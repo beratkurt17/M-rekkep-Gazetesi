@@ -106,7 +106,62 @@ body {
         box-shadow: 0 4px 20px rgba(0,0,0,0.12);
     }
     .utility-container {
-        padding: 150px 20px;
+        padding: 30px 20px;
+    }
+    .btn-utility {
+        padding: 16px 32px !important;
+        font-size: 1.4rem !important;
+        border-radius: 40px !important;
+        gap: 12px !important;
+        height: auto !important;
+    }
+    .btn-utility svg {
+        width: 24px !important;
+        height: 24px !important;
+    }
+    .utility-logo {
+        font-size: 2.2rem !important;
+        letter-spacing: 3px !important;
+    }
+    .user-avatar {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 1.3rem !important;
+    }
+    .profile-avatar-btn {
+        padding: 8px 24px !important;
+        gap: 12px !important;
+    }
+    .profile-avatar-btn span {
+        font-size: 1.4rem !important;
+    }
+    .profile-avatar-btn .dropdown-chevron {
+        width: 20px !important;
+        height: 20px !important;
+    }
+    .notifications-btn svg {
+        width: 26px !important;
+        height: 26px !important;
+    }
+    .notifications-badge {
+        font-size: 0.9rem !important;
+        padding: 4px 8px !important;
+        top: -6px !important;
+        right: -6px !important;
+    }
+    .author-search-wrapper {
+        height: auto !important;
+    }
+    #global-author-search-input {
+        padding: 14px 20px 14px 44px !important;
+        font-size: 1.3rem !important;
+        border-radius: 30px !important;
+        width: 200px !important;
+    }
+    .author-search-wrapper svg {
+        left: 16px !important;
+        width: 20px !important;
+        height: 20px !important;
     }
 }
 
@@ -813,10 +868,10 @@ body {
     transition: background-color var(--transition-speed), border-color var(--transition-speed);
 }
 
-/* Touch/mobile device: push newspaper further down (500px here = ~150px visible on phone due to 1300px viewport scaling) */
+/* Touch/mobile device: push newspaper down to clear utility bar */
 @media (pointer: coarse) {
     .newspaper-wrapper {
-        margin-top: 500px;
+        margin-top: 130px;
     }
 }
 
@@ -1536,6 +1591,102 @@ body {
     display: none !important;
     opacity: 0;
     transform: translateY(20px);
+}
+
+/* Glassmorphism modal backdrop */
+.overlay-modal {
+    background: rgba(15, 15, 15, 0.75) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow-y: auto !important;
+}
+
+.overlay-modal .editor-studio-container {
+    margin: auto !important;
+    padding: 40px 20px !important;
+    width: 90% !important;
+    box-sizing: border-box !important;
+}
+
+.overlay-modal-card {
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 16px;
+    padding: 35px 30px;
+    box-shadow: 0 20px 50px var(--shadow-color) !important;
+    width: 100%;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .overlay-modal-card {
+    background: rgba(30, 30, 30, 0.75) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Touch scaling for modal contents */
+@media (pointer: coarse) {
+    .overlay-modal .editor-studio-container {
+        max-width: 650px !important;
+    }
+    .overlay-modal-card,
+    .auth-card {
+        padding: 50px 40px !important;
+        border-radius: 24px !important;
+    }
+    .overlay-modal-card h2,
+    .auth-card h2 {
+        font-size: 2.2rem !important;
+    }
+    .overlay-modal-card p,
+    .auth-card p {
+        font-size: 1.3rem !important;
+    }
+    .overlay-modal-card label,
+    .auth-card label {
+        font-size: 1.25rem !important;
+    }
+    .overlay-modal-card .form-control,
+    .auth-card .form-control {
+        font-size: 1.3rem !important;
+        padding: 16px 20px !important;
+        height: auto !important;
+        border-radius: 10px !important;
+    }
+    .overlay-modal-card .btn-publish-submit,
+    .auth-card .btn-publish-submit {
+        font-size: 1.4rem !important;
+        padding: 18px 24px !important;
+        border-radius: 12px !important;
+    }
+    .overlay-modal-card .auth-tab-btn,
+    .auth-card .auth-tab-btn {
+        font-size: 1.3rem !important;
+        padding: 20px !important;
+    }
+    .overlay-modal-card #forgot-password-link,
+    .auth-card #forgot-password-link,
+    .overlay-modal-card #back-to-login-btn,
+    .auth-card #back-to-login-btn {
+        font-size: 1.2rem !important;
+    }
+    
+    .btn-close-overlay {
+        padding: 18px 30px !important;
+        font-size: 1.4rem !important;
+        border-radius: 40px !important;
+        top: 30px !important;
+        left: 30px !important;
+    }
+    .btn-close-overlay svg {
+        width: 24px !important;
+        height: 24px !important;
+    }
 }
 
 /* Reading Progress Bar */
@@ -2377,8 +2528,24 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
+.auth-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 25px;
+}
+
 .auth-tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 15px;
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    font-weight: 700;
     color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
 }
 
 .auth-tab-btn:hover {
@@ -2387,7 +2554,7 @@ body {
 
 .auth-tab-btn.active {
     color: var(--text-primary) !important;
-    border-bottom-color: var(--accent-color) !important;
+    border-bottom: 2px solid var(--accent-color) !important;
 }
 
 /* User avatar display initials icon */

@@ -422,49 +422,51 @@
     </div>
 
     <!-- Supabase Configuration Overlay -->
-    <div id="supabase-overlay" class="overlay hidden">
+    <div id="supabase-overlay" class="overlay overlay-modal hidden">
         <button id="close-supabase" class="btn-close-overlay" aria-label="Bağlantıyı Kapat">
             <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             <span>Kapat</span>
         </button>
 
         <div class="editor-studio-container" style="max-width: 500px;">
-            <header class="editor-studio-header">
-                <h2>Supabase Bağlantısı</h2>
-                <p>Verilerinizi gerçek zamanlı bir bulut veritabanına taşımak için API bilgilerinizi girin.</p>
-            </header>
+            <div class="overlay-modal-card">
+                <header class="editor-studio-header">
+                    <h2>Supabase Bağlantısı</h2>
+                    <p>Verilerinizi gerçek zamanlı bir bulut veritabanına taşımak için API bilgilerinizi girin.</p>
+                </header>
 
-            <form id="supabase-config-form" class="editor-form">
-                <div class="form-group">
-                    <label for="sb-url">Supabase Project URL</label>
-                    <input type="url" id="sb-url" placeholder="https://xxxx.supabase.co" required class="form-control">
-                </div>
+                <form id="supabase-config-form" class="editor-form">
+                    <div class="form-group">
+                        <label for="sb-url">Supabase Project URL</label>
+                        <input type="url" id="sb-url" placeholder="https://xxxx.supabase.co" required class="form-control">
+                    </div>
 
-                <div class="form-group">
-                    <label for="sb-key">Supabase Anon API Key</label>
-                    <input type="password" id="sb-key" placeholder="Anon API Key..." required class="form-control">
-                </div>
+                    <div class="form-group">
+                        <label for="sb-key">Supabase Anon API Key</label>
+                        <input type="password" id="sb-key" placeholder="Anon API Key..." required class="form-control">
+                    </div>
 
-                <div class="form-actions" style="display: flex; gap: 10px;">
-                    <button type="submit" class="btn-publish-submit" style="flex: 1;">Bağlan</button>
-                    <button type="button" id="sb-disconnect-btn" class="btn-publish-submit" style="flex: 1; background-color: transparent; border: 1px solid var(--border-color); color: var(--text-primary);">Bağlantıyı Kes</button>
-                </div>
-            </form>
+                    <div class="form-actions" style="display: flex; gap: 10px;">
+                        <button type="submit" class="btn-publish-submit" style="flex: 1;">Bağlan</button>
+                        <button type="button" id="sb-disconnect-btn" class="btn-publish-submit" style="flex: 1; background-color: transparent; border: 1px solid var(--border-color); color: var(--text-primary);">Bağlantıyı Kes</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
     <!-- Auth Overlay -->
-    <div id="auth-overlay" class="overlay hidden">
+    <div id="auth-overlay" class="overlay overlay-modal hidden">
         <button id="close-auth" class="btn-close-overlay" aria-label="Kapat">
             <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             <span>Kapat</span>
         </button>
 
         <div class="editor-studio-container" style="max-width: 450px;">
-            <div class="auth-card" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 30px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15); margin-top: 40px;">
-                <div class="auth-tabs" style="display: flex; border-bottom: 1px solid var(--border-light); margin-bottom: 25px;">
-                    <button type="button" class="auth-tab-btn active" id="tab-login" style="flex: 1; background: none; border: none; padding: 15px; font-family: var(--font-ui); font-size: 0.85rem; font-weight: 700; color: var(--text-primary); cursor: pointer; border-bottom: 2px solid var(--accent-color); transition: all 0.2s ease;">GİRİŞ YAP</button>
-                    <button type="button" class="auth-tab-btn" id="tab-register" style="flex: 1; background: none; border: none; padding: 15px; font-family: var(--font-ui); font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s ease;">KAYIT OL</button>
+            <div class="auth-card">
+                <div class="auth-tabs">
+                    <button type="button" class="auth-tab-btn active" id="tab-login">GİRİŞ YAP</button>
+                    <button type="button" class="auth-tab-btn" id="tab-register">KAYIT OL</button>
                 </div>
 
                 <!-- Login Form -->
@@ -626,17 +628,18 @@
     </div>
 
     <!-- Settings Overlay -->
-    <div id="settings-overlay" class="overlay hidden">
+    <div id="settings-overlay" class="overlay overlay-modal hidden">
         <button id="close-settings" class="btn-close-overlay" aria-label="Ayarları Kapat">
             <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             <span>Kapat</span>
         </button>
 
         <div class="editor-studio-container" style="max-width: 480px;">
-            <header class="editor-studio-header" style="margin-bottom: 28px;">
-                <h2 style="font-family: var(--font-header); font-size: 2rem; font-weight: 800;">Hesap Ayarları</h2>
-                <p style="color: var(--text-secondary); margin-top: 6px;">Profilinizi ve tercihlerinizi yönetin.</p>
-            </header>
+            <div class="overlay-modal-card">
+                <header class="editor-studio-header" style="margin-bottom: 28px;">
+                    <h2 style="font-family: var(--font-header); font-size: 2rem; font-weight: 800;">Hesap Ayarları</h2>
+                    <p style="color: var(--text-secondary); margin-top: 6px;">Profilinizi ve tercihlerinizi yönetin.</p>
+                </header>
 
             <!-- Profile Section -->
             <div class="settings-section">
@@ -864,6 +867,7 @@
             </div>
         </div>
     </div>
+</div>
 
     <!-- Author Showcase Modal -->
     <div id="author-modal" class="overlay hidden" style="z-index: 1100;">
