@@ -1,0 +1,1985 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mürekkep - Yönetici & Editör Kontrol Paneli</title>
+    
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400..600;1,400..600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0c0e12;
+            --bg-card: rgba(255, 255, 255, 0.02);
+            --bg-card-hover: rgba(255, 255, 255, 0.04);
+            --border-color: rgba(255, 255, 255, 0.06);
+            --border-hover: rgba(255, 255, 255, 0.12);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-gold: #c5a059;
+            --accent-gold-hover: #e0bb73;
+            --color-danger: #e74c3c;
+            --color-success: #2ecc71;
+            --font-serif: 'Cinzel', serif;
+            --font-body: 'Lora', serif;
+            --font-ui: 'Inter', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-ui);
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
+        }
+
+        /* LOGIN SCREEN STYLING */
+        #login-view {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #10121a 0%, #06070a 100%);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 40px 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+
+        .login-logo {
+            font-family: var(--font-serif);
+            font-size: 2rem;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, #ffffff 40%, var(--accent-gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+
+        .login-subtitle {
+            font-family: var(--font-body);
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-control {
+            width: 100%;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 14px;
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.25s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent-gold);
+            border: none;
+            border-radius: 8px;
+            color: #0b0d12;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 12px rgba(197, 160, 89, 0.2);
+            margin-top: 10px;
+        }
+
+        .btn-login:hover {
+            background: var(--accent-gold-hover);
+            box-shadow: 0 6px 16px rgba(197, 160, 89, 0.3);
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--accent-gold);
+        }
+
+        /* DASHBOARD SCREEN STYLING */
+        #dashboard-view {
+            display: flex;
+            width: 100vw;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background-color: #08090d;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 30px 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .sidebar-logo {
+            font-family: var(--font-serif);
+            font-size: 1.6rem;
+            letter-spacing: 3px;
+            color: var(--text-main);
+        }
+
+        .sidebar-subtitle {
+            font-family: var(--font-body);
+            font-size: 0.72rem;
+            font-style: italic;
+            color: var(--accent-gold);
+            margin-top: 4px;
+        }
+
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex-grow: 1;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .menu-item:hover, .menu-item.active {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+        }
+
+        .menu-item.active {
+            border-left: 3px solid var(--accent-gold);
+            border-radius: 0 8px 8px 0;
+            padding-left: 13px;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 10px 8px;
+            border-top: 1px solid var(--border-color);
+            margin-bottom: 10px;
+        }
+
+        .user-name {
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .user-role {
+            font-size: 0.72rem;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            margin-left: 260px;
+            padding: 40px 50px;
+            width: calc(100vw - 260px);
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .tab-title {
+            font-family: var(--font-serif);
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        /* Dashboard Tables */
+        .table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(255,255,255,0.01);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.88rem;
+            color: var(--text-main);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255,255,255,0.005);
+        }
+
+        /* Badges & Buttons */
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-report {
+            background: rgba(231, 76, 60, 0.15);
+            color: var(--color-danger);
+            border: 1px solid rgba(231, 76, 60, 0.25);
+        }
+
+        .badge-none {
+            background: rgba(255,255,255,0.04);
+            color: var(--text-muted);
+        }
+
+        .action-btn-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-action.approve {
+            background: rgba(46, 204, 113, 0.15);
+            color: var(--color-success);
+            border: 1px solid rgba(46, 204, 113, 0.25);
+        }
+
+        .btn-action.approve:hover {
+            background: var(--color-success);
+            color: #fff;
+        }
+
+        .btn-action.delete {
+            background: rgba(231, 76, 60, 0.15);
+            color: var(--color-danger);
+            border: 1px solid rgba(231, 76, 60, 0.25);
+        }
+
+        .btn-action.delete:hover {
+            background: var(--color-danger);
+            color: #fff;
+        }
+
+        /* User Management Grid */
+        .user-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .user-form-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Toast Component */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1f2937;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1100;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-icon {
+            font-size: 1.2rem;
+        }
+
+        .toast-text {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-view">
+        <div class="login-card">
+            <div class="login-logo">MÜREKKEP</div>
+            <div class="login-subtitle">Editör & Yönetici Kontrol Paneli</div>
+            
+            <form id="admin-login-form">
+                <div class="form-group">
+                    <label class="form-label">E-Posta Adresi</label>
+                    <input type="email" id="login-email" class="form-control" placeholder="editor@murekkep.com" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 25px;">
+                    <label class="form-label">Şifre</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-login">Giriş Yap</button>
+            </form>
+            <a href="index.html" class="back-link">← Gazeteye Geri Dön</a>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <div id="dashboard-view" class="hidden">
+        <div class="sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-logo">MÜREKKEP</div>
+                <div class="sidebar-subtitle">Yönetim Konsolu</div>
+            </div>
+            
+            <div class="sidebar-menu">
+                <div class="menu-item active" onclick="switchTab('articles')">
+                    <i class="fa-solid fa-feather"></i> Yazı Yönetimi
+                </div>
+                <div class="menu-item" onclick="switchTab('comments')">
+                    <i class="fa-solid fa-comments"></i> Yorum Yönetimi
+                </div>
+                <div class="menu-item" onclick="switchTab('statistics')">
+                    <i class="fa-solid fa-chart-line"></i> İstatistikler
+                </div>
+                <div id="menu-users" class="menu-item hidden" onclick="switchTab('users')">
+                    <i class="fa-solid fa-users-gear"></i> Kullanıcı Yetkileri
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <span id="user-display-name" class="user-name">-</span>
+                    <span id="user-display-role" class="user-role">-</span>
+                </div>
+                <a href="index.html" class="menu-item" style="border-top: 1px solid var(--border-color); border-radius: 0; padding: 12px 8px;">
+                    <i class="fa-solid fa-newspaper"></i> Gazeteyi Aç
+                </a>
+                <div class="menu-item" onclick="handleLogout()" style="color: var(--color-danger); padding: 12px 8px;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Oturumu Kapat
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- ARTICLES TAB -->
+            <div id="tab-articles" class="tab-panel">
+                <div class="header-row">
+                    <h2 class="tab-title">Yazı Yönetimi</h2>
+                </div>
+                <div class="table-card">
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Yazı Başlığı</th>
+                                    <th>Yazar</th>
+                                    <th>Kategori</th>
+                                    <th>Şikayet</th>
+                                    <th style="width: 180px;">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody id="articles-table-body">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COMMENTS TAB -->
+            <div id="tab-comments" class="tab-panel hidden">
+                <div class="header-row">
+                    <h2 class="tab-title">Yorum Yönetimi</h2>
+                </div>
+                <div class="table-card">
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Yorum Yapan</th>
+                                    <th>Yorum Metni</th>
+                                    <th>İlgili Yazı</th>
+                                    <th>Şikayet</th>
+                                    <th style="width: 180px;">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody id="comments-table-body">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- USERS TAB -->
+            <div id="tab-users" class="tab-panel hidden">
+                <div class="header-row">
+                    <h2 class="tab-title">Kullanıcı & Yetki Yönetimi</h2>
+                </div>
+                <div class="user-grid">
+                    <!-- Create User Form -->
+                    <div class="user-form-card">
+                        <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 20px; color: var(--accent-gold);">YENİ YETKİLİ HESAP EKLE</h3>
+                        <form id="create-user-form">
+                            <div class="form-group">
+                                <label class="form-label">E-Posta Adresi</label>
+                                <input type="email" id="new-user-email" class="form-control" placeholder="adsoyad@murekkep.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Kullanıcı Adı / Kalem İsmi</label>
+                                <input type="text" id="new-user-username" class="form-control" placeholder="Ahmet Yılmaz" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Şifre</label>
+                                <input type="password" id="new-user-password" class="form-control" placeholder="••••••••" required>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 25px;">
+                                <label class="form-label">Yetki Derecesi</label>
+                                <select id="new-user-role" class="form-control" style="background-color: var(--bg-dark); cursor: pointer;">
+                                    <option value="editor">Editör</option>
+                                    <option value="admin">Yönetici (Admin)</option>
+                                    <option value="user">Yazar/Okur (Standart)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-login" style="margin-top: 0;">Oluştur ve Yetkilendir</button>
+                        </form>
+                    </div>
+
+                    <!-- User List -->
+                    <div class="table-card" style="margin-bottom: 0;">
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Kullanıcı Bilgileri</th>
+                                        <th>Yetki Derecesi</th>
+                                        <th style="width: 100px;">İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table-body">
+                                    <!-- Loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATISTICS TAB -->
+            <div id="tab-statistics" class="tab-panel hidden">
+                <style>
+                    .stats-grid-4 {
+                        display: grid;
+                        grid-template-columns: repeat(4, 1fr);
+                        gap: 20px;
+                        margin-bottom: 30px;
+                    }
+                    .stats-card {
+                        background: var(--bg-card);
+                        border: 1px solid var(--border-color);
+                        border-radius: 12px;
+                        padding: 20px;
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                        transition: transform 0.2s, border-color 0.2s;
+                    }
+                    .stats-card:hover {
+                        transform: translateY(-2px);
+                        border-color: var(--accent-gold);
+                    }
+                    .stats-icon {
+                        width: 50px;
+                        height: 50px;
+                        border-radius: 10px;
+                        background: rgba(197, 160, 89, 0.1);
+                        color: var(--accent-gold);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 1.5rem;
+                    }
+                    .stats-info h3 {
+                        font-size: 0.75rem;
+                        color: var(--text-muted);
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        margin-bottom: 4px;
+                        font-family: var(--font-ui);
+                    }
+                    .stats-info p {
+                        font-size: 1.6rem;
+                        font-weight: 700;
+                        color: var(--text-main);
+                        font-family: var(--font-ui);
+                    }
+                    .charts-grid-2 {
+                        display: grid;
+                        grid-template-columns: 2fr 1fr;
+                        gap: 25px;
+                        margin-bottom: 30px;
+                    }
+                    .chart-card {
+                        background: var(--bg-card);
+                        border: 1px solid var(--border-color);
+                        border-radius: 12px;
+                        padding: 24px;
+                    }
+                    .chart-card h3 {
+                        font-size: 1rem;
+                        font-weight: 700;
+                        margin-bottom: 20px;
+                        color: var(--accent-gold);
+                        font-family: var(--font-serif);
+                        letter-spacing: 1px;
+                        text-transform: uppercase;
+                        border-bottom: 1px solid var(--border-color);
+                        padding-bottom: 10px;
+                    }
+                    .stats-detail-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 25px;
+                    }
+                    .live-log-list {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 12px;
+                        max-height: 380px;
+                        overflow-y: auto;
+                        padding-right: 5px;
+                    }
+                    .live-log-item {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 10px 12px;
+                        background: rgba(255,255,255,0.01);
+                        border: 1px solid var(--border-color);
+                        border-radius: 8px;
+                        font-size: 0.8rem;
+                    }
+                    .live-log-item:hover {
+                        background: rgba(255,255,255,0.03);
+                    }
+                    .log-details {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 2px;
+                    }
+                    .log-meta {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-size: 0.72rem;
+                        color: var(--text-muted);
+                    }
+                    .log-time {
+                        color: var(--accent-gold);
+                    }
+                </style>
+                <div class="header-row">
+                    <h2 class="tab-title">Ziyaretçi ve Okuma İstatistikleri</h2>
+                    <button onclick="resetStatsData()" class="btn-action delete" style="padding: 8px 16px; border-radius: 6px; font-weight:600;">Verileri Sıfırla</button>
+                </div>
+
+                <!-- Metrics Row -->
+                <div class="stats-grid-4">
+                    <div class="stats-card">
+                        <div class="stats-icon"><i class="fa-solid fa-eye"></i></div>
+                        <div class="stats-info">
+                            <h3>Toplam Sayfa Gösterimi</h3>
+                            <p id="stat-total-views">0</p>
+                        </div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-icon"><i class="fa-solid fa-users"></i></div>
+                        <div class="stats-info">
+                            <h3>Tekil Ziyaretçi</h3>
+                            <p id="stat-unique-visitors">0</p>
+                        </div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-icon"><i class="fa-solid fa-star"></i></div>
+                        <div class="stats-info">
+                            <h3>En Çok Okunan Kategori</h3>
+                            <p id="stat-top-category" style="font-size: 1.2rem; font-weight:700; text-transform:uppercase; margin-top:5px; color: var(--accent-gold);">-</p>
+                        </div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-icon"><i class="fa-solid fa-book-open"></i></div>
+                        <div class="stats-info">
+                            <h3>Toplam Eser Okuma</h3>
+                            <p id="stat-total-reads">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="charts-grid-2">
+                    <div class="chart-card">
+                        <h3>Ziyaretçi Grafiği (Son 15 Gün)</h3>
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="visitorTrendChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Cihaz Dağılımı</h3>
+                        <div style="height: 300px; position: relative; display: flex; align-items: center; justify-content: center;">
+                            <canvas id="deviceChart" style="max-height: 240px; max-width: 240px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details Row -->
+                <div class="stats-detail-grid">
+                    <!-- Popular Articles -->
+                    <div class="chart-card">
+                        <h3>En Çok Okunan Yazılar</h3>
+                        <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Yazı Başlığı</th>
+                                        <th>Yazar</th>
+                                        <th style="width: 100px; text-align: right;">Okunma Sayısı</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stats-articles-tbody">
+                                    <!-- Loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Live Log -->
+                    <div class="chart-card">
+                        <h3>Son Etkinlik Akışı</h3>
+                        <div id="stats-live-log" class="live-log-list">
+                            <!-- Loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span id="toast-icon" class="toast-icon">👋</span>
+        <span id="toast-text" class="toast-text">İşlem başarılı.</span>
+    </div>
+
+    <script>
+        // System variables
+        let isSupabaseConnected = false;
+        let supabaseClient = null;
+        let currentUser = null;
+
+        // Data arrays
+        let articles = [];
+        let comments = [];
+        let userRoles = [];
+        let authorProfiles = {};
+
+        // Default predefined roles
+        const DEFAULT_USER_ROLES = [
+            { email: "admin@murekkep.com", username: "Mürekkep Yöneticisi", role: "admin" },
+            { email: "editor@murekkep.com", username: "Mürekkep Editörü", role: "editor" }
+        ];
+
+        // SUPABASE CONNECTION ARGS (Same as app.js)
+        const SUPABASE_URL = ""; 
+        const SUPABASE_ANON_KEY = "";
+
+        // Initialize Supabase & load data on start
+        document.addEventListener("DOMContentLoaded", async () => {
+            initSupabaseConnection();
+            
+            // First load userRoles configuration
+            await loadUserRoles();
+            
+            // Check session
+            checkSession();
+
+            // Bind forms
+            document.getElementById("admin-login-form").addEventListener("submit", handleLogin);
+            document.getElementById("create-user-form").addEventListener("submit", handleCreateUser);
+        });
+
+        function initSupabaseConnection() {
+            if (window.supabase) {
+                try {
+                    const url = SUPABASE_URL || localStorage.getItem("murekkep_supabase_url");
+                    const key = SUPABASE_ANON_KEY || localStorage.getItem("murekkep_supabase_key");
+                    if (url && key) {
+                        supabaseClient = window.supabase.createClient(url, key);
+                        isSupabaseConnected = true;
+                        console.log("Supabase connected successfully in admin.html.");
+                    } else {
+                        isSupabaseConnected = false;
+                    }
+                } catch(e) {
+                    isSupabaseConnected = false;
+                }
+            }
+        }
+
+        // Access Control checks
+        function getUserRole(email) {
+            if (!email) return "user";
+            const emailNorm = email.toLowerCase().trim();
+            const match = userRoles.find(u => u.email.toLowerCase().trim() === emailNorm);
+            return match ? match.role : "user";
+        }
+
+        async function loadUserRoles() {
+            if (isSupabaseConnected) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('site_settings')
+                        .select('value')
+                        .eq('key', 'user_roles')
+                        .single();
+                    if (data && data.value) {
+                        userRoles = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+                        localStorage.setItem("murekkep_user_roles", JSON.stringify(userRoles));
+                        return;
+                    }
+                } catch(e) {}
+            }
+            try {
+                const saved = localStorage.getItem("murekkep_user_roles");
+                if (saved) {
+                    userRoles = JSON.parse(saved);
+                    return;
+                }
+            } catch(e) {}
+            userRoles = JSON.parse(JSON.stringify(DEFAULT_USER_ROLES));
+        }
+
+        async function saveUserRoles() {
+            try {
+                localStorage.setItem("murekkep_user_roles", JSON.stringify(userRoles));
+            } catch(e) {}
+            if (isSupabaseConnected) {
+                try {
+                    await supabaseClient
+                        .from('site_settings')
+                        .upsert({ key: 'user_roles', value: userRoles });
+                } catch(e) {}
+            }
+        }
+
+        async function checkSession() {
+            // First try to restore real Supabase session
+            if (isSupabaseConnected) {
+                try {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (session && session.user) {
+                        const email = session.user.email;
+                        const role = getUserRole(email);
+                        if (role === 'admin' || role === 'editor') {
+                            currentUser = {
+                                id: session.user.id,
+                                email: email,
+                                username: session.user.user_metadata?.username || email.split('@')[0],
+                                role: role,
+                                isAdmin: role === 'admin',
+                                isEditor: true
+                            };
+                            showDashboard();
+                            return;
+                        }
+                    }
+                } catch(e) {}
+            }
+
+            // Fallback: check mock session
+            try {
+                const session = localStorage.getItem("murekkep_mock_session");
+                if (session) {
+                    const parsed = JSON.parse(session);
+                    const role = getUserRole(parsed.email);
+                    if (role === 'admin' || role === 'editor') {
+                        currentUser = parsed;
+                        currentUser.role = role;
+                        currentUser.isAdmin = (role === 'admin');
+                        currentUser.isEditor = true;
+                        showDashboard();
+                        return;
+                    }
+                }
+            } catch(e) {}
+
+            document.getElementById("login-view").classList.remove("hidden");
+            document.getElementById("dashboard-view").classList.add("hidden");
+        }
+
+        // Login Submit Handler
+        async function handleLogin(e) {
+            if (e) e.preventDefault();
+
+            const emailRaw = document.getElementById("login-email").value.trim();
+            const password = document.getElementById("login-password").value.trim();
+            const emailNorm = emailRaw.toLowerCase();
+            const passNorm = password.toLowerCase();
+
+            // Normalize short inputs to full email
+            const resolvedEmail = emailNorm.includes("@") ? emailNorm :
+                (emailNorm === "admin" ? "admin@murekkep.com" :
+                (emailNorm === "editor" ? "editor@murekkep.com" : emailNorm));
+
+            const resolvedPass = passNorm || password;
+
+            // Show loading
+            const btn = document.getElementById("login-btn");
+            const origText = btn ? btn.textContent : "";
+            if (btn) { btn.textContent = "Giriş yapılıyor..."; btn.disabled = true; }
+
+            // ── 1. Try real Supabase Auth ──
+            if (isSupabaseConnected) {
+                try {
+                    const { data, error } = await supabaseClient.auth.signInWithPassword({
+                        email: resolvedEmail,
+                        password: resolvedPass
+                    });
+
+                    if (!error && data?.user) {
+                        const email = data.user.email;
+                        const role = getUserRole(email);
+
+                        if (role === 'admin' || role === 'editor') {
+                            currentUser = {
+                                id: data.user.id,
+                                email: email,
+                                username: data.user.user_metadata?.username || email.split('@')[0],
+                                role: role,
+                                isAdmin: role === 'admin',
+                                isEditor: true
+                            };
+                            localStorage.setItem("murekkep_mock_session", JSON.stringify(currentUser));
+                            if (btn) { btn.textContent = origText; btn.disabled = false; }
+                            showToast("👋 Supabase ile giriş yapıldı!", "👋");
+                            setTimeout(showDashboard, 800);
+                            return;
+                        } else {
+                            // Signed in to Supabase but not admin/editor role
+                            await supabaseClient.auth.signOut();
+                            if (btn) { btn.textContent = origText; btn.disabled = false; }
+                            showToast("✕ Bu hesabın yönetici yetkisi yok.", "✕");
+                            return;
+                        }
+                    }
+                    // Supabase auth failed → fall through to mock check
+                } catch(e) {}
+            }
+
+            // ── 2. Fallback: mock credential check (from LocalStorage) ──
+            let matchedMockUser = null;
+            try {
+                let mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
+                
+                // Seed default mock accounts in localStorage if empty on first run
+                if (mockUsers.length === 0) {
+                    mockUsers.push(
+                        { id: "u_default_admin", email: "admin@murekkep.com", username: "Mürekkep Yöneticisi", password: "admin" },
+                        { id: "u_default_editor", email: "editor@murekkep.com", username: "Mürekkep Editörü", password: "editor" }
+                    );
+                    localStorage.setItem("murekkep_mock_users", JSON.stringify(mockUsers));
+                }
+
+                matchedMockUser = mockUsers.find(u => 
+                    (u.email.toLowerCase().trim() === emailNorm || u.email.split("@")[0].toLowerCase().trim() === emailNorm) && 
+                    u.password === resolvedPass
+                );
+            } catch(e) {}
+
+            const dynRoleObj = userRoles.find(r => r.email.toLowerCase().trim() === emailNorm || r.email.split("@")[0].toLowerCase().trim() === emailNorm);
+            const resolvedRole = dynRoleObj ? dynRoleObj.role : (matchedMockUser ? (emailNorm.includes("admin") ? "admin" : "editor") : "user");
+
+            let authUser = null;
+            if (matchedMockUser && (resolvedRole === 'admin' || resolvedRole === 'editor')) {
+                authUser = {
+                    id: matchedMockUser.id,
+                    email: matchedMockUser.email,
+                    username: matchedMockUser.username,
+                    role: resolvedRole, 
+                    isAdmin: resolvedRole === 'admin', 
+                    isEditor: true
+                };
+            }
+
+            if (btn) { btn.textContent = origText; btn.disabled = false; }
+
+            if (authUser) {
+                currentUser = authUser;
+                localStorage.setItem("murekkep_mock_session", JSON.stringify(currentUser));
+                showToast("👋 Giriş yapıldı! (Çevrimdışı mod - silme kısıtlı olabilir)", "👋");
+                setTimeout(showDashboard, 800);
+            } else {
+                showToast("✕ E-posta veya şifre hatalı.", "✕");
+            }
+        }
+
+        async function showDashboard() {
+            document.getElementById("login-view").classList.add("hidden");
+            document.getElementById("dashboard-view").classList.remove("hidden");
+            
+            document.getElementById("user-display-name").innerText = currentUser.username;
+            document.getElementById("user-display-role").innerText = currentUser.role === 'admin' ? 'Yönetici' : 'Editör';
+
+            // Show user roles tab only if administrator
+            const menuUsers = document.getElementById("menu-users");
+            if (currentUser.isAdmin) {
+                if (menuUsers) menuUsers.classList.remove("hidden");
+            } else {
+                if (menuUsers) menuUsers.classList.add("hidden");
+            }
+
+            // Load site data
+            await fetchAllData();
+            
+            // Render default active tab
+            switchTab('articles');
+        }
+
+        async function fetchAllData() {
+            // Load Articles
+            if (isSupabaseConnected) {
+                try {
+                    const { data, error } = await supabaseClient.from('articles').select('*');
+                    if (data) articles = data;
+                } catch(e) {}
+            } else {
+                articles = JSON.parse(localStorage.getItem("murekkep_articles_v2") || "[]");
+            }
+
+            // Load Comments
+            if (isSupabaseConnected) {
+                try {
+                    const { data, error } = await supabaseClient.from('comments').select('*');
+                    if (data) {
+                        comments = data.map(c => ({
+                            id: c.id,
+                            articleId: c.article_id,
+                            author: c.author,
+                            text: c.text,
+                            date: c.date
+                        }));
+                    }
+                } catch(e) {}
+            } else {
+                comments = JSON.parse(localStorage.getItem("murekkep_comments_v2") || "[]");
+            }
+
+            // Load profiles
+            if (isSupabaseConnected) {
+                try {
+                    const { data } = await supabaseClient.from('site_settings').select('value').eq('key', 'author_profiles').single();
+                    if (data && data.value) {
+                        authorProfiles = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+                    }
+                } catch(e) {}
+            } else {
+                authorProfiles = JSON.parse(localStorage.getItem("murekkep_author_profiles") || "{}");
+            }
+        }
+
+        // Chart JS Instances
+        let visitorChartInstance = null;
+        let deviceChartInstance = null;
+
+        // Tab switcher
+        function switchTab(tabId) {
+            document.querySelectorAll(".tab-panel").forEach(p => p.classList.add("hidden"));
+            document.querySelectorAll(".sidebar-menu .menu-item").forEach(m => m.classList.remove("active"));
+            
+            const activeTab = document.getElementById("tab-" + tabId);
+            if (activeTab) activeTab.classList.remove("hidden");
+            
+            // Set active class on the matching sidebar menu item
+            document.querySelectorAll(".sidebar-menu .menu-item").forEach(item => {
+                const clickAttr = item.getAttribute("onclick");
+                if (clickAttr && clickAttr.includes(`'${tabId}'`)) {
+                    item.classList.add("active");
+                }
+            });
+
+            // Render relevant table data
+            if (tabId === 'articles') renderArticlesTable();
+            if (tabId === 'comments') renderCommentsTable();
+            if (tabId === 'users') renderUsersTable();
+            if (tabId === 'statistics') renderStatisticsDashboard();
+        }
+
+        async function fetchStatsData() {
+            let stats = null;
+            if (isSupabaseConnected && supabaseClient) {
+                try {
+                    const { data } = await supabaseClient
+                        .from('site_settings')
+                        .select('value')
+                        .eq('key', 'site_statistics')
+                        .single();
+                    if (data && data.value) {
+                        stats = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+                    }
+                } catch(e) {}
+            }
+            if (!stats) {
+                try {
+                    const saved = localStorage.getItem("murekkep_site_statistics");
+                    if (saved) stats = JSON.parse(saved);
+                } catch(e) {}
+            }
+            
+            // Generate fallback simulation statistics if empty
+            if (!stats || typeof stats !== 'object') {
+                stats = generateMockStatistics();
+                localStorage.setItem("murekkep_site_statistics", JSON.stringify(stats));
+                if (isSupabaseConnected && supabaseClient) {
+                    await supabaseClient.from('site_settings').upsert({ key: 'site_statistics', value: stats }).catch(console.error);
+                }
+            }
+            return stats;
+        }
+
+        function generateMockStatistics() {
+            const today = new Date();
+            const dailyStats = {};
+            let totalPageViews = 0;
+            let totalUnique = 0;
+
+            // Generate last 15 days of data
+            for (let i = 14; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(today.getDate() - i);
+                const dateStr = d.toISOString().split('T')[0];
+                const views = Math.floor(Math.random() * 40) + 15;
+                const unique = Math.floor(views * (Math.random() * 0.4 + 0.3));
+                dailyStats[dateStr] = { pageViews: views, uniqueVisitors: unique };
+                totalPageViews += views;
+                totalUnique += unique;
+            }
+
+            // Article views mockup
+            const articleViews = {};
+            articles.forEach(art => {
+                articleViews[art.id] = Math.floor(Math.random() * 80) + 10;
+            });
+
+            // Category views mockup
+            const categoryViews = {
+                manset: Math.floor(Math.random() * 200) + 100,
+                siir: Math.floor(Math.random() * 100) + 50,
+                oyku: Math.floor(Math.random() * 120) + 60,
+                deneme: Math.floor(Math.random() * 110) + 50,
+                kitap: Math.floor(Math.random() * 80) + 30,
+                roportaj: Math.floor(Math.random() * 70) + 20,
+                "kose-yazilari": Math.floor(Math.random() * 90) + 40,
+                haber: Math.floor(Math.random() * 60) + 20,
+                yarismalar: Math.floor(Math.random() * 50) + 10
+            };
+
+            // Device and browser mockup
+            const deviceStats = {
+                desktop: Math.floor(totalPageViews * 0.55),
+                mobile: Math.floor(totalPageViews * 0.38),
+                tablet: Math.floor(totalPageViews * 0.07)
+            };
+
+            const browserStats = {
+                chrome: Math.floor(totalPageViews * 0.65),
+                firefox: Math.floor(totalPageViews * 0.15),
+                safari: Math.floor(totalPageViews * 0.12),
+                edge: Math.floor(totalPageViews * 0.06),
+                other: Math.floor(totalPageViews * 0.02)
+            };
+
+            // Recent visits log mockup
+            const recentVisits = [];
+            const browsers = ["chrome", "firefox", "safari", "edge"];
+            const devices = ["desktop", "mobile", "tablet"];
+
+            for (let i = 0; i < 15; i++) {
+                const visitTime = new Date(today);
+                visitTime.setMinutes(today.getMinutes() - (i * (Math.floor(Math.random() * 25) + 5)));
+                const randArt = articles[Math.floor(Math.random() * articles.length)];
+                
+                recentVisits.push({
+                    timestamp: visitTime.toISOString(),
+                    page: i % 3 === 0 ? "Ana Sayfa" : (randArt ? randArt.title : "Ana Sayfa"),
+                    device: devices[Math.floor(Math.random() * devices.length)],
+                    browser: browsers[Math.floor(Math.random() * browsers.length)]
+                });
+            }
+
+            return {
+                totalPageViews,
+                totalUniqueVisitors: totalUnique,
+                categoryViews,
+                articleViews,
+                deviceStats,
+                browserStats,
+                dailyStats,
+                recentVisits
+            };
+        }
+
+        async function renderStatisticsDashboard() {
+            const stats = await fetchStatsData();
+
+            // 1. Fill Card Metrics
+            document.getElementById("stat-total-views").innerText = stats.totalPageViews.toLocaleString();
+            document.getElementById("stat-unique-visitors").innerText = stats.totalUniqueVisitors.toLocaleString();
+
+            // Calculate total article reads
+            let totalReads = 0;
+            if (stats.articleViews) {
+                Object.values(stats.articleViews).forEach(v => totalReads += v);
+            }
+            document.getElementById("stat-total-reads").innerText = totalReads.toLocaleString();
+
+            // Determine top category
+            let topCat = "-";
+            let topCatViews = -1;
+            const categoryNames = {
+                "siir": "Şiir", "oyku": "Öykü", "deneme": "Deneme",
+                "kitap": "Kitap İncelemesi", "roportaj": "Yazar Röportajı",
+                "kose-yazilari": "Köşe Yazısı", "haber": "Edebiyat Haberleri",
+                "yarismalar": "Yarışmalar", "manset": "Manşet"
+            };
+            if (stats.categoryViews) {
+                Object.entries(stats.categoryViews).forEach(([cat, val]) => {
+                    if (val > topCatViews) {
+                        topCatViews = val;
+                        topCat = categoryNames[cat] || cat;
+                    }
+                });
+            }
+            document.getElementById("stat-top-category").innerText = topCat;
+
+            // 2. Render Popular Articles Table
+            const tbody = document.getElementById("stats-articles-tbody");
+            tbody.innerHTML = "";
+
+            // Sort articles by view count in stats
+            const artViewsSorted = articles.map(art => ({
+                title: art.title,
+                author: art.author,
+                views: stats.articleViews && stats.articleViews[art.id] ? stats.articleViews[art.id] : 0
+            })).sort((a, b) => b.views - a.views);
+
+            if (artViewsSorted.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Okunma kaydı bulunmuyor.</td></tr>`;
+            } else {
+                artViewsSorted.slice(0, 10).forEach(art => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td style="font-weight: 600;">${art.title}</td>
+                        <td>${art.author}</td>
+                        <td style="text-align: right; font-weight: 700; color: var(--accent-gold);">${art.views}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // 3. Render Recent Activity Log
+            const logContainer = document.getElementById("stats-live-log");
+            logContainer.innerHTML = "";
+
+            if (stats.recentVisits && stats.recentVisits.length > 0) {
+                stats.recentVisits.slice(0, 12).forEach(v => {
+                    const item = document.createElement("div");
+                    item.className = "live-log-item";
+
+                    const devIcon = v.device === 'mobile' ? 'fa-mobile-screen-button' : (v.device === 'tablet' ? 'fa-tablet-screen-button' : 'fa-desktop');
+                    const browserIcon = v.browser === 'chrome' ? 'fa-chrome' : (v.browser === 'firefox' ? 'fa-firefox' : (v.browser === 'safari' ? 'fa-safari' : (v.browser === 'edge' ? 'fa-edge' : 'fa-globe')));
+
+                    const d = new Date(v.timestamp);
+                    const timeStr = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+                    item.innerHTML = `
+                        <div class="log-details">
+                            <span style="font-weight:600; color:var(--text-main);">${v.page}</span>
+                            <div class="log-meta">
+                                <span class="log-time"><i class="fa-regular fa-clock"></i> ${timeStr}</span>
+                                <span>•</span>
+                                <span><i class="fa-solid ${devIcon}"></i> ${v.device}</span>
+                                <span>•</span>
+                                <span><i class="fa-brands ${browserIcon}"></i> ${v.browser}</span>
+                            </div>
+                        </div>
+                    `;
+                    logContainer.appendChild(item);
+                });
+            } else {
+                logContainer.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding: 20px;">Son ziyaret kaydı bulunmuyor.</p>`;
+            }
+
+            // 4. Render Chart.js visitorTrendChart
+            if (visitorChartInstance) {
+                visitorChartInstance.destroy();
+            }
+
+            const dailyKeys = Object.keys(stats.dailyStats || {}).sort();
+            const pageViewsData = [];
+            const uniqueVisitorsData = [];
+            const labels = [];
+
+            dailyKeys.slice(-15).forEach(k => {
+                const parts = k.split('-');
+                labels.push(`${parts[2]}/${parts[1]}`); // DD/MM
+                pageViewsData.push(stats.dailyStats[k].pageViews);
+                uniqueVisitorsData.push(stats.dailyStats[k].uniqueVisitors);
+            });
+
+            const ctx1 = document.getElementById('visitorTrendChart').getContext('2d');
+            visitorChartInstance = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Sayfa Gösterimi',
+                            data: pageViewsData,
+                            borderColor: '#c5a059',
+                            backgroundColor: 'rgba(197, 160, 89, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Tekil Ziyaretçi',
+                            data: uniqueVisitorsData,
+                            borderColor: '#2ecc71',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#f3f4f6',
+                                font: { family: 'Inter' }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#9ca3af', font: { family: 'Inter' } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#9ca3af', font: { family: 'Inter' } }
+                        }
+                    }
+                }
+            });
+
+            // 5. Render Chart.js deviceChart
+            if (deviceChartInstance) {
+                deviceChartInstance.destroy();
+            }
+
+            const desktop = stats.deviceStats ? (stats.deviceStats.desktop || 0) : 0;
+            const mobile = stats.deviceStats ? (stats.deviceStats.mobile || 0) : 0;
+            const tablet = stats.deviceStats ? (stats.deviceStats.tablet || 0) : 0;
+
+            const ctx2 = document.getElementById('deviceChart').getContext('2d');
+            deviceChartInstance = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Masaüstü', 'Mobil', 'Tablet'],
+                    datasets: [{
+                        data: [desktop, mobile, tablet],
+                        backgroundColor: ['#c5a059', '#3498db', '#9b59b6'],
+                        borderColor: '#0c0e12',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#f3f4f6',
+                                font: { family: 'Inter', size: 11 },
+                                boxWidth: 15
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function resetStatsData() {
+            if (!confirm("Tüm istatistik verilerini sıfırlamak ve temizlemek istediğinizden emin misiniz?")) return;
+            
+            const stats = {
+                totalPageViews: 0,
+                totalUniqueVisitors: 0,
+                categoryViews: {
+                    manset: 0, siir: 0, oyku: 0, deneme: 0, kitap: 0, roportaj: 0, "kose-yazilari": 0, haber: 0, yarismalar: 0
+                },
+                articleViews: {},
+                deviceStats: { desktop: 0, mobile: 0, tablet: 0 },
+                browserStats: { chrome: 0, firefox: 0, safari: 0, edge: 0, other: 0 },
+                dailyStats: {},
+                recentVisits: []
+            };
+
+            // Clear local client visitor UUIDs to allow fresh tracking
+            localStorage.removeItem("murekkep_visitor_uuid");
+            localStorage.removeItem("murekkep_last_visit_date");
+            
+            localStorage.setItem("murekkep_site_statistics", JSON.stringify(stats));
+
+            if (isSupabaseConnected && supabaseClient) {
+                try {
+                    await supabaseClient.from('site_settings').upsert({ key: 'site_statistics', value: stats });
+                } catch(e) {}
+            }
+
+            showToast("İstatistik verileri sıfırlandı.", "🟢");
+            renderStatisticsDashboard();
+        }
+
+        // Flag helper maps
+        function getArticleReports(id) {
+            try {
+                const reports = JSON.parse(localStorage.getItem("murekkep_reports") || "{}");
+                return reports[id] || 0;
+            } catch(e) { return 0; }
+        }
+
+        function resetArticleReports(id) {
+            try {
+                const reports = JSON.parse(localStorage.getItem("murekkep_reports") || "{}");
+                reports[id] = 0;
+                localStorage.setItem("murekkep_reports", JSON.stringify(reports));
+            } catch(e) {}
+        }
+
+        function getCommentReports(id) {
+            try {
+                const reports = JSON.parse(localStorage.getItem("murekkep_comment_reports") || "{}");
+                return reports[id] || 0;
+            } catch(e) { return 0; }
+        }
+
+        function resetCommentReports(id) {
+            try {
+                const reports = JSON.parse(localStorage.getItem("murekkep_comment_reports") || "{}");
+                reports[id] = 0;
+                localStorage.setItem("murekkep_comment_reports", JSON.stringify(reports));
+            } catch(e) {}
+        }
+
+        // RENDER FUNCTIONS
+        function renderArticlesTable() {
+            const tbody = document.getElementById("articles-table-body");
+            tbody.innerHTML = "";
+            
+            if (articles.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Kayıtlı yazı bulunmuyor.</td></tr>`;
+                return;
+            }
+
+            const categoryNames = {
+                "siir": "Şiir", "oyku": "Öykü", "deneme": "Deneme",
+                "kitap": "Kitap İncelemesi", "roportaj": "Yazar Röportajı",
+                "kose-yazilari": "Köşe Yazısı", "haber": "Edebiyat Haberleri",
+                "yarismalar": "Yarışmalar", "manset": "Manşet"
+            };
+
+            articles.slice().reverse().forEach(art => {
+                const reports = getArticleReports(art.id);
+                let catLabel = categoryNames[art.category] || art.category || "Diğer";
+                if (!catLabel || catLabel === "undefined") catLabel = "Diğer";
+
+                const tr = document.createElement("tr");
+
+                const tdTitle = document.createElement("td");
+                tdTitle.style.fontWeight = "600";
+                tdTitle.textContent = art.title;
+
+                const tdAuthor = document.createElement("td");
+                tdAuthor.textContent = art.author;
+
+                const tdCat = document.createElement("td");
+                const catBadge = document.createElement("span");
+                catBadge.className = "badge";
+                catBadge.style.background = "rgba(255,255,255,0.03)";
+                catBadge.textContent = catLabel;
+                tdCat.appendChild(catBadge);
+
+                const tdReport = document.createElement("td");
+                const repBadge = document.createElement("span");
+                repBadge.className = "badge " + (reports > 0 ? "badge-report" : "badge-none");
+                repBadge.textContent = reports > 0 ? `⚠️ ${reports} Şikayet` : "Temiz";
+                tdReport.appendChild(repBadge);
+
+                const tdActions = document.createElement("td");
+                const btnGroup = document.createElement("div");
+                btnGroup.className = "action-btn-group";
+
+                const btnApprove = document.createElement("button");
+                btnApprove.className = "btn-action approve";
+                btnApprove.textContent = "Onayla";
+                btnApprove.addEventListener("click", () => approveArticle(art.id));
+
+                const btnDelete = document.createElement("button");
+                btnDelete.className = "btn-action delete";
+                btnDelete.textContent = "Sil";
+                btnDelete.addEventListener("click", () => deleteArticle(art.id));
+
+                btnGroup.appendChild(btnApprove);
+                btnGroup.appendChild(btnDelete);
+                tdActions.appendChild(btnGroup);
+
+                tr.appendChild(tdTitle);
+                tr.appendChild(tdAuthor);
+                tr.appendChild(tdCat);
+                tr.appendChild(tdReport);
+                tr.appendChild(tdActions);
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderCommentsTable() {
+            const tbody = document.getElementById("comments-table-body");
+            tbody.innerHTML = "";
+
+            if (comments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Kayıtlı yorum bulunmuyor.</td></tr>`;
+                return;
+            }
+
+            comments.slice().reverse().forEach(c => {
+                const reports = getCommentReports(c.id);
+                const art = articles.find(a => String(a.id) === String(c.articleId));
+                const artTitle = art ? art.title : "Bilinmeyen Eser";
+
+                const tr = document.createElement("tr");
+
+                const tdAuthor = document.createElement("td");
+                tdAuthor.style.fontWeight = "600";
+                tdAuthor.textContent = c.author;
+
+                const tdText = document.createElement("td");
+                tdText.style.cssText = "max-width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;";
+                tdText.textContent = c.text;
+
+                const tdArt = document.createElement("td");
+                tdArt.style.cssText = "font-style:italic; font-size:0.82rem;";
+                tdArt.textContent = artTitle;
+
+                const tdReport = document.createElement("td");
+                const repBadge = document.createElement("span");
+                repBadge.className = "badge " + (reports > 0 ? "badge-report" : "badge-none");
+                repBadge.textContent = reports > 0 ? `⚠️ ${reports} Şikayet` : "Temiz";
+                tdReport.appendChild(repBadge);
+
+                const tdActions = document.createElement("td");
+                const btnGroup = document.createElement("div");
+                btnGroup.className = "action-btn-group";
+
+                const btnApprove = document.createElement("button");
+                btnApprove.className = "btn-action approve";
+                btnApprove.textContent = "Onayla";
+                btnApprove.addEventListener("click", () => approveComment(c.id));
+
+                const btnDelete = document.createElement("button");
+                btnDelete.className = "btn-action delete";
+                btnDelete.textContent = "Sil";
+                btnDelete.addEventListener("click", () => deleteComment(c.id));
+
+                btnGroup.appendChild(btnApprove);
+                btnGroup.appendChild(btnDelete);
+                tdActions.appendChild(btnGroup);
+
+                tr.appendChild(tdAuthor);
+                tr.appendChild(tdText);
+                tr.appendChild(tdArt);
+                tr.appendChild(tdReport);
+                tr.appendChild(tdActions);
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderUsersTable() {
+            const tbody = document.getElementById("users-table-body");
+            tbody.innerHTML = "";
+
+            let displayUsers = [];
+            // Merge dynamically elevated userRoles
+            userRoles.forEach(r => {
+                if (!displayUsers.some(u => u.email.toLowerCase().trim() === r.email.toLowerCase().trim())) {
+                    displayUsers.push({
+                        email: r.email,
+                        username: r.username,
+                        role: r.role
+                    });
+                }
+            });
+
+            // If offline, read mock users list
+            if (!isSupabaseConnected) {
+                try {
+                    const mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
+                    mockUsers.forEach(m => {
+                        if (!displayUsers.some(u => u.email.toLowerCase().trim() === m.email.toLowerCase().trim())) {
+                            displayUsers.push({
+                                email: m.email,
+                                username: m.username,
+                                role: "user"
+                            });
+                        }
+                    });
+                } catch(e) {}
+            }
+
+            displayUsers.forEach(u => {
+                const isPredefinedAdmin = u.email.toLowerCase().trim() === 'admin@murekkep.com';
+                const roleLabels = {
+                    "admin": "Yönetici (Admin)",
+                    "editor": "Editör",
+                    "user": "Yazar/Okur"
+                };
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>
+                        <div style="font-weight:600;">${u.username}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">${u.email}</div>
+                    </td>
+                    <td>
+                        <select onchange="updateUserRole('${u.email}', this.value)" style="padding:6px; font-size:0.8rem; border-radius:4px; background:var(--bg-dark); color:var(--text-main); border:1px solid var(--border-color); cursor:pointer;" ${isPredefinedAdmin ? 'disabled' : ''}>
+                            <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Yönetici</option>
+                            <option value="editor" ${u.role === 'editor' ? 'selected' : ''}>Editör</option>
+                            <option value="user" ${u.role === 'user' ? 'selected' : ''}>Yazar/Okur</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button onclick="deleteUser('${u.email}')" class="btn-action delete" style="${isPredefinedAdmin ? 'display:none;' : ''}">Sil</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ACTIONS AND HANDLERS
+        async function approveArticle(id) {
+            resetArticleReports(id);
+            localStorage.removeItem("murekkep_data_cache");
+            showToast("Yazı şikayetleri temizlendi ve onaylandı.", "🟢");
+            renderArticlesTable();
+        }
+
+        async function deleteArticle(id) {
+            if (!confirm("Bu yazıyı kalıcı olarak silmek istediğinizden emin misiniz?")) return;
+
+            console.log("Deleting article, id:", id, "type:", typeof id);
+
+            if (isSupabaseConnected) {
+                try {
+                    const { error } = await supabaseClient.from('articles').delete().eq('id', id);
+                    if (error) {
+                        console.error("Delete article error:", error);
+                        showToast("✕ Veritabanı hatası: " + error.message, "✕");
+                        return;
+                    }
+                } catch(e) { 
+                    showToast("✕ Hata: " + e.message, "✕");
+                    return;
+                }
+            }
+
+            articles = articles.filter(art => String(art.id) !== String(id));
+            localStorage.removeItem("murekkep_data_cache");
+            if (!isSupabaseConnected) {
+                localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+            }
+
+            showToast("✕ Yazı kalıcı olarak silindi.", "🔴");
+            renderArticlesTable();
+        }
+
+        async function approveComment(id) {
+            resetCommentReports(id);
+            localStorage.removeItem("murekkep_data_cache");
+            showToast("Yorum şikayetleri temizlendi ve onaylandı.", "🟢");
+            renderCommentsTable();
+        }
+
+        async function deleteComment(id) {
+            if (!confirm("Bu yorumu silmek istediğinizden emin misiniz?")) return;
+
+            console.log("Deleting comment, id:", id, "type:", typeof id);
+
+            if (isSupabaseConnected) {
+                try {
+                    const { error } = await supabaseClient.from('comments').delete().eq('id', id);
+                    if (error) {
+                        console.error("Delete comment error:", error);
+                        showToast("✕ Veritabanı hatası: " + error.message, "✕");
+                        return;
+                    }
+                } catch(e) { 
+                    showToast("✕ Hata: " + e.message, "✕");
+                    return;
+                }
+            }
+
+            comments = comments.filter(c => String(c.id) !== String(id));
+            localStorage.removeItem("murekkep_data_cache");
+            if (!isSupabaseConnected) {
+                localStorage.setItem("murekkep_comments_v2", JSON.stringify(comments));
+            }
+
+            showToast("Yorum silindi.", "🔴");
+            renderCommentsTable();
+        }
+
+        async function updateUserRole(email, newRole) {
+            if (!currentUser.isAdmin) {
+                showToast("✕ Sadece yöneticiler yetki değiştirebilir.", "✕");
+                return;
+            }
+
+            const emailNorm = email.toLowerCase().trim();
+            if (emailNorm === 'admin@murekkep.com') return;
+
+            userRoles = userRoles.filter(r => r.email.toLowerCase().trim() !== emailNorm);
+
+            if (newRole === 'admin' || newRole === 'editor') {
+                let username = emailNorm.split("@")[0];
+                try {
+                    // Try to resolve username from offline list
+                    if (!isSupabaseConnected) {
+                        const mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
+                        const matched = mockUsers.find(u => u.email.toLowerCase().trim() === emailNorm);
+                        if (matched) username = matched.username;
+                    }
+                } catch(e) {}
+
+                userRoles.push({
+                    email: emailNorm,
+                    username: username,
+                    role: newRole
+                });
+            }
+
+            await saveUserRoles();
+            showToast("Kullanıcı yetkisi güncellendi.", "🟢");
+            renderUsersTable();
+        }
+
+        async function deleteUser(email) {
+            if (!currentUser.isAdmin) {
+                showToast("✕ Sadece yöneticiler kullanıcı silebilir.", "✕");
+                return;
+            }
+
+            const emailNorm = email.toLowerCase().trim();
+            if (emailNorm === 'admin@murekkep.com') return;
+
+            let targetUsername = "";
+            const match = userRoles.find(r => r.email.toLowerCase().trim() === emailNorm);
+            if (match) targetUsername = match.username;
+
+            if (!isSupabaseConnected) {
+                try {
+                    const mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
+                    const matched = mockUsers.find(u => u.email.toLowerCase().trim() === emailNorm);
+                    if (matched && !targetUsername) targetUsername = matched.username;
+                } catch(e) {}
+            }
+
+            const deleteArticles = confirm(`"${emailNorm}" hesabını silmek istediğinizden emin misiniz?\n\nEvet seçerseniz hesabın yetkileri kaldırılacaktır. Yazarın tüm yazılarını da silmek istiyorsanız bir sonraki adımı onaylayın.`);
+            const deletePosts = deleteArticles ? confirm("Silinen yazara ait tüm gazete makaleleri de kalıcı olarak silinsin mi?") : false;
+
+            // Remove role
+            userRoles = userRoles.filter(r => r.email.toLowerCase().trim() !== emailNorm);
+            await saveUserRoles();
+
+            // Offline delete mock accounts
+            if (!isSupabaseConnected) {
+                try {
+                    let mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
+                    mockUsers = mockUsers.filter(u => u.email.toLowerCase().trim() !== emailNorm);
+                    localStorage.setItem("murekkep_mock_users", JSON.stringify(mockUsers));
+                } catch(e) {}
+            }
+
+            // Remove profile card
+            if (targetUsername) {
+                const key = targetUsername.toLowerCase().trim();
+                if (authorProfiles[key]) {
+                    delete authorProfiles[key];
+                    try {
+                        localStorage.setItem("murekkep_author_profiles", JSON.stringify(authorProfiles));
+                        if (isSupabaseConnected) {
+                            await supabaseClient.from('site_settings').upsert({ key: 'author_profiles', value: authorProfiles });
+                        }
+                    } catch(e) {}
+                }
+            }
+
+            // Remove posts if confirmed
+            if (deletePosts && targetUsername) {
+                articles = articles.filter(art => {
+                    const matchName = art.author.trim().toLowerCase() === targetUsername.trim().toLowerCase();
+                    if (matchName && isSupabaseConnected) {
+                        supabaseClient.from('articles').delete().eq('id', art.id).catch(console.error);
+                    }
+                    return !matchName;
+                });
+
+                if (!isSupabaseConnected) {
+                    localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+                }
+            }
+
+            showToast("Kullanıcı hesabı silindi.", "🔴");
+            renderUsersTable();
+        }
+
+        async function handleCreateUser(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById("new-user-email").value.trim();
+            const username = document.getElementById("new-user-username").value.trim();
+            const password = document.getElementById("new-user-password").value.trim();
+            const role = document.getElementById("new-user-role").value;
+
+            const emailNorm = email.toLowerCase().trim();
+
+            if (userRoles.some(r => r.email.toLowerCase().trim() === emailNorm)) {
+                showToast("✕ Bu kullanıcı zaten yetkilendirilmiş.", "✕");
+                return;
+            }
+
+            // Add role
+            userRoles.push({
+                email: emailNorm,
+                username: username,
+                role: role
+            });
+            await saveUserRoles();
+
+            // Create offline mock login if disconnected
+            if (!isSupabaseConnected) {
+                try {
+                    const mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
+                    mockUsers.push({
+                        id: "u_" + Date.now(),
+                        email: emailNorm,
+                        password: password,
+                        username: username
+                    });
+                    localStorage.setItem("murekkep_mock_users", JSON.stringify(mockUsers));
+                } catch(e) {}
+            } else {
+                showToast("ℹ️ Çevrimiçi mod: Kullanıcı siteye kaydolduğunda yetkileri aktif olacaktır.", "ℹ️");
+            }
+
+            // Create profile
+            const key = username.toLowerCase().trim();
+            if (!authorProfiles[key]) {
+                authorProfiles[key] = {
+                    bioVal: "Mürekkep Yazarı",
+                    avatarType: "initial",
+                    avatarVal: ""
+                };
+                try {
+                    localStorage.setItem("murekkep_author_profiles", JSON.stringify(authorProfiles));
+                    if (isSupabaseConnected) {
+                        await supabaseClient.from('site_settings').upsert({ key: 'author_profiles', value: authorProfiles });
+                    }
+                } catch(e) {}
+            }
+
+            // Clear inputs
+            document.getElementById("new-user-email").value = "";
+            document.getElementById("new-user-username").value = "";
+            document.getElementById("new-user-password").value = "";
+
+            showToast("✅ Kullanıcı başarıyla oluşturuldu ve yetkilendirildi.", "✅");
+            renderUsersTable();
+        }
+
+        // Logout
+        function handleLogout() {
+            localStorage.removeItem("murekkep_mock_session");
+            currentUser = null;
+            location.reload();
+        }
+
+        // Toast Helper
+        function showToast(message, icon = "👋") {
+            const toast = document.getElementById("toast");
+            const toastIcon = document.getElementById("toast-icon");
+            const toastText = document.getElementById("toast-text");
+            
+            toastIcon.innerText = icon;
+            toastText.innerText = message;
+            
+            toast.classList.add("show");
+            setTimeout(() => {
+                toast.classList.remove("show");
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
