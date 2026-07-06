@@ -1904,9 +1904,8 @@ function updateEditorBannerUI() {
     }
 }
 
-// Supabase Configuration
-const SUPABASE_URL = ""; 
-const SUPABASE_ANON_KEY = "";
+const SUPABASE_URL = "https://xhgtipmmahtoshypngdm.supabase.co"; 
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZ3RpcG1tYWh0b3NoeXBuZ2RtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMDQyMzYsImV4cCI6MjA5Nzc4MDIzNn0.Z1eYqrrU8U62kDf0G8zUEBguXt4h0HviZJBIEJvH588";
 
 let supabaseClient = null;
 let isSupabaseConnected = false;
