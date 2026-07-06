@@ -18,7 +18,7 @@ function lockBodyScroll() {
         document.body.style.top = `-${_savedScrollY}px`;
         document.body.style.left = '0';
         document.body.style.right = '0';
-        lockBodyScroll();
+        document.body.style.overflow = 'hidden';
     }
     _scrollLockDepth++;
 }
@@ -33,7 +33,7 @@ function unlockBodyScroll() {
         document.body.style.top = '';
         document.body.style.left = '';
         document.body.style.right = '';
-        unlockBodyScroll();
+        document.body.style.overflow = '';
         window.scrollTo(0, savedY);
         _savedScrollY = 0;
     }
