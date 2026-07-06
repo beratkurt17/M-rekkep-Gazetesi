@@ -1014,14 +1014,14 @@ body {
 .newspaper-grid {
     display: grid;
     grid-template-columns: var(--col-widths, 1fr 2fr 1fr);
-    gap: 16px;
+    gap: 24px;
     align-items: start;
 }
 
 /* Card components styled like print columns */
 .news-column {
     display: grid;
-    gap: 16px;
+    gap: 28px;
     align-items: start;
     /* grid-template-columns set dynamically via JS based on colWidth */
 }
@@ -1044,7 +1044,7 @@ body {
 .article-card {
     background: none;
     border-bottom: 1px solid var(--border-color);
-    padding-bottom: 12px;
+    padding-bottom: 22px;
     display: flex;
     flex-direction: column;
     cursor: pointer;
@@ -1097,9 +1097,9 @@ body {
     background-color: var(--bg-primary);
 }
 
-/* Limit card image heights on non-headline cards to save vertical space and look uniform */
+/* Limit card image heights on non-headline cards to look uniform */
 .article-card:not(.headline-card):not(.poem-card):not(.article-card-horizontal) .card-image-box {
-    height: 130px;
+    height: 180px;
     overflow: hidden;
 }
 
@@ -1150,8 +1150,8 @@ body {
 .headline-card {
     grid-column: span 1;
     border-bottom: 2px solid var(--border-color);
-    padding-bottom: 25px;
-    margin-bottom: 15px;
+    padding-bottom: 40px;
+    margin-bottom: 30px;
 }
 
 .headline-card .card-title {
