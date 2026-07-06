@@ -859,12 +859,13 @@ body {
 /* Newspaper Wrapper */
 .newspaper-wrapper {
     width: 1300px;
-    margin: 60px auto 60px;
-    padding: 40px 50px;
+    margin: 60px auto 120px;
+    padding: 40px 50px 80px;
     background-color: var(--bg-primary);
     border: 1px solid var(--border-color);
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.08);
     position: relative;
+    min-height: calc(100vh - 60px);
     transition: background-color var(--transition-speed), border-color var(--transition-speed);
 }
 
@@ -872,6 +873,9 @@ body {
 @media (pointer: coarse) {
     .newspaper-wrapper {
         margin-top: 130px;
+        margin-bottom: 200px;
+        padding-bottom: 120px;
+        min-height: auto;
     }
 }
 
@@ -1576,10 +1580,14 @@ body {
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100vh;
+    height: 100%;
+    min-height: 100vh;
     background-color: var(--bg-primary);
     z-index: 1000;
     overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch; /* iOS momentum scrolling */
+    overscroll-behavior: contain; /* Prevent scroll chaining to page behind */
     display: flex;
     flex-direction: column;
     opacity: 1;
@@ -1817,7 +1825,8 @@ body {
 .medium-article-container {
     max-width: 700px;
     width: 90%;
-    margin: 100px auto 100px;
+    margin: 100px auto 200px;
+    /* Generous bottom space so content flows fully — Medium-style */
 }
 
 .article-detail-header {

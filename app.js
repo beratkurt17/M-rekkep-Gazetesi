@@ -3,6 +3,42 @@ if (window.location.hostname !== "localhost" && window.location.hostname !== "12
     console.log = () => {};
 }
 
+// =============================================
+// SCROLL LOCK UTILITY (Medium-style)
+// Prevents the page from jumping to top when
+// overlays open by using position:fixed + top offset.
+// =============================================
+let _scrollLockDepth = 0;
+let _savedScrollY = 0;
+
+function lockBodyScroll() {
+    if (_scrollLockDepth === 0) {
+        _savedScrollY = window.scrollY || window.pageYOffset;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${_savedScrollY}px`;
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        lockBodyScroll();
+    }
+    _scrollLockDepth++;
+}
+
+function unlockBodyScroll() {
+    if (_scrollLockDepth > 0) {
+        _scrollLockDepth--;
+    }
+    if (_scrollLockDepth === 0) {
+        const savedY = _savedScrollY;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        unlockBodyScroll();
+        window.scrollTo(0, savedY);
+        _savedScrollY = 0;
+    }
+}
+
 // Application State & Seed Data
 const DEFAULT_ARTICLES = [
     {
@@ -1969,7 +2005,7 @@ function showToast(message) {
 function openAuthModal() {
     if (authOverlay) {
         authOverlay.classList.remove("hidden");
-        document.body.style.overflow = "hidden";
+        lockBodyScroll();
         switchAuthTab('login');
     }
 }
@@ -1977,7 +2013,7 @@ function openAuthModal() {
 function closeAuthModal() {
     if (authOverlay) {
         authOverlay.classList.add("hidden");
-        document.body.style.overflow = "";
+        unlockBodyScroll();
     }
 }
 
@@ -2065,7 +2101,7 @@ function openShareModal(articleId, preselectedText) {
     if (!overlay) return;
 
     overlay.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+    lockBodyScroll();
 
     // Populate sentences list
     populateShareSentences(article);
@@ -2089,7 +2125,7 @@ function closeShareModal() {
     const overlay = document.getElementById("share-overlay");
     if (overlay) {
         overlay.classList.add("hidden");
-        document.body.style.overflow = "";
+        unlockBodyScroll();
     }
 }
 
@@ -2586,7 +2622,7 @@ function openSettingsModal() {
     renderProfileTabUI();
 
     settingsOverlay.classList.remove("hidden");
-    document.body.style.overflow = "hidden";
+    lockBodyScroll();
 }
 
 // Support function: switch profile modal tabs
@@ -2977,7 +3013,7 @@ function closeSettingsModal() {
     const settingsOverlay = document.getElementById("settings-overlay");
     if (settingsOverlay) {
         settingsOverlay.classList.add("hidden");
-        document.body.style.overflow = "";
+        unlockBodyScroll();
     }
 }
 
@@ -4658,7 +4694,7 @@ async function openArticle(id) {
 
     // Show Overlay with fade/slide animations
     readingOverlay.classList.remove("hidden");
-    document.body.style.overflow = "hidden"; // lock page scroll
+    lockBodyScroll(); // lock page scroll
     readingOverlay.scrollTop = 0;
     readingProgress.style.width = "0%";
 
@@ -4790,7 +4826,7 @@ function updateCommentFormUI() {
 // Close Medium Reader Modal
 function closeArticle() {
     readingOverlay.classList.add("hidden");
-    document.body.style.overflow = ""; // restore page scroll
+    unlockBodyScroll(); // restore page scroll
     activeArticleId = null;
 }
 
@@ -4901,7 +4937,7 @@ writeToggleBtn.addEventListener("click", () => {
         return;
     }
     editorOverlay.classList.remove("hidden");
-    document.body.style.overflow = "hidden";
+    lockBodyScroll();
     
     // Prefill the author name to match user profile exactly
     const authorInput = document.getElementById("post-author");
@@ -4946,7 +4982,7 @@ writeToggleBtn.addEventListener("click", () => {
 
 closeEditorBtn.addEventListener("click", () => {
     editorOverlay.classList.add("hidden");
-    document.body.style.overflow = "";
+    unlockBodyScroll();
 });
 
 // Close Reading modal on back button
@@ -4973,14 +5009,14 @@ if (supabaseConfigBtn && supabaseOverlay) {
         
         // Show modal overlay
         supabaseOverlay.classList.remove("hidden");
-        document.body.style.overflow = "hidden";
+        lockBodyScroll();
     });
 }
 
 if (closeSupabaseBtn && supabaseOverlay) {
     closeSupabaseBtn.addEventListener("click", () => {
         supabaseOverlay.classList.add("hidden");
-        document.body.style.overflow = "";
+        unlockBodyScroll();
     });
 }
 
@@ -5001,7 +5037,7 @@ if (supabaseConfigForm) {
 
             // Close modal
             supabaseOverlay.classList.add("hidden");
-            document.body.style.overflow = "";
+            unlockBodyScroll();
         }
     });
 }
@@ -5027,7 +5063,7 @@ if (sbDisconnectBtn) {
 
         // Close modal
         supabaseOverlay.classList.add("hidden");
-        document.body.style.overflow = "";
+        unlockBodyScroll();
     });
 }
 
@@ -5284,7 +5320,7 @@ publishForm.addEventListener("submit", async (e) => {
     // Reset and hide form
     publishForm.reset();
     editorOverlay.classList.add("hidden");
-    document.body.style.overflow = "";
+    unlockBodyScroll();
 
     // Navigate to the page where the new article appears
     // New model: position in overall clap-sorted list / slots per page = page number
@@ -6451,7 +6487,7 @@ window.openAuthorProfile = function(authorName, startTab) {
                 item.addEventListener('click', (e) => {
                     if (e.target.closest('.profile-editor-controls')) return;
                     modal.classList.add('hidden');
-                    document.body.style.overflow = '';
+                    unlockBodyScroll();
                     openArticle(art.id);
                 });
                 articlesContainer.appendChild(item);
@@ -6517,7 +6553,7 @@ window.openAuthorProfile = function(authorName, startTab) {
 
     // Show modal
     modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+    lockBodyScroll();
 };
 
 // Dynamic Dashboard Sync in Profile Modal
@@ -7079,7 +7115,7 @@ document.getElementById("close-author-modal")?.addEventListener("click", () => {
     const modal = document.getElementById("author-modal");
     if (modal) {
         modal.classList.add("hidden");
-        document.body.style.overflow = "";
+        unlockBodyScroll();
     }
 });
 
@@ -7161,7 +7197,7 @@ function initDynamicViewport() {
                     closeBtn.click();
                 } else {
                     overlay.classList.add('hidden');
-                    document.body.style.overflow = '';
+                    unlockBodyScroll();
                 }
             }
         });
