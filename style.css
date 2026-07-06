@@ -4252,5 +4252,197 @@ button, a, input, textarea, select {
     }
 }
 
+/* =======================================================
+   COMMENTS DRAWER (INSTAGRAM / MEDIUM STYLE)
+   ======================================================= */
+.comments-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1200; /* Higher than reading overlay (1000) */
+    display: flex;
+    justify-content: flex-end;
+    align-items: stretch;
+    visibility: visible;
+    opacity: 1;
+    transition: visibility 0.3s, opacity 0.3s;
+}
+
+.comments-drawer.hidden {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.comments-drawer-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: opacity 0.3s;
+}
+
+.comments-drawer-panel {
+    position: relative;
+    width: 450px;
+    max-width: 100%;
+    background-color: var(--bg-primary);
+    border-left: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    z-index: 1210;
+    transform: translateX(0);
+    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.comments-drawer.hidden .comments-drawer-panel {
+    transform: translateX(100%);
+}
+
+.comments-drawer-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.cd-header-indicator {
+    display: none;
+}
+
+.cd-header-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cd-header-title h3 {
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+}
+
+.btn-close-comments {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-close-comments svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+}
+
+.comments-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+/* Comments trigger bar style */
+.comments-trigger-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    cursor: pointer;
+    margin-top: 30px;
+    transition: all 0.2s ease;
+}
+
+.comments-trigger-bar:hover {
+    border-color: var(--text-secondary);
+    background-color: var(--bg-primary);
+}
+
+.ctb-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.comment-icon-svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+.ctb-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.chevron-svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+/* Mobile responsive comments drawer styling */
+@media screen and (max-width: 768px) {
+    .comments-drawer {
+        justify-content: center;
+        align-items: flex-end;
+    }
+    
+    .comments-drawer-panel {
+        width: 100%;
+        height: 75vh;
+        border-left: none;
+        border-top: 1px solid var(--border-light);
+        border-radius: 20px 20px 0 0;
+        transform: translateY(0);
+        transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    
+    .comments-drawer.hidden .comments-drawer-panel {
+        transform: translateY(100%);
+    }
+    
+    .cd-header-indicator {
+        display: block;
+        width: 40px;
+        height: 4px;
+        background-color: var(--border-light);
+        border-radius: 2px;
+        margin: -8px auto 12px auto;
+    }
+    
+    .comments-drawer-header {
+        padding: 16px 20px 12px 20px;
+    }
+    
+    .comments-drawer-body {
+        padding: 16px 20px;
+    }
+}
+
 
 

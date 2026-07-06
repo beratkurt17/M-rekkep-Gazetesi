@@ -3862,6 +3862,13 @@ const commentAuthorInput = document.getElementById("comment-author-input");
 const commentTextInput = document.getElementById("comment-text-input");
 const commentsListContainer = document.getElementById("comments-list-container");
 const commentsTotalCountEl = document.getElementById("comments-total-count");
+const commentsDrawer = document.getElementById("comments-drawer");
+const commentsDrawerBackdrop = document.getElementById("comments-drawer-backdrop");
+const closeCommentsDrawerBtn = document.getElementById("close-comments-drawer");
+const commentsTriggerBar = document.getElementById("comments-trigger-bar");
+const articleCommentBtn = document.getElementById("article-comment-btn");
+const articleEditorEditBtn = document.getElementById("article-editor-edit-btn");
+let editingArticleId = null;
 
 // Auth DOM Elements
 const authOverlay = document.getElementById("auth-overlay");
@@ -4719,6 +4726,19 @@ async function openArticle(id) {
         }
     }
 
+    // Handle article edit button
+    if (articleEditorEditBtn) {
+        const isOwnArticle = currentUser && currentUser.username &&
+            currentUser.username.trim().toLowerCase() === article.author.trim().toLowerCase();
+        const canEdit = isOwnArticle || (currentUser && (currentUser.isEditor || currentUser.isAdmin));
+        if (canEdit) {
+            articleEditorEditBtn.classList.remove("hidden");
+            articleEditorEditBtn.onclick = (e) => { window.editArticleClick(id, e); };
+        } else {
+            articleEditorEditBtn.classList.add("hidden");
+        }
+    }
+
     // Render comments initially (even if article text is loading)
     renderArticleComments(id);
 
@@ -4823,9 +4843,15 @@ function updateCommentFormUI() {
     }
 }
 
+
+
 // Close Medium Reader Modal
 function closeArticle() {
     readingOverlay.classList.add("hidden");
+    if (commentsDrawer && !commentsDrawer.classList.contains("hidden")) {
+        commentsDrawer.classList.add("hidden");
+        unlockBodyScroll();
+    }
     unlockBodyScroll(); // restore page scroll
     activeArticleId = null;
 }
@@ -4833,7 +4859,15 @@ function closeArticle() {
 // RENDER COMMENTS FOR ARTICLE
 function renderArticleComments(articleId) {
     const articleComments = comments.filter(c => c.articleId === articleId);
-    commentsTotalCountEl.innerText = articleComments.length;
+    const count = articleComments.length;
+
+    if (commentsTotalCountEl) commentsTotalCountEl.innerText = count;
+    
+    const articleCommentsCountEl = document.getElementById("article-comments-count");
+    if (articleCommentsCountEl) articleCommentsCountEl.innerText = count;
+    
+    const commentsDrawerCountEl = document.getElementById("comments-drawer-count");
+    if (commentsDrawerCountEl) commentsDrawerCountEl.innerText = count;
 
     let commentsHTML = "";
     articleComments.slice().reverse().forEach(c => {
@@ -4867,10 +4901,17 @@ function renderArticleComments(articleId) {
                     <button class="btn-editor-action delete" style="padding: 4px 10px; font-size: 0.7rem;" onclick="window.deleteCommentClick('${c.id}', '${articleId}', event)">Sil</button>
                 </div>
             `;
-        } else if (canDelete) {
-            actionControlHtml = `
-                <button class="btn-editor-action delete" style="padding: 4px 10px; font-size: 0.7rem;" onclick="window.deleteCommentClick('${c.id}', '${articleId}', event)">Sil</button>
-            `;
+        } else {
+            let buttons = [];
+            if (isOwnComment) {
+                buttons.push(`<button class="btn-editor-action edit" style="padding: 4px 10px; font-size: 0.7rem; background-color: var(--border-light); color: var(--text-primary);" onclick="window.editCommentInline('${c.id}', '${articleId}', event)">Düzenle</button>`);
+            }
+            if (canDelete) {
+                buttons.push(`<button class="btn-editor-action delete" style="padding: 4px 10px; font-size: 0.7rem;" onclick="window.deleteCommentClick('${c.id}', '${articleId}', event)">Sil</button>`);
+            }
+            if (buttons.length > 0) {
+                actionControlHtml = `<div style="display: flex; gap: 8px;">${buttons.join("")}</div>`;
+            }
         }
 
         commentsHTML += `
@@ -4894,7 +4935,158 @@ function renderArticleComments(articleId) {
 
     commentsListContainer.innerHTML = commentsHTML || `<p style="color: var(--text-secondary); text-align: center; padding: 20px 0;">Bu yazıya henüz yorum yazılmamış. İlk yorumu siz yazın!</p>`;
 }
+
+// ── COMMENT INLINE EDITING ──────────────────────────────────
+window.editCommentInline = function(id, articleId, event) {
+    if (event) event.stopPropagation();
+    const commentEl = document.getElementById(`comment-${id}`);
+    if (!commentEl) return;
+    
+    const comment = comments.find(c => c.id === id);
+    if (!comment) return;
+    
+    // Check if already editing
+    if (commentEl.querySelector('.comment-edit-textarea')) return;
+    
+    const bodyEl = commentEl.querySelector('.comment-body');
+    const originalText = comment.text;
+    
+    bodyEl.innerHTML = `
+        <textarea class="comment-edit-textarea comment-input" style="width: 100%; margin-top: 8px;" rows="2">${originalText}</textarea>
+        <div style="display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end;">
+            <button class="btn-editor-action approve" style="padding: 4px 12px; font-size: 0.75rem;" onclick="window.saveCommentInline('${id}', '${articleId}', event)">Kaydet</button>
+            <button class="btn-editor-action delete" style="padding: 4px 12px; font-size: 0.75rem;" onclick="window.cancelCommentInline('${id}', '${articleId}', event)">İptal</button>
+        </div>
+    `;
+};
+
+window.saveCommentInline = async function(id, articleId, event) {
+    if (event) event.stopPropagation();
+    const commentEl = document.getElementById(`comment-${id}`);
+    if (!commentEl) return;
+    
+    const textarea = commentEl.querySelector('.comment-edit-textarea');
+    if (!textarea) return;
+    
+    const newText = textarea.value.trim();
+    if (!newText) {
+        showToast("Yorum alanı boş bırakılamaz.");
+        return;
+    }
+    
+    if (containsProfanity(newText)) {
+        showToast("❌ Yorumunuz topluluk kurallarına aykırı ifadeler içermektedir.");
+        return;
+    }
+    
+    const comment = comments.find(c => c.id === id);
+    if (!comment) return;
+    
+    comment.text = newText;
+    
+    if (isSupabaseConnected) {
+        try {
+            await supabaseClient
+                .from('comments')
+                .update({ text: newText })
+                .eq('id', id);
+        } catch (err) {
+            console.error("Error updating comment on Supabase:", err);
+        }
+        clearSupabaseCache();
+    } else {
+        localStorage.setItem("murekkep_comments_v2", JSON.stringify(comments));
+    }
+    
+    showToast("Yorum güncellendi.");
+    renderArticleComments(articleId);
+};
+
+window.cancelCommentInline = function(id, articleId, event) {
+    if (event) event.stopPropagation();
+    renderArticleComments(articleId);
+};
+
+// ── ARTICLE EDITING ─────────────────────────────────────────
+function convertHtmlToRawText(html) {
+    if (!html) return "";
+    let text = html;
+    text = text.replace(/<\/p>\s*<p>/gi, "\n\n");
+    text = text.replace(/<\/?p>/gi, "");
+    text = text.replace(/<br\s*\/?>/gi, "\n");
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = text;
+    return tempDiv.textContent || tempDiv.innerText || text;
+}
+
+window.editArticleClick = function(id, event) {
+    if (event) event.stopPropagation();
+    const article = articles.find(a => a.id === id);
+    if (!article) return;
+    
+    editingArticleId = id;
+    
+    // Fill the Writer Studio forms
+    document.getElementById("post-title").value = article.title;
+    document.getElementById("post-subtitle").value = article.subtitle;
+    document.getElementById("post-author").value = article.author;
+    document.getElementById("post-category").value = article.category;
+    
+    const cornerNameInput = document.getElementById("post-corner-name");
+    if (cornerNameInput) {
+        cornerNameInput.value = article.corner_name || "";
+    }
+    
+    // Select the image
+    const imgInput = document.querySelector(`input[name="post-image"][value="${article.image}"]`);
+    if (imgInput) imgInput.checked = true;
+    
+    // Content HTML to Raw text
+    document.getElementById("post-content").value = convertHtmlToRawText(article.content);
+    
+    // Change UI titles
+    const studioTitle = document.querySelector(".editor-studio-header h2");
+    if (studioTitle) studioTitle.innerText = "Yazı Düzenle";
+    
+    const studioDesc = document.querySelector(".editor-studio-header p");
+    if (studioDesc) studioDesc.innerText = "Yazınız üzerinde değişiklikleri yapın ve güncelleyin.";
+    
+    const submitBtn = document.querySelector(".btn-publish-submit");
+    if (submitBtn) submitBtn.innerText = "Değişiklikleri Kaydet";
+    
+    // Open editor overlay
+    const editorOverlay = document.getElementById("editor-overlay");
+    if (editorOverlay) {
+        editorOverlay.classList.remove("hidden");
+        lockBodyScroll();
+    }
+};
+
+// ── COMMENTS DRAWER CONTROLS ────────────────────────────────
+function openCommentsDrawer() {
+    if (commentsDrawer) {
+        commentsDrawer.classList.remove("hidden");
+        lockBodyScroll();
+        if (activeArticleId) {
+            renderArticleComments(activeArticleId);
+        }
+    }
+}
+
+function closeCommentsDrawer() {
+    if (commentsDrawer) {
+        commentsDrawer.classList.add("hidden");
+        unlockBodyScroll();
+    }
+}
+
 // EVENT LISTENERS
+
+// Comments Drawer Toggles
+commentsTriggerBar?.addEventListener("click", openCommentsDrawer);
+articleCommentBtn?.addEventListener("click", openCommentsDrawer);
+closeCommentsDrawerBtn?.addEventListener("click", closeCommentsDrawer);
+commentsDrawerBackdrop?.addEventListener("click", closeCommentsDrawer);
 
 // Reading Overlay Scroll Progress
 readingOverlay.addEventListener("scroll", () => {
@@ -4981,6 +5173,14 @@ writeToggleBtn.addEventListener("click", () => {
 });
 
 closeEditorBtn.addEventListener("click", () => {
+    editingArticleId = null;
+    const studioTitle = document.querySelector(".editor-studio-header h2");
+    if (studioTitle) studioTitle.innerText = "Yazarlık Stüdyosu";
+    const studioDesc = document.querySelector(".editor-studio-header p");
+    if (studioDesc) studioDesc.innerText = "Edebiyat hareketinin bir parçası olun. Yazınızı kaleme alın ve Mürekkep sayfalarında yayınlayın.";
+    const submitBtn = document.querySelector(".btn-publish-submit");
+    if (submitBtn) submitBtn.innerText = "Gazetede Yayınla";
+    publishForm.reset();
     editorOverlay.classList.add("hidden");
     unlockBodyScroll();
 });
@@ -5269,6 +5469,68 @@ publishForm.addEventListener("submit", async (e) => {
         .split(/\n\s*\n/)
         .map(para => `<p>${para.replace(/\n/g, "<br>")}</p>`)
         .join("\n");
+
+    if (editingArticleId) {
+        const article = articles.find(a => a.id === editingArticleId);
+        if (!article) return;
+        
+        article.title = title;
+        article.subtitle = subtitle;
+        article.author = author;
+        article.category = category;
+        article.image = image;
+        article.content = contentHTML;
+        article.corner_name = cornerName || null;
+        article.readTime = calculateReadTime(contentHTML);
+        
+        if (isSupabaseConnected) {
+            try {
+                await supabaseClient
+                    .from('articles')
+                    .update({
+                        title: article.title,
+                        subtitle: article.subtitle,
+                        author: article.author,
+                        category: article.category,
+                        image: article.image,
+                        content: article.content,
+                        corner_name: article.corner_name,
+                        read_time: article.readTime
+                    })
+                    .eq('id', editingArticleId);
+            } catch (err) {
+                console.error("Error updating article on Supabase:", err);
+            }
+            clearSupabaseCache();
+        } else {
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+        }
+        
+        showToast("Yazı başarıyla güncellendi.");
+        editingArticleId = null;
+        
+        // Reset overlay titles
+        const studioTitle = document.querySelector(".editor-studio-header h2");
+        if (studioTitle) studioTitle.innerText = "Yazarlık Stüdyosu";
+        const studioDesc = document.querySelector(".editor-studio-header p");
+        if (studioDesc) studioDesc.innerText = "Edebiyat hareketinin bir parçası olun. Yazınızı kaleme alın ve Mürekkep sayfalarında yayınlayın.";
+        const submitBtn = document.querySelector(".btn-publish-submit");
+        if (submitBtn) submitBtn.innerText = "Gazetede Yayınla";
+        
+        publishForm.reset();
+        editorOverlay.classList.add("hidden");
+        unlockBodyScroll();
+        
+        // Refresh reading view and grid
+        openArticle(article.id);
+        
+        if (currentCategoryFilter === "all") {
+            renderNewspaperGrid();
+        } else {
+            renderCategoryFeed(currentCategoryFilter);
+        }
+        return;
+    }
 
     const newArticle = {
         id: generateId(),
@@ -7146,9 +7408,57 @@ if (document.readyState === "loading") {
 // Dynamic Viewport & History Manager for Mobile Modals
 function initDynamicViewport() {
     const overlays = document.querySelectorAll('.overlay');
-    if (overlays.length === 0) return;
-
+    
     let isHandlingPopstate = false;
+
+    // Prevent background body touch/scroll on mobile when any overlay or comments-drawer is active
+    document.addEventListener('touchmove', function(e) {
+        const activeOverlay = document.querySelector('.overlay:not(.hidden), .comments-drawer:not(.hidden)');
+        if (activeOverlay) {
+            // If the touch is NOT inside the active overlay/drawer, prevent body scrolling
+            if (!activeOverlay.contains(e.target)) {
+                if (e.cancelable) e.preventDefault();
+            }
+        }
+    }, { passive: false });
+
+    // Prevent elastic scroll/bounce overflow chain on mobile devices for each scrollable container
+    const scrollContainers = document.querySelectorAll('.overlay, .comments-drawer-body');
+    scrollContainers.forEach(container => {
+        const adjustScroll = () => {
+            const top = container.scrollTop;
+            const total = container.scrollHeight;
+            const clientHeight = container.clientHeight;
+            const current = top + clientHeight;
+            
+            if (top === 0) {
+                container.scrollTop = 1;
+            } else if (current === total) {
+                container.scrollTop = top - 1;
+            }
+        };
+
+        container.addEventListener('touchstart', adjustScroll, { passive: true });
+        
+        // Also verify and prevent touchmove default behavior if the container doesn't need to scroll
+        container.addEventListener('touchmove', (e) => {
+            if (container.scrollHeight <= container.clientHeight) {
+                if (e.cancelable) e.preventDefault();
+            }
+        }, { passive: false });
+    });
+
+    // Fix iOS keyboard scroll shift on input/textarea blur inside overlays or drawers
+    document.addEventListener('focusout', (e) => {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+            if (e.target.closest('.overlay') || e.target.closest('.comments-drawer')) {
+                // Reset window scroll position (iOS visual viewport shift fix)
+                setTimeout(() => {
+                    window.scrollTo(0, 0);
+                }, 100);
+            }
+        }
+    });
 
     const checkOverlays = () => {
         let anyVisible = false;
@@ -7160,8 +7470,13 @@ function initDynamicViewport() {
                 visibleOverlayId = overlay.id;
             }
         });
+        
+        if (commentsDrawer && !commentsDrawer.classList.contains('hidden')) {
+            anyVisible = true;
+            visibleOverlayId = commentsDrawer.id;
+        }
 
-        // Push state if overlay is open
+        // Push state if overlay or drawer is open
         if (anyVisible && visibleOverlayId) {
             if (!isHandlingPopstate && window.location.hash !== '#' + visibleOverlayId) {
                 history.pushState({ activeOverlay: visibleOverlayId }, '', '#' + visibleOverlayId);
@@ -7183,10 +7498,19 @@ function initDynamicViewport() {
     overlays.forEach(overlay => {
         observer.observe(overlay, { attributes: true, attributeFilter: ['class'] });
     });
+    
+    if (commentsDrawer) {
+        observer.observe(commentsDrawer, { attributes: true, attributeFilter: ['class'] });
+    }
 
     // Listen for mobile/browser back button
     window.addEventListener('popstate', (event) => {
         isHandlingPopstate = true;
+        
+        // Hide open drawer first
+        if (commentsDrawer && !commentsDrawer.classList.contains('hidden')) {
+            closeCommentsDrawer();
+        }
         
         // Hide open overlays
         overlays.forEach(overlay => {
