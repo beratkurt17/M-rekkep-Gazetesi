@@ -4448,5 +4448,140 @@ button, a, input, textarea, select {
     }
 }
 
+/* Reading settings toolbar */
+.reading-controls-wrapper {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1005;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.btn-reading-settings {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    padding: 10px 18px;
+    border-radius: 30px;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    transition: all 0.2s ease;
+}
+
+.btn-reading-settings:hover {
+    background-color: var(--bg-secondary);
+    transform: translateY(-1px);
+}
+
+.reading-settings-dropdown {
+    margin-top: 8px;
+    width: 250px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 1006;
+}
+
+.rs-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rs-label {
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rs-options {
+    display: flex;
+    gap: 6px;
+}
+
+.rs-opt-btn {
+    flex: 1;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    padding: 8px 0;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.rs-opt-btn:hover {
+    background: var(--border-light);
+}
+
+.rs-opt-btn.active {
+    background: var(--accent-color);
+    color: #fff;
+    border-color: var(--accent-color);
+}
+
+/* Dynamic Article Fonts */
+.article-font-serif #article-detail-content {
+    font-family: var(--font-body) !important; /* Lora */
+}
+
+.article-font-sans #article-detail-content {
+    font-family: var(--font-ui) !important; /* Inter */
+}
+
+.article-font-classic #article-detail-content {
+    font-family: var(--font-serif) !important; /* Cinzel */
+}
+
+/* Dynamic Article Font Sizes */
+.article-size-small #article-detail-content p {
+    font-size: 1rem !important; /* ~16px */
+    line-height: 1.6 !important;
+}
+
+.article-size-medium #article-detail-content p {
+    font-size: 1.15rem !important; /* ~18.4px - default */
+    line-height: 1.625 !important;
+}
+
+.article-size-large #article-detail-content p {
+    font-size: 1.35rem !important; /* ~21.6px */
+    line-height: 1.65 !important;
+}
+
+/* Mobile viewport overrides for reading preferences controls */
+@media (pointer: coarse) {
+    .btn-reading-settings {
+        padding: 10px 18px !important;
+        font-size: 0.85rem !important;
+        border-radius: 30px !important;
+        top: 20px !important;
+        right: 20px !important;
+    }
+    .btn-reading-settings svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+}
+
 
 

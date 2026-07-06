@@ -7569,3 +7569,61 @@ function initDynamicViewport() {
     // Scaling is handled natively by the browser via viewport meta tag width=1300
 }
 
+// Reading Settings Controller
+document.addEventListener("DOMContentLoaded", () => {
+    const rsToggle = document.getElementById("reading-settings-toggle");
+    const rsDropdown = document.getElementById("reading-settings-dropdown");
+    const articleContainer = document.querySelector(".medium-article-container");
+
+    if (rsToggle && rsDropdown && articleContainer) {
+        rsToggle.addEventListener("click", (e) => {
+            e.stopPropagation();
+            rsDropdown.classList.toggle("hidden");
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!rsDropdown.classList.contains("hidden") && !rsDropdown.contains(e.target) && e.target !== rsToggle) {
+                rsDropdown.classList.add("hidden");
+            }
+        });
+
+        // Font Family selection
+        const fontBtns = document.querySelectorAll(".font-family-options .rs-opt-btn");
+        fontBtns.forEach(btn => {
+            btn.addEventListener("click", () => {
+                fontBtns.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                
+                const font = btn.getAttribute("data-font");
+                articleContainer.classList.remove("article-font-serif", "article-font-sans", "article-font-classic");
+                articleContainer.classList.add("article-font-" + font);
+                localStorage.setItem("murekkep_reader_font", font);
+            });
+        });
+
+        // Font Size selection
+        const sizeBtns = document.querySelectorAll(".font-size-options .rs-opt-btn");
+        sizeBtns.forEach(btn => {
+            btn.addEventListener("click", () => {
+                sizeBtns.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                
+                const size = btn.getAttribute("data-size");
+                articleContainer.classList.remove("article-size-small", "article-size-medium", "article-size-large");
+                articleContainer.classList.add("article-size-" + size);
+                localStorage.setItem("murekkep_reader_size", size);
+            });
+        });
+
+        // Load saved reader preferences
+        const savedFont = localStorage.getItem("murekkep_reader_font") || "serif";
+        const savedSize = localStorage.getItem("murekkep_reader_size") || "medium";
+
+        const activeFontBtn = document.querySelector(`.font-family-options .rs-opt-btn[data-font="${savedFont}"]`);
+        if (activeFontBtn) activeFontBtn.click();
+
+        const activeSizeBtn = document.querySelector(`.font-size-options .rs-opt-btn[data-size="${savedSize}"]`);
+        if (activeSizeBtn) activeSizeBtn.click();
+    }
+});
+
