@@ -7411,43 +7411,6 @@ function initDynamicViewport() {
     
     let isHandlingPopstate = false;
 
-    // Prevent background body touch/scroll on mobile when any overlay or comments-drawer is active
-    document.addEventListener('touchmove', function(e) {
-        const activeOverlay = document.querySelector('.overlay:not(.hidden), .comments-drawer:not(.hidden)');
-        if (activeOverlay) {
-            // If the touch is NOT inside the active overlay/drawer, prevent body scrolling
-            if (!activeOverlay.contains(e.target)) {
-                if (e.cancelable) e.preventDefault();
-            }
-        }
-    }, { passive: false });
-
-    // Prevent elastic scroll/bounce overflow chain on mobile devices for each scrollable container
-    const scrollContainers = document.querySelectorAll('.overlay, .comments-drawer-body');
-    scrollContainers.forEach(container => {
-        const adjustScroll = () => {
-            const top = container.scrollTop;
-            const total = container.scrollHeight;
-            const clientHeight = container.clientHeight;
-            const current = top + clientHeight;
-            
-            if (top === 0) {
-                container.scrollTop = 1;
-            } else if (current === total) {
-                container.scrollTop = top - 1;
-            }
-        };
-
-        container.addEventListener('touchstart', adjustScroll, { passive: true });
-        
-        // Also verify and prevent touchmove default behavior if the container doesn't need to scroll
-        container.addEventListener('touchmove', (e) => {
-            if (container.scrollHeight <= container.clientHeight) {
-                if (e.cancelable) e.preventDefault();
-            }
-        }, { passive: false });
-    });
-
     // Fix iOS keyboard scroll shift on input/textarea blur inside overlays or drawers
     document.addEventListener('focusout', (e) => {
         if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
