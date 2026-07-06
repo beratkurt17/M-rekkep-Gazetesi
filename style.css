@@ -4427,117 +4427,24 @@ button, a, input, textarea, select {
     
     .cd-header-indicator {
         display: block !important;
-        width: 80px !important;
-        height: 8px !important;
+        width: 60px !important;
+        height: 5px !important;
         background-color: var(--border-light) !important;
-        border-radius: 4px !important;
-        margin: -8px auto 20px auto !important;
+        border-radius: 3px !important;
+        margin: -6px auto 12px auto !important;
     }
-    
-    .comments-drawer-header {
-        padding: 24px 32px 18px 32px !important;
-    }
-    
-    .cd-header-title h3 {
-        font-size: 1.8rem !important;
-    }
-    
-    .btn-close-comments svg {
-        width: 36px !important;
-        height: 36px !important;
-    }
-    
-    .comments-drawer-body {
-        padding: 24px 32px !important;
-        gap: 28px !important;
-    }
-    
-    /* Comments trigger bar mobile scaling */
-    .comments-trigger-bar {
-        padding: 24px 30px !important;
-        border-radius: 16px !important;
-        margin-top: 40px !important;
-        margin-bottom: 40px !important;
-    }
-    
-    .ctb-left {
-        gap: 14px !important;
-        font-size: 1.4rem !important;
-    }
-    
-    .comment-icon-svg {
-        width: 28px !important;
-        height: 28px !important;
-    }
-    
-    .ctb-right {
-        gap: 10px !important;
-        font-size: 1.2rem !important;
-    }
-    
-    .chevron-svg {
-        width: 24px !important;
-        height: 24px !important;
-    }
-    
-    /* Comment form elements scaling */
-    .comments-drawer-form-container .comment-submission-form {
-        padding: 24px !important;
-        border-radius: 16px !important;
-        margin-bottom: 20px !important;
-    }
-    
-    .comments-drawer-form-container .comment-input {
-        padding: 16px 20px !important;
-        font-size: 1.3rem !important;
-        border-radius: 10px !important;
-    }
-    
-    .comments-drawer-form-container .btn-submit-comment {
-        padding: 14px 28px !important;
-        font-size: 1.2rem !important;
+
+    /* Restores close buttons inside active mobile viewport to clean compact dimensions */
+    .btn-close-overlay {
+        padding: 10px 18px !important;
+        font-size: 0.85rem !important;
         border-radius: 30px !important;
+        top: 20px !important;
+        left: 20px !important;
     }
-    
-    /* Comment card scaling */
-    .comments-drawer-body .comment-card {
-        padding: 20px !important;
-        border-radius: 12px !important;
-        margin-bottom: 20px !important;
-    }
-    
-    .comments-drawer-body .commenter-name {
-        font-size: 1.3rem !important;
-    }
-    
-    .comments-drawer-body .comment-date {
-        font-size: 1.1rem !important;
-    }
-    
-    .comments-drawer-body .comment-body {
-        font-size: 1.4rem !important;
-        line-height: 1.6 !important;
-    }
-    
-    .comments-drawer-body .btn-comment-report span {
-        font-size: 1.1rem !important;
-    }
-    
-    .comments-drawer-body .btn-comment-report svg {
+    .btn-close-overlay svg {
         width: 16px !important;
         height: 16px !important;
-    }
-    
-    .comments-drawer-body .btn-editor-action {
-        padding: 8px 16px !important;
-        font-size: 1.1rem !important;
-        border-radius: 15px !important;
-    }
-    
-    /* Inline edit text area scaling */
-    .comments-drawer-body .comment-edit-textarea {
-        font-size: 1.3rem !important;
-        padding: 12px !important;
     }
 }
 

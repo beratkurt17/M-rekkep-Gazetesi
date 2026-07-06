@@ -7423,6 +7423,20 @@ function initDynamicViewport() {
         }
     });
 
+    const setMobileViewport = () => {
+        let viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) {
+            viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes');
+        }
+    };
+
+    const setDesktopViewport = () => {
+        let viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) {
+            viewport.setAttribute('content', 'width=1300');
+        }
+    };
+
     const checkOverlays = () => {
         let anyVisible = false;
         let visibleOverlayId = null;
@@ -7437,6 +7451,12 @@ function initDynamicViewport() {
         if (commentsDrawer && !commentsDrawer.classList.contains('hidden')) {
             anyVisible = true;
             visibleOverlayId = commentsDrawer.id;
+        }
+
+        if (anyVisible) {
+            setMobileViewport();
+        } else {
+            setDesktopViewport();
         }
 
         // Push state if overlay or drawer is open
