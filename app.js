@@ -669,6 +669,53 @@ function getUserRole(email) {
     return match ? match.role : "user";
 }
 
+async function registerUserInList(email, username) {
+    if (!email) return;
+    const emailNorm = email.toLowerCase().trim();
+    const displayName = username || emailNorm.split("@")[0];
+    
+    let list = [];
+    if (isSupabaseConnected && supabaseClient) {
+        try {
+            const { data, error } = await supabaseClient
+                .from('site_settings')
+                .select('value')
+                .eq('key', 'registered_users')
+                .single();
+            if (data && data.value) {
+                list = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+            }
+        } catch(e) {}
+    } else {
+        try {
+            list = JSON.parse(localStorage.getItem("murekkep_registered_users") || "[]");
+        } catch(e) {}
+    }
+    
+    // Check if already in list
+    if (!list.some(u => u.email.toLowerCase().trim() === emailNorm)) {
+        list.push({
+            email: emailNorm,
+            username: displayName,
+            date: new Date().toLocaleDateString('tr-TR'),
+            role: getUserRole(emailNorm) || 'user'
+        });
+        
+        if (isSupabaseConnected && supabaseClient) {
+            try {
+                await supabaseClient
+                    .from('site_settings')
+                    .upsert({ key: 'registered_users', value: list });
+                console.log("Registered user appended on Supabase.");
+            } catch(e) {
+                console.error("Error saving registered users list:", e);
+            }
+        } else {
+            localStorage.setItem("murekkep_registered_users", JSON.stringify(list));
+        }
+    }
+}
+
 // User Management UI & Control Handlers
 function renderUsersManagementUI() {
     const listContainer = document.getElementById("admin-users-list-container");
@@ -3337,6 +3384,9 @@ async function signUpUser(email, password, username) {
             if (error) throw error;
             
             if (data.user) {
+                // Register user in our public database list
+                registerUserInList(data.user.email, username || data.user.user_metadata?.username || data.user.email.split("@")[0]).catch(console.error);
+
                 // If session exists directly (email confirmation disabled)
                 if (data.session) {
                     currentUser = {
@@ -3467,6 +3517,8 @@ async function signInUser(email, password) {
                     email: data.user.email,
                     username: data.user.user_metadata?.username || data.user.email.split("@")[0]
                 };
+                registerUserInList(currentUser.email, currentUser.username).catch(console.error);
+                
                 const role = getUserRole(currentUser.email);
                 currentUser.role = role;
                 currentUser.isAdmin = (role === "admin");

@@ -436,6 +436,95 @@
             font-size: 0.85rem;
             font-weight: 500;
         }
+
+        /* MOBILE RESPONSIVE CONTROL PANEL OVERRIDES */
+        @media screen and (max-width: 900px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding: 24px 20px;
+            }
+            .sidebar-brand {
+                margin-bottom: 20px;
+            }
+            .sidebar-menu {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+                margin-bottom: 15px;
+            }
+            .menu-item {
+                padding: 10px 14px;
+                font-size: 0.8rem;
+            }
+            .menu-item.active {
+                border-left: none;
+                border-bottom: 3px solid var(--accent-gold);
+                border-radius: 0;
+                padding-left: 14px;
+            }
+            .sidebar-footer {
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: center;
+                gap: 15px;
+                border-top: 1px solid var(--border-color);
+                padding-top: 15px;
+                margin-top: 10px;
+            }
+            .user-info {
+                border-top: none;
+                margin-bottom: 0;
+                padding: 0;
+                text-align: center;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 24px 16px;
+                width: 100%;
+            }
+            .header-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .tab-title {
+                font-size: 1.5rem;
+            }
+            .user-grid {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid-4 {
+                grid-template-columns: 1fr 1fr;
+            }
+            .charts-grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .stats-detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media screen and (max-width: 480px) {
+            .stats-grid-4 {
+                grid-template-columns: 1fr;
+            }
+            .sidebar-menu {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+            .sidebar-footer {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
     </style>
 </head>
 <body>
@@ -818,6 +907,7 @@
         let articles = [];
         let comments = [];
         let userRoles = [];
+        let registeredUsers = [];
         let authorProfiles = {};
 
         // Default predefined roles
@@ -836,6 +926,7 @@
             
             // First load userRoles configuration
             await loadUserRoles();
+            await loadRegisteredUsers();
             
             // Check session
             checkSession();
@@ -905,6 +996,44 @@
                     await supabaseClient
                         .from('site_settings')
                         .upsert({ key: 'user_roles', value: userRoles });
+                } catch(e) {}
+            }
+        }
+
+        async function loadRegisteredUsers() {
+            if (isSupabaseConnected) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('site_settings')
+                        .select('value')
+                        .eq('key', 'registered_users')
+                        .single();
+                    if (data && data.value) {
+                        registeredUsers = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+                        localStorage.setItem("murekkep_registered_users", JSON.stringify(registeredUsers));
+                        return;
+                    }
+                } catch(e) {}
+            }
+            try {
+                const saved = localStorage.getItem("murekkep_registered_users");
+                if (saved) {
+                    registeredUsers = JSON.parse(saved);
+                    return;
+                }
+            } catch(e) {}
+            registeredUsers = [];
+        }
+
+        async function saveRegisteredUsers() {
+            try {
+                localStorage.setItem("murekkep_registered_users", JSON.stringify(registeredUsers));
+            } catch(e) {}
+            if (isSupabaseConnected) {
+                try {
+                    await supabaseClient
+                        .from('site_settings')
+                        .upsert({ key: 'registered_users', value: registeredUsers });
                 } catch(e) {}
             }
         }
@@ -1662,32 +1791,46 @@
             tbody.innerHTML = "";
 
             let displayUsers = [];
+
+            // Add registered users loaded from Supabase or localStorage
+            registeredUsers.forEach(r => {
+                if (!displayUsers.some(u => u.email.toLowerCase().trim() === r.email.toLowerCase().trim())) {
+                    displayUsers.push({
+                        email: r.email,
+                        username: r.username,
+                        role: r.role || "user"
+                    });
+                }
+            });
+
             // Merge dynamically elevated userRoles
             userRoles.forEach(r => {
-                if (!displayUsers.some(u => u.email.toLowerCase().trim() === r.email.toLowerCase().trim())) {
+                const existing = displayUsers.find(u => u.email.toLowerCase().trim() === r.email.toLowerCase().trim());
+                if (!existing) {
                     displayUsers.push({
                         email: r.email,
                         username: r.username,
                         role: r.role
                     });
+                } else {
+                    existing.role = r.role;
                 }
             });
 
-            // If offline, read mock users list
-            if (!isSupabaseConnected) {
-                try {
-                    const mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
-                    mockUsers.forEach(m => {
-                        if (!displayUsers.some(u => u.email.toLowerCase().trim() === m.email.toLowerCase().trim())) {
-                            displayUsers.push({
-                                email: m.email,
-                                username: m.username,
-                                role: "user"
-                            });
-                        }
-                    });
-                } catch(e) {}
-            }
+            // Merge mock users list (from localStorage offline registration)
+            try {
+                const mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
+                mockUsers.forEach(m => {
+                    const existing = displayUsers.find(u => u.email.toLowerCase().trim() === m.email.toLowerCase().trim());
+                    if (!existing) {
+                        displayUsers.push({
+                            email: m.email,
+                            username: m.username,
+                            role: "user"
+                        });
+                    }
+                });
+            } catch(e) {}
 
             displayUsers.forEach(u => {
                 const isPredefinedAdmin = u.email.toLowerCase().trim() === 'admin@murekkep.com';
@@ -1802,17 +1945,30 @@
 
             userRoles = userRoles.filter(r => r.email.toLowerCase().trim() !== emailNorm);
 
-            if (newRole === 'admin' || newRole === 'editor') {
-                let username = emailNorm.split("@")[0];
-                try {
-                    // Try to resolve username from offline list
-                    if (!isSupabaseConnected) {
-                        const mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
-                        const matched = mockUsers.find(u => u.email.toLowerCase().trim() === emailNorm);
-                        if (matched) username = matched.username;
-                    }
-                } catch(e) {}
+            let username = emailNorm.split("@")[0];
+            try {
+                // Try to resolve username from offline list
+                const mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
+                const matched = mockUsers.find(u => u.email.toLowerCase().trim() === emailNorm);
+                if (matched) username = matched.username;
+            } catch(e) {}
 
+            // Try to resolve from registeredUsers
+            const matchedRegUser = registeredUsers.find(r => r.email.toLowerCase().trim() === emailNorm);
+            if (matchedRegUser) {
+                username = matchedRegUser.username;
+                matchedRegUser.role = newRole;
+            } else {
+                registeredUsers.push({
+                    email: emailNorm,
+                    username: username,
+                    role: newRole,
+                    date: new Date().toLocaleDateString('tr-TR')
+                });
+            }
+            await saveRegisteredUsers();
+
+            if (newRole === 'admin' || newRole === 'editor') {
                 userRoles.push({
                     email: emailNorm,
                     username: username,
@@ -1852,6 +2008,10 @@
             // Remove role
             userRoles = userRoles.filter(r => r.email.toLowerCase().trim() !== emailNorm);
             await saveUserRoles();
+
+            // Remove from registeredUsers
+            registeredUsers = registeredUsers.filter(r => r.email.toLowerCase().trim() !== emailNorm);
+            await saveRegisteredUsers();
 
             // Offline delete mock accounts
             if (!isSupabaseConnected) {
@@ -1917,6 +2077,21 @@
                 role: role
             });
             await saveUserRoles();
+
+            // Add to registeredUsers
+            const matchedRegUser = registeredUsers.find(r => r.email.toLowerCase().trim() === emailNorm);
+            if (!matchedRegUser) {
+                registeredUsers.push({
+                    email: emailNorm,
+                    username: username,
+                    role: role,
+                    date: new Date().toLocaleDateString('tr-TR')
+                });
+            } else {
+                matchedRegUser.role = role;
+                matchedRegUser.username = username;
+            }
+            await saveRegisteredUsers();
 
             // Create offline mock login if disconnected
             if (!isSupabaseConnected) {
