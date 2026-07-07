@@ -218,7 +218,7 @@ const DEFAULT_ARTICLES = [
                 <li><strong>Son Başvuru Tarihi:</strong> 31 Temmuz 2026</li>
                 <li><strong>Ödüller:</strong> Dereceye giren ilk 3 öykü Mürekkep Gazetesi'nin basılı özel sayısında yayınlanacak ve yazarlara edebi kitap seti hediye edilecektir.</li>
             </ul>
-            <p>Yazılarınızı yarisma@murekkep.com adresine veya 'Yazı Yaz' stüdyomuzu kullanarak doğrudan sitemize gönderebilirsiniz. Kalemlerinize kuvvet!</p>
+            <p>Yazılarınızı yarisma@murekkepgzt.com adresine veya 'Yazı Yaz' stüdyomuzu kullanarak doğrudan sitemize gönderebilirsiniz. Kalemlerinize kuvvet!</p>
         `
     },
     {
@@ -607,8 +607,8 @@ async function saveAuthorProfiles() {
 
 // IO Functions for User Roles and Access Control
 const DEFAULT_USER_ROLES = [
-    { email: "admin@murekkep.com", username: "Mürekkep Yöneticisi", role: "admin" },
-    { email: "editor@murekkep.com", username: "Mürekkep Editörü", role: "editor" }
+    { email: "admin@murekkepgzt.com", username: "Mürekkep Yöneticisi", role: "admin" },
+    { email: "editor@murekkepgzt.com", username: "Mürekkep Editörü", role: "editor" }
 ];
 let userRoles = [];
 
@@ -759,7 +759,7 @@ function renderUsersManagementUI() {
 
     displayUsers.forEach(u => {
         const emailLower = u.email.toLowerCase().trim();
-        const isPredefinedAdmin = (emailLower === "admin@murekkep.com");
+        const isPredefinedAdmin = (emailLower === "admin@murekkepgzt.com");
         
         const row = document.createElement("div");
         row.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid var(--border-light); border-radius: 8px; background: rgba(255,255,255,0.01);";
@@ -798,7 +798,7 @@ window.updateUserRoleInAdmin = async function(email, newRole) {
     }
     
     const emailNorm = email.toLowerCase().trim();
-    if (emailNorm === "admin@murekkep.com") {
+    if (emailNorm === "admin@murekkepgzt.com") {
         showToast("✕ Ana yöneticinin yetkisi değiştirilemez.");
         return;
     }
@@ -836,7 +836,7 @@ window.deleteUserInAdmin = async function(email) {
     }
 
     const emailNorm = email.toLowerCase().trim();
-    if (emailNorm === "admin@murekkep.com") {
+    if (emailNorm === "admin@murekkepgzt.com") {
         showToast("✕ Ana yönetici silinemez.");
         return;
     }
@@ -2376,7 +2376,7 @@ function renderShareCard(template) {
     ctx.fillStyle = t.accentColor;
     ctx.font = `700 28px 'Inter', sans-serif`;
     ctx.textAlign = 'right';
-    ctx.fillText('murekkep.com', W - pad, H - pad);
+    ctx.fillText('murekkepgzt.com', W - pad, H - pad);
     ctx.textAlign = 'left';
 }
 
@@ -2504,7 +2504,7 @@ function initTextSelectionPopup() {
         if (!lastSelectedText) return;
         const art = articles.find(a => a.id === activeArticleId);
         const author = art ? `— ${art.author}` : '';
-        const tweet = `"${lastSelectedText.substring(0, 200)}" ${author} #Mürekkep\nmurekkep.com`;
+        const tweet = `"${lastSelectedText.substring(0, 200)}" ${author} #Mürekkep\nmurekkepgzt.com`;
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweet)}`, '_blank');
         hidePopup();
         window.getSelection()?.removeAllRanges();
@@ -2557,7 +2557,7 @@ function initShareOverlay() {
     document.getElementById("share-whatsapp")?.addEventListener("click", () => {
         if (!shareCurrentArticle) return;
         const q = quoteInput?.value.trim() || shareCurrentArticle.subtitle || shareCurrentArticle.title;
-        const text = `"${q}"\n\n— ${shareCurrentArticle.author}\n📖 ${shareCurrentArticle.title}\n\nmurekkep.com`;
+        const text = `"${q}"\n\n— ${shareCurrentArticle.author}\n📖 ${shareCurrentArticle.title}\n\nmurekkepgzt.com`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
     });
 
@@ -3366,7 +3366,7 @@ async function initAuth() {
 
 // User Actions
 async function signUpUser(email, password, username) {
-    if (email.toLowerCase() === "admin@murekkep.com" || email.toLowerCase() === "editor@murekkep.com") {
+    if (email.toLowerCase() === "admin@murekkepgzt.com" || email.toLowerCase() === "editor@murekkepgzt.com") {
         showToast("❌ Bu e-posta adresiyle yeni kayıt oluşturulamaz.");
         return;
     }
@@ -3464,12 +3464,12 @@ async function signInUser(email, password) {
     const passNorm = (password || "").toLowerCase().trim();
 
     // Pre-defined Admin login intercept for testing and moderation
-    if ((emailNorm === "admin@murekkep.com" || emailNorm === "admin") && 
+    if ((emailNorm === "admin@murekkepgzt.com" || emailNorm === "admin") && 
         (passNorm === "murekkepadmin" || passNorm === "admin" || passNorm === "murekkep")) {
         const role = "admin";
         currentUser = {
             id: "admin_murekkep",
-            email: "admin@murekkep.com",
+            email: "admin@murekkepgzt.com",
             username: "Mürekkep Yöneticisi",
             role: role,
             isAdmin: true,
@@ -3484,12 +3484,12 @@ async function signInUser(email, password) {
     }
 
     // Pre-defined Editor login intercept
-    if ((emailNorm === "editor@murekkep.com" || emailNorm === "editor") && 
+    if ((emailNorm === "editor@murekkepgzt.com" || emailNorm === "editor") && 
         (passNorm === "murekkepeditor" || passNorm === "mürekkepeditör" || passNorm === "editor" || passNorm === "editör" || passNorm === "murekkep")) {
         const role = "editor";
         currentUser = {
             id: "editor_murekkep",
-            email: "editor@murekkep.com",
+            email: "editor@murekkepgzt.com",
             username: "Mürekkep Editörü",
             role: role,
             isAdmin: false,

@@ -650,7 +650,7 @@
             <form id="admin-login-form">
                 <div class="form-group">
                     <label class="form-label">E-Posta Adresi</label>
-                    <input type="email" id="login-email" class="form-control" placeholder="editor@murekkep.com" required>
+                    <input type="email" id="login-email" class="form-control" placeholder="editor@murekkepgzt.com" required>
                 </div>
                 <div class="form-group" style="margin-bottom: 25px;">
                     <label class="form-label">Şifre</label>
@@ -763,7 +763,7 @@
                         <form id="create-user-form">
                             <div class="form-group">
                                 <label class="form-label">E-Posta Adresi</label>
-                                <input type="email" id="new-user-email" class="form-control" placeholder="adsoyad@murekkep.com" required>
+                                <input type="email" id="new-user-email" class="form-control" placeholder="adsoyad@murekkepgzt.com" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Kullanıcı Adı / Kalem İsmi</label>
@@ -914,8 +914,8 @@
 
         // Default predefined roles
         const DEFAULT_USER_ROLES = [
-            { email: "admin@murekkep.com", username: "Mürekkep Yöneticisi", role: "admin" },
-            { email: "editor@murekkep.com", username: "Mürekkep Editörü", role: "editor" }
+            { email: "admin@murekkepgzt.com", username: "Mürekkep Yöneticisi", role: "admin" },
+            { email: "editor@murekkepgzt.com", username: "Mürekkep Editörü", role: "editor" }
         ];
 
         // SUPABASE CONNECTION ARGS (Same as app.js)
@@ -1096,8 +1096,8 @@
 
             // Normalize short inputs to full email
             const resolvedEmail = emailNorm.includes("@") ? emailNorm :
-                (emailNorm === "admin" ? "admin@murekkep.com" :
-                (emailNorm === "editor" ? "editor@murekkep.com" : emailNorm));
+                (emailNorm === "admin" ? "admin@murekkepgzt.com" :
+                (emailNorm === "editor" ? "editor@murekkepgzt.com" : emailNorm));
 
             const resolvedPass = passNorm || password;
 
@@ -1152,8 +1152,8 @@
                 // Seed default mock accounts in localStorage if empty on first run
                 if (mockUsers.length === 0) {
                     mockUsers.push(
-                        { id: "u_default_admin", email: "admin@murekkep.com", username: "Mürekkep Yöneticisi", password: "admin" },
-                        { id: "u_default_editor", email: "editor@murekkep.com", username: "Mürekkep Editörü", password: "editor" }
+                        { id: "u_default_admin", email: "admin@murekkepgzt.com", username: "Mürekkep Yöneticisi", password: "admin" },
+                        { id: "u_default_editor", email: "editor@murekkepgzt.com", username: "Mürekkep Editörü", password: "editor" }
                     );
                     localStorage.setItem("murekkep_mock_users", JSON.stringify(mockUsers));
                 }
@@ -1835,7 +1835,7 @@
             } catch(e) {}
 
             displayUsers.forEach(u => {
-                const isPredefinedAdmin = u.email.toLowerCase().trim() === 'admin@murekkep.com';
+                const isPredefinedAdmin = u.email.toLowerCase().trim() === 'admin@murekkepgzt.com';
                 const roleLabels = {
                     "admin": "Yönetici (Admin)",
                     "editor": "Editör",
@@ -1943,7 +1943,7 @@
             }
 
             const emailNorm = email.toLowerCase().trim();
-            if (emailNorm === 'admin@murekkep.com') return;
+            if (emailNorm === 'admin@murekkepgzt.com') return;
 
             userRoles = userRoles.filter(r => r.email.toLowerCase().trim() !== emailNorm);
 
@@ -1990,7 +1990,7 @@
             }
 
             const emailNorm = email.toLowerCase().trim();
-            if (emailNorm === 'admin@murekkep.com') return;
+            if (emailNorm === 'admin@murekkepgzt.com') return;
 
             let targetUsername = "";
             const match = userRoles.find(r => r.email.toLowerCase().trim() === emailNorm);
