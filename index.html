@@ -434,8 +434,75 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="post-content">İçerik (Paragrafları satır boşluğu bırakarak yazabilirsiniz)</label>
-                    <textarea id="post-content" placeholder="Edebi eserinizi buraya dökün..." required class="form-control" rows="12"></textarea>
+                    <label for="post-editor">İçerik</label>
+                    <div id="post-editor-wrapper" class="wysiwyg-editor-wrapper">
+                        <!-- Toolbar -->
+                        <div class="editor-toolbar">
+                            <div class="toolbar-group">
+                                <select id="editor-font-family" class="toolbar-select" title="Yazı Tipi">
+                                    <option value="'Lora', Georgia, serif" style="font-family: 'Lora', Georgia, serif;">Lora (Varsayılan)</option>
+                                    <option value="'Playfair Display', Georgia, serif" style="font-family: 'Playfair Display', Georgia, serif;">Playfair Display</option>
+                                    <option value="'Cinzel', serif" style="font-family: 'Cinzel', serif;">Cinzel</option>
+                                    <option value="'Inter', system-ui, sans-serif" style="font-family: 'Inter', system-ui, sans-serif;">Inter</option>
+                                </select>
+                            </div>
+                            
+                            <div class="toolbar-divider"></div>
+                            
+                            <div class="toolbar-group">
+                                <button type="button" class="toolbar-btn" data-command="bold" title="Kalın (Ctrl+B)">
+                                    <i class="fas fa-bold"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-command="italic" title="İtalik (Ctrl+I)">
+                                    <i class="fas fa-italic"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-command="underline" title="Altı Çizili (Ctrl+U)">
+                                    <i class="fas fa-underline"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="toolbar-divider"></div>
+                            
+                            <div class="toolbar-group">
+                                <button type="button" class="toolbar-btn" data-command="justifyLeft" title="Sola Hizala">
+                                    <i class="fas fa-align-left"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-command="justifyCenter" title="Ortala">
+                                    <i class="fas fa-align-center"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-command="justifyRight" title="Sağa Hizala">
+                                    <i class="fas fa-align-right"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-command="justifyFull" title="İki Yana Yasla">
+                                    <i class="fas fa-align-justify"></i>
+                                </button>
+                            </div>
+
+                            <div class="toolbar-divider"></div>
+
+                            <div class="toolbar-group">
+                                <button type="button" class="toolbar-btn" data-command="insertUnorderedList" title="Sırasız Liste">
+                                    <i class="fas fa-list-ul"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-command="insertOrderedList" title="Sıralı Liste">
+                                    <i class="fas fa-list-ol"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="toolbar-divider"></div>
+                            
+                            <div class="toolbar-group">
+                                <button type="button" class="toolbar-btn" data-command="removeFormat" title="Biçimlendirmeyi Temizle">
+                                    <i class="fas fa-eraser"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Content Editable Area -->
+                        <div id="post-editor" contenteditable="true" class="editor-content" placeholder="Edebi eserinizi buraya dökün..."></div>
+                    </div>
+                    <!-- Hidden textarea for form submission / compatibility -->
+                    <textarea id="post-content" required style="display: none;"></textarea>
                 </div>
 
                 <div class="form-actions">

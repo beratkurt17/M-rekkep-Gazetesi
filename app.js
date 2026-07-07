@@ -5093,8 +5093,14 @@ window.editArticleClick = function(id, event) {
     const imgInput = document.querySelector(`input[name="post-image"][value="${article.image}"]`);
     if (imgInput) imgInput.checked = true;
     
-    // Content HTML to Raw text
-    document.getElementById("post-content").value = convertHtmlToRawText(article.content);
+    // Populate rich text editor or fall back to textarea
+    const editorDiv = document.getElementById("post-editor");
+    if (editorDiv) {
+        editorDiv.innerHTML = article.content || "";
+        document.getElementById("post-content").value = article.content || "";
+    } else {
+        document.getElementById("post-content").value = convertHtmlToRawText(article.content);
+    }
     
     // Change UI titles
     const studioTitle = document.querySelector(".editor-studio-header h2");
@@ -5487,6 +5493,8 @@ publishForm.addEventListener("submit", async (e) => {
     subtitleInput.classList.remove("profanity-error");
     authorInput.classList.remove("profanity-error");
     contentInput.classList.remove("profanity-error");
+    const editorWrapper = document.getElementById("post-editor-wrapper");
+    if (editorWrapper) editorWrapper.classList.remove("profanity-error");
     if (cornerNameInput) cornerNameInput.classList.remove("profanity-error");
 
     let hasError = false;
@@ -5502,8 +5510,12 @@ publishForm.addEventListener("submit", async (e) => {
         authorInput.classList.add("profanity-error");
         hasError = true;
     }
-    if (containsProfanity(contentText)) {
+    
+    // Strip HTML tags for cleaner profanity check on the editor body
+    const plainTextForFilter = contentText.replace(/<[^>]*>/g, "");
+    if (containsProfanity(plainTextForFilter)) {
         contentInput.classList.add("profanity-error");
+        if (editorWrapper) editorWrapper.classList.add("profanity-error");
         hasError = true;
     }
     if (cornerName && containsProfanity(cornerName)) {
@@ -5516,11 +5528,14 @@ publishForm.addEventListener("submit", async (e) => {
         return;
     }
 
-    // Convert raw content text with double newlines into HTML paragraphs
-    const contentHTML = contentText
-        .split(/\n\s*\n/)
-        .map(para => `<p>${para.replace(/\n/g, "<br>")}</p>`)
-        .join("\n");
+    // Convert raw content text with double newlines into HTML paragraphs only if it doesn't already have tags
+    let contentHTML = contentText;
+    if (!contentHTML.includes("<p>") && !contentHTML.includes("<div") && !contentHTML.includes("<span")) {
+        contentHTML = contentText
+            .split(/\n\s*\n/)
+            .map(para => `<p>${para.replace(/\n/g, "<br>")}</p>`)
+            .join("\n");
+    }
 
     if (editingArticleId) {
         const article = articles.find(a => a.id === editingArticleId);
@@ -7451,10 +7466,12 @@ if (document.readyState === "loading") {
     window.addEventListener("DOMContentLoaded", () => {
         bootApp();
         initDynamicViewport();
+        initWysiwygEditor();
     });
 } else {
     bootApp();
     initDynamicViewport();
+    initWysiwygEditor();
 }
 
 // Dynamic Viewport & History Manager for Mobile Modals
@@ -7626,4 +7643,109 @@ document.addEventListener("DOMContentLoaded", () => {
         if (activeSizeBtn) activeSizeBtn.click();
     }
 });
+
+// ── RICH TEXT WYSIWYG EDITOR INITIALIZATION ──────────────────
+function initWysiwygEditor() {
+    const editor = document.getElementById("post-editor");
+    const textarea = document.getElementById("post-content");
+    const wrapper = document.getElementById("post-editor-wrapper");
+    const publishForm = document.getElementById("publish-form");
+    const fontSelect = document.getElementById("editor-font-family");
+    
+    if (!editor || !textarea) return;
+
+    // Helper to sync editor content to hidden textarea
+    function syncEditorContent() {
+        textarea.value = editor.innerHTML;
+    }
+
+    // Input events to update the hidden textarea in real-time
+    editor.addEventListener("input", syncEditorContent);
+    editor.addEventListener("blur", syncEditorContent);
+
+    // Sync form resets (clears editor div as well)
+    if (publishForm) {
+        publishForm.addEventListener("reset", () => {
+            editor.innerHTML = "";
+            textarea.value = "";
+            if (wrapper) wrapper.classList.remove("profanity-error");
+            updateToolbarButtonStates();
+        });
+    }
+
+    // Font Family dropdown selection
+    if (fontSelect) {
+        fontSelect.addEventListener("change", function () {
+            const font = this.value;
+            editor.focus();
+            document.execCommand("fontName", false, font);
+            syncEditorContent();
+        });
+    }
+
+    // Toolbar formatting buttons
+    document.querySelectorAll(".editor-toolbar .toolbar-btn").forEach(btn => {
+        btn.addEventListener("click", function (e) {
+            e.preventDefault();
+            const command = this.getAttribute("data-command");
+            if (!command) return;
+
+            editor.focus();
+
+            if (command === "removeFormat") {
+                document.execCommand("removeFormat", false, null);
+                // Reset to default font-family Lora
+                document.execCommand("fontName", false, "'Lora', Georgia, serif");
+                if (fontSelect) fontSelect.selectedIndex = 0;
+            } else {
+                document.execCommand(command, false, null);
+            }
+
+            updateToolbarButtonStates();
+            syncEditorContent();
+        });
+    });
+
+    // Update active toolbar button states based on text selection
+    function updateToolbarButtonStates() {
+        document.querySelectorAll(".editor-toolbar .toolbar-btn[data-command]").forEach(btn => {
+            const command = btn.getAttribute("data-command");
+            if (command === "removeFormat") return;
+            try {
+                if (document.queryCommandState(command)) {
+                    btn.classList.add("active");
+                } else {
+                    btn.classList.remove("active");
+                }
+            } catch (e) {}
+        });
+
+        // Update selected option in font-family dropdown
+        if (fontSelect) {
+            try {
+                const fontName = document.queryCommandValue("fontName");
+                if (fontName) {
+                    const cleanFont = fontName.replace(/['"]/g, "").trim().toLowerCase();
+                    let matched = false;
+                    for (let option of fontSelect.options) {
+                        const optVal = option.value.replace(/['"]/g, "").trim().toLowerCase();
+                        if (optVal.includes(cleanFont) || cleanFont.includes(optVal)) {
+                            fontSelect.value = option.value;
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (!matched) {
+                        fontSelect.selectedIndex = 0; // Fallback to Lora
+                    }
+                }
+            } catch (e) {}
+        }
+    }
+
+    // Listeners for selection & focus changes to update toolbar state dynamically
+    editor.addEventListener("keyup", updateToolbarButtonStates);
+    editor.addEventListener("mouseup", updateToolbarButtonStates);
+    editor.addEventListener("focus", updateToolbarButtonStates);
+}
 
