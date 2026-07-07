@@ -433,8 +433,118 @@
         }
 
         .toast-text {
-            font-size: 0.85rem;
             font-weight: 500;
+        }
+
+        /* Statistics Tab Styles */
+        .stats-grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stats-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .stats-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-gold);
+        }
+        .stats-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            background: rgba(197, 160, 89, 0.1);
+            color: var(--accent-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .stats-info h3 {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            font-family: var(--font-ui);
+        }
+        .stats-info p {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-main);
+            font-family: var(--font-ui);
+        }
+        .charts-grid-2 {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .chart-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--accent-gold);
+            font-family: var(--font-serif);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+        .stats-detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        .live-log-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 380px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .live-log-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.01);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+        .live-log-item:hover {
+            background: rgba(255,255,255,0.03);
+        }
+        .log-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .log-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+        .log-time {
+            color: var(--accent-gold);
         }
 
         /* MOBILE RESPONSIVE CONTROL PANEL OVERRIDES */
@@ -694,117 +804,6 @@
 
             <!-- STATISTICS TAB -->
             <div id="tab-statistics" class="tab-panel hidden">
-                <style>
-                    .stats-grid-4 {
-                        display: grid;
-                        grid-template-columns: repeat(4, 1fr);
-                        gap: 20px;
-                        margin-bottom: 30px;
-                    }
-                    .stats-card {
-                        background: var(--bg-card);
-                        border: 1px solid var(--border-color);
-                        border-radius: 12px;
-                        padding: 20px;
-                        display: flex;
-                        align-items: center;
-                        gap: 15px;
-                        transition: transform 0.2s, border-color 0.2s;
-                    }
-                    .stats-card:hover {
-                        transform: translateY(-2px);
-                        border-color: var(--accent-gold);
-                    }
-                    .stats-icon {
-                        width: 50px;
-                        height: 50px;
-                        border-radius: 10px;
-                        background: rgba(197, 160, 89, 0.1);
-                        color: var(--accent-gold);
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-size: 1.5rem;
-                    }
-                    .stats-info h3 {
-                        font-size: 0.75rem;
-                        color: var(--text-muted);
-                        text-transform: uppercase;
-                        letter-spacing: 0.5px;
-                        margin-bottom: 4px;
-                        font-family: var(--font-ui);
-                    }
-                    .stats-info p {
-                        font-size: 1.6rem;
-                        font-weight: 700;
-                        color: var(--text-main);
-                        font-family: var(--font-ui);
-                    }
-                    .charts-grid-2 {
-                        display: grid;
-                        grid-template-columns: 2fr 1fr;
-                        gap: 25px;
-                        margin-bottom: 30px;
-                    }
-                    .chart-card {
-                        background: var(--bg-card);
-                        border: 1px solid var(--border-color);
-                        border-radius: 12px;
-                        padding: 24px;
-                    }
-                    .chart-card h3 {
-                        font-size: 1rem;
-                        font-weight: 700;
-                        margin-bottom: 20px;
-                        color: var(--accent-gold);
-                        font-family: var(--font-serif);
-                        letter-spacing: 1px;
-                        text-transform: uppercase;
-                        border-bottom: 1px solid var(--border-color);
-                        padding-bottom: 10px;
-                    }
-                    .stats-detail-grid {
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 25px;
-                    }
-                    .live-log-list {
-                        display: flex;
-                        flex-direction: column;
-                        gap: 12px;
-                        max-height: 380px;
-                        overflow-y: auto;
-                        padding-right: 5px;
-                    }
-                    .live-log-item {
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        padding: 10px 12px;
-                        background: rgba(255,255,255,0.01);
-                        border: 1px solid var(--border-color);
-                        border-radius: 8px;
-                        font-size: 0.8rem;
-                    }
-                    .live-log-item:hover {
-                        background: rgba(255,255,255,0.03);
-                    }
-                    .log-details {
-                        display: flex;
-                        flex-direction: column;
-                        gap: 2px;
-                    }
-                    .log-meta {
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                        font-size: 0.72rem;
-                        color: var(--text-muted);
-                    }
-                    .log-time {
-                        color: var(--accent-gold);
-                    }
-                </style>
                 <div class="header-row">
                     <h2 class="tab-title">Ziyaretçi ve Okuma İstatistikleri</h2>
                     <button onclick="resetStatsData()" class="btn-action delete" style="padding: 8px 16px; border-radius: 6px; font-weight:600;">Verileri Sıfırla</button>
