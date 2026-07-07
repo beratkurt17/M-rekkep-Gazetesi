@@ -915,7 +915,8 @@
         // Default predefined roles
         const DEFAULT_USER_ROLES = [
             { email: "admin@murekkepgzt.com", username: "Mürekkep Yöneticisi", role: "admin" },
-            { email: "editor@murekkepgzt.com", username: "Mürekkep Editörü", role: "editor" }
+            { email: "editor@murekkepgzt.com", username: "Mürekkep Editörü", role: "editor" },
+            { email: "yonetici@murekkepgzt.com", username: "Mürekkep Yöneticisi 2", role: "admin" }
         ];
 
         // SUPABASE CONNECTION ARGS (Same as app.js)
@@ -925,6 +926,15 @@
         // Initialize Supabase & load data on start
         document.addEventListener("DOMContentLoaded", async () => {
             initSupabaseConnection();
+            
+            // One-time cleanup to remove cached/mock users as requested by the administrator
+            if (!localStorage.getItem("murekkep_cleanup_v1")) {
+                localStorage.removeItem("murekkep_mock_users");
+                localStorage.removeItem("murekkep_registered_users");
+                localStorage.removeItem("murekkep_user_roles");
+                localStorage.removeItem("murekkep_supabase_cache");
+                localStorage.setItem("murekkep_cleanup_v1", "true");
+            }
             
             // First load userRoles configuration
             await loadUserRoles();
@@ -993,6 +1003,8 @@
             try {
                 localStorage.setItem("murekkep_user_roles", JSON.stringify(userRoles));
             } catch(e) {}
+            // Clear frontend cache so updates reflect instantly
+            localStorage.removeItem("murekkep_supabase_cache");
             if (isSupabaseConnected) {
                 try {
                     await supabaseClient
@@ -1031,6 +1043,8 @@
             try {
                 localStorage.setItem("murekkep_registered_users", JSON.stringify(registeredUsers));
             } catch(e) {}
+            // Clear frontend cache so updates reflect instantly
+            localStorage.removeItem("murekkep_supabase_cache");
             if (isSupabaseConnected) {
                 try {
                     await supabaseClient
@@ -1151,7 +1165,8 @@
                 if (mockUsers.length === 0) {
                     mockUsers.push(
                         { id: "u_default_admin", email: "admin@murekkepgzt.com", username: "Mürekkep Yöneticisi", password: "admin" },
-                        { id: "u_default_editor", email: "editor@murekkepgzt.com", username: "Mürekkep Editörü", password: "editor" }
+                        { id: "u_default_editor", email: "editor@murekkepgzt.com", username: "Mürekkep Editörü", password: "editor" },
+                        { id: "u_yonetici_admin", email: "yonetici@murekkepgzt.com", username: "Mürekkep Yöneticisi 2", password: "murekkepyonetici" }
                     );
                     localStorage.setItem("murekkep_mock_users", JSON.stringify(mockUsers));
                 }
@@ -1160,12 +1175,13 @@
                     u && u.email && (u.email.toLowerCase().trim() === emailNorm || u.email.split("@")[0].toLowerCase().trim() === emailNorm) && 
                     (u.password === password || u.password.toLowerCase() === passNorm || 
                      (emailNorm.includes("admin") && (passNorm === "murekkepadmin" || passNorm === "admin" || passNorm === "murekkep")) ||
-                     (emailNorm.includes("editor") && (passNorm === "murekkepeditor" || passNorm === "editor" || passNorm === "murekkep")))
+                     (emailNorm.includes("editor") && (passNorm === "murekkepeditor" || passNorm === "editor" || passNorm === "murekkep")) ||
+                     (emailNorm.includes("yonetici") && (passNorm === "murekkepyonetici" || passNorm === "yonetici")))
                 );
             } catch(e) {}
 
             const dynRoleObj = userRoles.find(r => r && r.email && (r.email.toLowerCase().trim() === emailNorm || r.email.split("@")[0].toLowerCase().trim() === emailNorm));
-            const resolvedRole = dynRoleObj ? dynRoleObj.role : (matchedMockUser ? (emailNorm.includes("admin") ? "admin" : "editor") : "user");
+            const resolvedRole = dynRoleObj ? dynRoleObj.role : (matchedMockUser ? ((emailNorm.includes("admin") || emailNorm.includes("yonetici")) ? "admin" : "editor") : "user");
 
             let authUser = null;
             if (matchedMockUser && (resolvedRole === 'admin' || resolvedRole === 'editor')) {
@@ -1870,7 +1886,7 @@
         // ACTIONS AND HANDLERS
         async function approveArticle(id) {
             resetArticleReports(id);
-            localStorage.removeItem("murekkep_data_cache");
+            localStorage.removeItem("murekkep_supabase_cache");
             showToast("Yazı şikayetleri temizlendi ve onaylandı.", "🟢");
             renderArticlesTable();
         }
@@ -1895,7 +1911,7 @@
             }
 
             articles = articles.filter(art => String(art.id) !== String(id));
-            localStorage.removeItem("murekkep_data_cache");
+            localStorage.removeItem("murekkep_supabase_cache");
             if (!isSupabaseConnected) {
                 localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
             }
@@ -1906,7 +1922,7 @@
 
         async function approveComment(id) {
             resetCommentReports(id);
-            localStorage.removeItem("murekkep_data_cache");
+            localStorage.removeItem("murekkep_supabase_cache");
             showToast("Yorum şikayetleri temizlendi ve onaylandı.", "🟢");
             renderCommentsTable();
         }
@@ -1931,7 +1947,7 @@
             }
 
             comments = comments.filter(c => String(c.id) !== String(id));
-            localStorage.removeItem("murekkep_data_cache");
+            localStorage.removeItem("murekkep_supabase_cache");
             if (!isSupabaseConnected) {
                 localStorage.setItem("murekkep_comments_v2", JSON.stringify(comments));
             }
@@ -1994,19 +2010,20 @@
             }
 
             const emailNorm = email.toLowerCase().trim();
-            if (emailNorm === 'admin@murekkepgzt.com') return;
+            if (emailNorm === 'admin@murekkepgzt.com' || emailNorm === 'yonetici@murekkepgzt.com') {
+                showToast("✕ Ana yöneticiler silinemez.", "✕");
+                return;
+            }
 
             let targetUsername = "";
             const match = userRoles.find(r => r.email.toLowerCase().trim() === emailNorm);
             if (match) targetUsername = match.username;
 
-            if (!isSupabaseConnected) {
-                try {
-                    const mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
-                    const matched = mockUsers.find(u => u.email.toLowerCase().trim() === emailNorm);
-                    if (matched && !targetUsername) targetUsername = matched.username;
-                } catch(e) {}
-            }
+            try {
+                const mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
+                const matched = mockUsers.find(u => u.email.toLowerCase().trim() === emailNorm);
+                if (matched && !targetUsername) targetUsername = matched.username;
+            } catch(e) {}
 
             const deleteArticles = confirm(`"${emailNorm}" hesabını silmek istediğinizden emin misiniz?\n\nEvet seçerseniz hesabın yetkileri kaldırılacaktır. Yazarın tüm yazılarını da silmek istiyorsanız bir sonraki adımı onaylayın.`);
             const deletePosts = deleteArticles ? confirm("Silinen yazara ait tüm gazete makaleleri de kalıcı olarak silinsin mi?") : false;
@@ -2019,14 +2036,12 @@
             registeredUsers = registeredUsers.filter(r => r.email.toLowerCase().trim() !== emailNorm);
             await saveRegisteredUsers();
 
-            // Offline delete mock accounts
-            if (!isSupabaseConnected) {
-                try {
-                    let mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
-                    mockUsers = mockUsers.filter(u => u.email.toLowerCase().trim() !== emailNorm);
-                    localStorage.setItem("murekkep_mock_users", JSON.stringify(mockUsers));
-                } catch(e) {}
-            }
+            // Delete mock accounts from localStorage in all cases
+            try {
+                let mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
+                mockUsers = mockUsers.filter(u => u.email.toLowerCase().trim() !== emailNorm);
+                localStorage.setItem("murekkep_mock_users", JSON.stringify(mockUsers));
+            } catch(e) {}
 
             // Remove profile card
             if (targetUsername) {
@@ -2059,6 +2074,8 @@
 
             showToast("Kullanıcı hesabı silindi.", "🔴");
             renderUsersTable();
+            // Clear frontend cache so updates reflect instantly
+            localStorage.removeItem("murekkep_supabase_cache");
         }
 
         async function handleCreateUser(e) {
