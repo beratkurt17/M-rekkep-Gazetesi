@@ -5144,8 +5144,20 @@ function closeCommentsDrawer() {
 // Comments Drawer Toggles
 commentsTriggerBar?.addEventListener("click", openCommentsDrawer);
 articleCommentBtn?.addEventListener("click", openCommentsDrawer);
+
 closeCommentsDrawerBtn?.addEventListener("click", closeCommentsDrawer);
+closeCommentsDrawerBtn?.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    closeCommentsDrawer();
+}, { passive: false });
+
 commentsDrawerBackdrop?.addEventListener("click", closeCommentsDrawer);
+commentsDrawerBackdrop?.addEventListener("touchstart", (e) => {
+    if (e.target === commentsDrawerBackdrop) {
+        e.preventDefault();
+        closeCommentsDrawer();
+    }
+}, { passive: false });
 
 // Reading Overlay Scroll Progress
 readingOverlay.addEventListener("scroll", () => {
