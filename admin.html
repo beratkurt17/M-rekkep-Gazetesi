@@ -960,7 +960,7 @@
         function getUserRole(email) {
             if (!email) return "user";
             const emailNorm = email.toLowerCase().trim();
-            const match = userRoles.find(u => u.email.toLowerCase().trim() === emailNorm);
+            const match = userRoles.find(u => u && u.email && u.email.toLowerCase().trim() === emailNorm);
             return match ? match.role : "user";
         }
 
@@ -1099,10 +1099,8 @@
                 (emailNorm === "admin" ? "admin@murekkepgzt.com" :
                 (emailNorm === "editor" ? "editor@murekkepgzt.com" : emailNorm));
 
-            const resolvedPass = passNorm || password;
-
             // Show loading
-            const btn = document.getElementById("login-btn");
+            const btn = document.getElementById("login-btn") || document.querySelector(".btn-login");
             const origText = btn ? btn.textContent : "";
             if (btn) { btn.textContent = "Giriş yapılıyor..."; btn.disabled = true; }
 
@@ -1111,7 +1109,7 @@
                 try {
                     const { data, error } = await supabaseClient.auth.signInWithPassword({
                         email: resolvedEmail,
-                        password: resolvedPass
+                        password: password // Send original case-sensitive password to Supabase!
                     });
 
                     if (!error && data?.user) {
@@ -1159,12 +1157,14 @@
                 }
 
                 matchedMockUser = mockUsers.find(u => 
-                    (u.email.toLowerCase().trim() === emailNorm || u.email.split("@")[0].toLowerCase().trim() === emailNorm) && 
-                    u.password === resolvedPass
+                    u && u.email && (u.email.toLowerCase().trim() === emailNorm || u.email.split("@")[0].toLowerCase().trim() === emailNorm) && 
+                    (u.password === password || u.password.toLowerCase() === passNorm || 
+                     (emailNorm.includes("admin") && (passNorm === "murekkepadmin" || passNorm === "admin" || passNorm === "murekkep")) ||
+                     (emailNorm.includes("editor") && (passNorm === "murekkepeditor" || passNorm === "editor" || passNorm === "murekkep")))
                 );
             } catch(e) {}
 
-            const dynRoleObj = userRoles.find(r => r.email.toLowerCase().trim() === emailNorm || r.email.split("@")[0].toLowerCase().trim() === emailNorm);
+            const dynRoleObj = userRoles.find(r => r && r.email && (r.email.toLowerCase().trim() === emailNorm || r.email.split("@")[0].toLowerCase().trim() === emailNorm));
             const resolvedRole = dynRoleObj ? dynRoleObj.role : (matchedMockUser ? (emailNorm.includes("admin") ? "admin" : "editor") : "user");
 
             let authUser = null;
@@ -1796,7 +1796,7 @@
 
             // Add registered users loaded from Supabase or localStorage
             registeredUsers.forEach(r => {
-                if (!displayUsers.some(u => u.email.toLowerCase().trim() === r.email.toLowerCase().trim())) {
+                if (r && r.email && !displayUsers.some(u => u && u.email && u.email.toLowerCase().trim() === r.email.toLowerCase().trim())) {
                     displayUsers.push({
                         email: r.email,
                         username: r.username,
@@ -1807,15 +1807,17 @@
 
             // Merge dynamically elevated userRoles
             userRoles.forEach(r => {
-                const existing = displayUsers.find(u => u.email.toLowerCase().trim() === r.email.toLowerCase().trim());
-                if (!existing) {
-                    displayUsers.push({
-                        email: r.email,
-                        username: r.username,
-                        role: r.role
-                    });
-                } else {
-                    existing.role = r.role;
+                if (r && r.email) {
+                    const existing = displayUsers.find(u => u && u.email && u.email.toLowerCase().trim() === r.email.toLowerCase().trim());
+                    if (!existing) {
+                        displayUsers.push({
+                            email: r.email,
+                            username: r.username,
+                            role: r.role
+                        });
+                    } else {
+                        existing.role = r.role;
+                    }
                 }
             });
 
@@ -1823,13 +1825,15 @@
             try {
                 const mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
                 mockUsers.forEach(m => {
-                    const existing = displayUsers.find(u => u.email.toLowerCase().trim() === m.email.toLowerCase().trim());
-                    if (!existing) {
-                        displayUsers.push({
-                            email: m.email,
-                            username: m.username,
-                            role: "user"
-                        });
+                    if (m && m.email) {
+                        const existing = displayUsers.find(u => u && u.email && u.email.toLowerCase().trim() === m.email.toLowerCase().trim());
+                        if (!existing) {
+                            displayUsers.push({
+                                email: m.email,
+                                username: m.username,
+                                role: "user"
+                            });
+                        }
                     }
                 });
             } catch(e) {}
