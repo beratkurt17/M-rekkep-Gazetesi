@@ -348,7 +348,7 @@ async function loadNotifications() {
                 .from('site_settings')
                 .select('value')
                 .eq('key', key)
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 userNotifications = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                 localStorage.setItem(`murekkep_notifications_${currentUser.id}`, JSON.stringify(userNotifications));
@@ -398,7 +398,7 @@ async function createNotification(targetAuthorName, type, fromUser, text, target
                 .from('site_settings')
                 .select('value')
                 .eq('key', key)
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 targetNotifications = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
             }
@@ -567,7 +567,7 @@ async function loadAuthorProfiles() {
                 .from('site_settings')
                 .select('value')
                 .eq('key', 'author_profiles')
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 authorProfiles = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                 localStorage.setItem("murekkep_author_profiles", JSON.stringify(authorProfiles));
@@ -619,7 +619,7 @@ async function loadUserRoles() {
                 .from('site_settings')
                 .select('value')
                 .eq('key', 'user_roles')
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 userRoles = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                 localStorage.setItem("murekkep_user_roles", JSON.stringify(userRoles));
@@ -681,7 +681,7 @@ async function registerUserInList(email, username) {
                 .from('site_settings')
                 .select('value')
                 .eq('key', 'registered_users')
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 list = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
             }
@@ -996,7 +996,7 @@ async function loadAuthorFollowers() {
                 .from('site_settings')
                 .select('value')
                 .eq('key', 'author_followers')
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 const followersData = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                 localStorage.setItem("murekkep_author_followers", JSON.stringify(followersData));
@@ -1102,7 +1102,7 @@ async function loadCategories() {
                 .from('site_settings')
                 .select('value')
                 .eq('key', 'custom_categories')
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 customCategories = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                 console.log("Loaded custom categories from Supabase.");
@@ -1144,7 +1144,7 @@ async function loadLayoutConfig() {
                 .from('site_settings')
                 .select('value')
                 .eq('key', 'layout_config_v4')
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 layoutConfig = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                 console.log("Loaded layout config from Supabase.");
@@ -1196,7 +1196,7 @@ async function loadEditorNoteData() {
                 .from('site_settings')
                 .select('value')
                 .eq('key', 'editor_note')
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 editorNoteData = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                 console.log("Loaded editor note from Supabase.");
@@ -4030,7 +4030,7 @@ async function trackPageVisit(pageName, articleId = null, category = null) {
                     .from('site_settings')
                     .select('value')
                     .eq('key', 'site_statistics')
-                    .single();
+                    .maybeSingle();
                 if (data && data.value) {
                     stats = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                 }
@@ -4809,9 +4809,10 @@ async function openArticle(id) {
                 .from('articles')
                 .select('content, read_time')
                 .eq('id', id)
-                .single();
+                .maybeSingle();
             
             if (error) throw error;
+            if (!data) throw new Error("Makale bulunamadı.");
 
             article.content = data.content;
             if (data.read_time) {

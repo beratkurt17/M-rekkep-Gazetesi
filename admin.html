@@ -968,7 +968,7 @@
                         .from('site_settings')
                         .select('value')
                         .eq('key', 'user_roles')
-                        .single();
+                        .maybeSingle();
                     if (data && data.value) {
                         userRoles = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                         localStorage.setItem("murekkep_user_roles", JSON.stringify(userRoles));
@@ -1006,7 +1006,7 @@
                         .from('site_settings')
                         .select('value')
                         .eq('key', 'registered_users')
-                        .single();
+                        .maybeSingle();
                     if (data && data.value) {
                         registeredUsers = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                         localStorage.setItem("murekkep_registered_users", JSON.stringify(registeredUsers));
@@ -1242,7 +1242,7 @@
             // Load profiles
             if (isSupabaseConnected) {
                 try {
-                    const { data } = await supabaseClient.from('site_settings').select('value').eq('key', 'author_profiles').single();
+                    const { data } = await supabaseClient.from('site_settings').select('value').eq('key', 'author_profiles').maybeSingle();
                     if (data && data.value) {
                         authorProfiles = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                     }
@@ -1287,7 +1287,7 @@
                         .from('site_settings')
                         .select('value')
                         .eq('key', 'site_statistics')
-                        .single();
+                        .maybeSingle();
                     if (data && data.value) {
                         stats = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                     }
