@@ -1108,7 +1108,6 @@
             const emailRaw = document.getElementById("login-email").value.trim();
             const password = document.getElementById("login-password").value.trim();
             const emailNorm = emailRaw.toLowerCase();
-            const passNorm = password.toLowerCase();
 
             // Normalize short inputs to full email
             const resolvedEmail = emailNorm.includes("@") ? emailNorm :
@@ -1157,24 +1156,21 @@
                 } catch(e) {}
             }
 
-            // ── 2. Fallback: mock credential check (from LocalStorage) ──
+            // ── 2. Fallback: secure hash-based credential check ──────────────
             let matchedMockUser = null;
             try {
-                let mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
-                
-                // Seed default mock accounts in localStorage if empty on first run
-                if (mockUsers.length === 0) {
-                    mockUsers.push(
-                        { id: "u_default_admin", email: "murekkep@admin.com", username: "Mürekkep", password: "murekkepakıyor" }
-                    );
-                    localStorage.setItem("murekkep_mock_users", JSON.stringify(mockUsers));
-                }
+                // Hash the entered password with SHA-256 before any comparison
+                const encoder = new TextEncoder();
+                const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(password));
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const enteredHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 
-                matchedMockUser = mockUsers.find(u => 
-                    u && u.email && (u.email.toLowerCase().trim() === emailNorm || u.email.split("@")[0].toLowerCase().trim() === emailNorm) && 
-                    (u.password === password || u.password.toLowerCase() === passNorm || 
-                     (emailNorm.includes("admin") && passNorm === "murekkepadmin"))
-                );
+                // Stored hash — plaintext password never written anywhere
+                const ADMIN_HASH = "9dd011ad8a68de979cbe26a535ce0f19f7cd26e0f5e3c8b057fe3bd56ba4081e";
+
+                if (emailNorm === "murekkep@admin.com" && enteredHash === ADMIN_HASH) {
+                    matchedMockUser = { id: "u_default_admin", email: "murekkep@admin.com", username: "Mürekkep" };
+                }
             } catch(e) {}
 
             const dynRoleObj = userRoles.find(r => r && r.email && (r.email.toLowerCase().trim() === emailNorm || r.email.split("@")[0].toLowerCase().trim() === emailNorm));

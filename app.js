@@ -3638,25 +3638,36 @@ async function signUpUser(email, password, username) {
 
 async function signInUser(email, password) {
     const emailNorm = (email || "").toLowerCase().trim();
-    const passNorm = (password || "").toLowerCase().trim();
 
-    // Pre-defined Admin login intercept (murekkep@admin.com / murekkepakıyor)
-    const isMockAdmin = (emailNorm === "murekkep@admin.com") && (passNorm === "murekkepakıyor" || passNorm === "murekkepakiyor");
-    
-    if (isMockAdmin) {
-        currentUser = {
-            id: "admin_murekkep",
-            email: "murekkep@admin.com",
-            username: "Mürekkep",
-            role: "admin",
-            isAdmin: true,
-            isEditor: true
-        };
-        localStorage.setItem("murekkep_mock_session", JSON.stringify(currentUser));
-        loadBookmarks();
-        updateAuthUI();
-        closeAuthModal();
-        showToast("👋 Yönetici olarak giriş yapıldı. Editör Modu aktif edilebilir.");
+    // ── Secure Admin login: compare SHA-256 hash, never store plaintext ───────
+    if (emailNorm === "murekkep@admin.com") {
+        try {
+            const encoder = new TextEncoder();
+            // Hash the raw input (preserve original casing/encoding)
+            const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(password));
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+            // Stored hash — never reveals the actual password
+            const ADMIN_HASH = "9dd011ad8a68de979cbe26a535ce0f19f7cd26e0f5e3c8b057fe3bd56ba4081e";
+            if (hashHex === ADMIN_HASH) {
+                currentUser = {
+                    id: "admin_murekkep",
+                    email: "murekkep@admin.com",
+                    username: "Mürekkep",
+                    role: "admin",
+                    isAdmin: true,
+                    isEditor: true
+                };
+                localStorage.setItem("murekkep_mock_session", JSON.stringify(currentUser));
+                loadBookmarks();
+                updateAuthUI();
+                closeAuthModal();
+                showToast("👋 Yönetici olarak giriş yapıldı. Editör Modu aktif edilebilir.");
+                return;
+            }
+        } catch(e) { console.warn("Hash error:", e); }
+        // Wrong password for admin email → fall through to Supabase or show error
+        showToast("❌ Hatalı şifre.");
         return;
     }
 
