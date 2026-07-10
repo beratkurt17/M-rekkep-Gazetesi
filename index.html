@@ -928,41 +928,22 @@
                 </div>
             </div>
 
-            <!-- Layout Management Section (Admin Only) -->
+            <!-- Editor's Note Section (Admin Only) -->
             <div class="settings-divider hidden" id="settings-layout-divider" style="margin: 20px 0;"></div>
             <div class="settings-section hidden" id="settings-layout-section">
-                <h3 class="settings-section-title">Mizanpaj Yönetimi</h3>
-                <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.4;">Gazete sütunlarındaki slotları düzenleyin, yeni slotlar ekleyin veya kaldırın.</p>
-                
-                <div class="layout-columns-container" style="display: flex; flex-direction: column; gap: 20px;">
-                    <div class="layout-column-config" id="layout-col1-config">
-                        <h4 style="font-size: 0.8rem; font-weight: 800; color: var(--accent-color); margin-bottom: 10px; border-bottom: 1px solid var(--border-light); padding-bottom: 4px;">1. SÜTUN (SOL)</h4>
-                        <div class="column-slots-list" id="col1-slots-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
-                        <button class="btn-add-slot" type="button" onclick="window.addSlotToColumn('col1')" style="margin-top: 8px; background: none; border: 1px dashed var(--border-color); width: 100%; padding: 6px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 700; color: var(--text-primary);">+ Slot Ekle</button>
-                    </div>
-                    <div class="layout-column-config" id="layout-col2-config">
-                        <h4 style="font-size: 0.8rem; font-weight: 800; color: var(--accent-color); margin-bottom: 10px; border-bottom: 1px solid var(--border-light); padding-bottom: 4px;">2. SÜTUN (ORTA)</h4>
-                        <div class="column-slots-list" id="col2-slots-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
-                        <button class="btn-add-slot" type="button" onclick="window.addSlotToColumn('col2')" style="margin-top: 8px; background: none; border: 1px dashed var(--border-color); width: 100%; padding: 6px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 700; color: var(--text-primary);">+ Slot Ekle</button>
-                    </div>
-                    <div class="layout-column-config" id="layout-col3-config">
-                        <h4 style="font-size: 0.8rem; font-weight: 800; color: var(--accent-color); margin-bottom: 10px; border-bottom: 1px solid var(--border-light); padding-bottom: 4px;">3. SÜTUN (SAĞ)</h4>
-                        <div class="column-slots-list" id="col3-slots-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
-                        <button class="btn-add-slot" type="button" onclick="window.addSlotToColumn('col3')" style="margin-top: 8px; background: none; border: 1px dashed var(--border-color); width: 100%; padding: 6px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 700; color: var(--text-primary);">+ Slot Ekle</button>
-                    </div>
-                </div>
-                
-                <div class="settings-divider" style="margin: 20px 0 15px; border-top: 1px dashed var(--border-light);"></div>
+                <h3 class="settings-section-title">Editörün Notu Ayarları</h3>
+                <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.4;">Gazetedeki "Editörün Notu" bölümünde gösterilecek başlık alıntısını ve açıklama metnini düzenleyin.</p>
                 
                 <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="font-weight: 700; font-size: 0.82rem; color: var(--text-primary); display: block; margin-bottom: 8px;">Editörün Notu İçeriği</label>
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <input type="text" id="settings-editor-note-quote" class="form-control" style="font-size: 0.8rem; height: 34px;" placeholder="Not alıntısı...">
-                        <textarea id="settings-editor-note-desc" class="form-control" rows="2" style="font-size: 0.8rem; padding: 8px; line-height: 1.4;" placeholder="Açıklama metni..."></textarea>
-                    </div>
+                    <label style="font-weight: 700; font-size: 0.82rem; color: var(--text-primary); display: block; margin-bottom: 8px;">Alıntı Cümle</label>
+                    <input type="text" id="settings-editor-note-quote" class="form-control" style="font-size: 0.8rem; height: 34px;" placeholder="Not alıntısı...">
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="font-weight: 700; font-size: 0.82rem; color: var(--text-primary); display: block; margin-bottom: 8px;">Açıklama Metni</label>
+                    <textarea id="settings-editor-note-desc" class="form-control" rows="3" style="font-size: 0.8rem; padding: 8px; line-height: 1.4;" placeholder="Açıklama metni..."></textarea>
                 </div>
                 
-                <button id="save-layout-btn" type="button" class="btn-publish-submit" style="width: 100%; margin-top: 20px; border-radius: 8px; height: 40px;">Mizanpajı Kaydet ve Uygula</button>
+                <button id="save-layout-btn" type="button" class="btn-publish-submit" style="width: 100%; margin-top: 20px; border-radius: 8px; height: 40px;">Notu Kaydet ve Uygula</button>
             </div>
             
             <div class="settings-divider" style="margin: 20px 0;"></div>
