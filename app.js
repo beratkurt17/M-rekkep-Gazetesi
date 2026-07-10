@@ -1435,8 +1435,29 @@ window.renderLayoutConfigurator = function() {
 function wrapSlotInEditorControls(slot, index, colKey, cardHTML, colWeight) {
     if (!cardHTML.trim()) return "";
     
+    // Prepare values list for inline content and design selections
+    const cats = getCategoriesList();
+    const valueOptionsList = [
+        { value: "headline", label: "Manşet", type: "system" },
+        { value: "recent_comments", label: "Okur Yorumları", type: "system" },
+        { value: "popular_posts", label: "Çok Okunanlar", type: "system" },
+        { value: "popular_authors", label: "Haftanın Yazarları", type: "system" },
+        { value: "editor_note", label: "Editörün Notu", type: "system" }
+    ];
+    cats.forEach(c => {
+        valueOptionsList.push({ value: c.id, label: c.name, type: "category" });
+    });
+    
+    const styleOptions = [
+        { value: "standard", label: "Standart Kart" },
+        { value: "headline", label: "Manşet Tasarımı" },
+        { value: "editorial", label: "Başyazı Tasarımı" },
+        { value: "columnist", label: "Yazar Tasarımı" },
+        { value: "poem", label: "Şiir Tasarımı" },
+        { value: "list", label: "Liste Tasarımı" }
+    ];
+
     const slotLabel = slot.type === 'system' ? 'Sistem' : 'Köşe';
-    const configDetail = slot.type === 'system' ? slot.label : `${slot.label}`;
     const currentSize = slot.size || 'normal';
     const currentSlotWidth = slot.slotWidth || 1;
     const currentSlotHeight = slot.slotHeight || 1;
@@ -1473,12 +1494,27 @@ function wrapSlotInEditorControls(slot, index, colKey, cardHTML, colWeight) {
         <div class="editor-slot-wrapper slot-size-${currentSize} slot-height-${currentSlotHeight}" style="grid-column: span ${currentSlotWidth}; grid-row: span ${currentSlotHeight}; min-width: 0; position: relative; border: 2px solid var(--accent-color); margin-bottom: 16px; border-radius: 8px; background: rgba(201, 64, 64, 0.01); display: flex; flex-direction: column; overflow: hidden;">
             <!-- Editor Toolbar -->
             <div class="slot-editor-toolbar" style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-light); padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; font-family: var(--font-ui); z-index: 10;">
-                <!-- Toolbar Row 1: Label and Actions -->
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <span style="background: var(--accent-color); color: #fff; font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
-                        ${slotLabel}: ${configDetail}
-                    </span>
-                    <button type="button" onclick="event.stopPropagation(); window.quickRemoveSlot('${colKey}', ${index})" title="Slotu Kaldır" style="background: #c94040; border: none; color: #ffffff; font-size: 0.65rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-weight: 700; transition: background 0.2s;">✕ Kaldır</button>
+                <!-- Toolbar Row 1: Content, Style Selectors and Actions -->
+                <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; width: 100%; gap: 6px;">
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <!-- Content Selector -->
+                        <div style="display: flex; align-items: center; gap: 3px; background: rgba(0,0,0,0.02); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border-light);">
+                            <span style="color: var(--text-secondary); font-weight: 700; font-size: 0.55rem; text-transform: uppercase;">İÇERİK:</span>
+                            <select onchange="event.stopPropagation(); window.quickSetSlotValue('${colKey}', ${index}, this.value)" style="font-size: 0.65rem; padding: 1px 4px; border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-light); font-weight: 700; font-family: var(--font-ui); cursor: pointer;">
+                                ${valueOptionsList.map(opt => `<option value="${opt.value}" ${slot.value === opt.value ? 'selected' : ''}>${opt.type === 'system' ? '⚙️' : '✒️'} ${opt.label}</option>`).join('')}
+                            </select>
+                        </div>
+                        
+                        <!-- Style Selector -->
+                        <div style="display: flex; align-items: center; gap: 3px; background: rgba(0,0,0,0.02); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border-light);">
+                            <span style="color: var(--text-secondary); font-weight: 700; font-size: 0.55rem; text-transform: uppercase;">STİL:</span>
+                            <select onchange="event.stopPropagation(); window.quickSetSlotStyle('${colKey}', ${index}, this.value)" style="font-size: 0.65rem; padding: 1px 4px; border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-light); font-weight: 700; font-family: var(--font-ui); cursor: pointer;">
+                                ${styleOptions.map(opt => `<option value="${opt.value}" ${slot.style === opt.value ? 'selected' : ''}>🎨 ${opt.label}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button type="button" onclick="event.stopPropagation(); window.quickRemoveSlot('${colKey}', ${index})" title="Slotu Kaldır" style="background: #c94040; border: none; color: #ffffff; font-size: 0.65rem; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: 700; transition: background 0.2s; white-space: nowrap;">✕ Kaldır</button>
                 </div>
                 
                 <!-- Toolbar Row 2: Adjustments -->
@@ -1831,6 +1867,46 @@ window.quickRemoveSlot = function(colKey, index) {
     renderNewspaperGrid();
     renderLayoutConfigurator();
     showToast(`✕ Slot kaldırıldı.`);
+};
+
+window.quickSetSlotValue = function(colKey, index, val) {
+    if (!layoutConfig || !layoutConfig[colKey] || !layoutConfig[colKey][index]) return;
+    
+    // Determine type (system vs category)
+    const cats = getCategoriesList();
+    const isCategory = cats.some(c => c.id === val);
+    
+    layoutConfig[colKey][index].type = isCategory ? "category" : "system";
+    layoutConfig[colKey][index].value = val;
+    
+    // Update label
+    if (isCategory) {
+        const cat = cats.find(c => c.id === val);
+        layoutConfig[colKey][index].label = cat ? cat.name : val;
+    } else {
+        const systemLabels = {
+            headline: "Manşet",
+            recent_comments: "Okur Yorumları",
+            popular_posts: "Çok Okunanlar",
+            popular_authors: "Haftanın Yazarları",
+            editor_note: "Editörün Notu"
+        };
+        layoutConfig[colKey][index].label = systemLabels[val] || val;
+    }
+    
+    saveLayoutConfig();
+    renderNewspaperGrid();
+    renderLayoutConfigurator();
+    showToast(`📝 Slot içeriği güncellendi!`);
+};
+
+window.quickSetSlotStyle = function(colKey, index, style) {
+    if (!layoutConfig || !layoutConfig[colKey] || !layoutConfig[colKey][index]) return;
+    layoutConfig[colKey][index].style = style;
+    saveLayoutConfig();
+    renderNewspaperGrid();
+    renderLayoutConfigurator();
+    showToast(`🎨 Slot tasarımı güncellendi!`);
 };
 
 window.quickSetColWidth = function(colKey, width) {
