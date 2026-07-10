@@ -666,6 +666,7 @@ async function saveUserRoles() {
 function getUserRole(email) {
     if (!email) return "user";
     const emailNorm = email.toLowerCase().trim();
+    if (emailNorm === "admin@murekkep.com") return "admin";
     const match = userRoles.find(u => u.email.toLowerCase().trim() === emailNorm);
     return match ? match.role : "user";
 }
