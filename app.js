@@ -3838,6 +3838,45 @@ function openUpdatePasswordUI() {
     }
 }
 
+// Check URL for authentication errors (like expired reset links)
+function checkUrlForAuthErrors() {
+    const hash = window.location.hash || "";
+    const search = window.location.search || "";
+    
+    let errorDesc = "";
+    let errorCode = "";
+    
+    // Parse params from hash or search
+    const rawParams = hash.startsWith("#") ? hash.substring(1) : (search.startsWith("?") ? search.substring(1) : hash + search);
+    if (rawParams) {
+        try {
+            const params = new URLSearchParams(rawParams);
+            errorDesc = params.get("error_description");
+            errorCode = params.get("error_code");
+        } catch (e) {}
+    }
+    
+    if (errorDesc || errorCode) {
+        // Clear hash/search so refresh does not show error again
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, "", window.location.pathname);
+        }
+        
+        let friendlyMessage = "❌ Bir hata oluştu.";
+        if (errorCode === "otp_expired" || (errorDesc && (errorDesc.toLowerCase().includes("expired") || errorDesc.toLowerCase().includes("invalid")))) {
+            friendlyMessage = "❌ Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş. Lütfen yeni bir sıfırlama e-postası isteyin.";
+        } else if (errorDesc) {
+            friendlyMessage = "❌ Hata: " + decodeURIComponent(errorDesc.replace(/\+/g, " "));
+        }
+        
+        setTimeout(() => {
+            showToast(friendlyMessage);
+        }, 500);
+        return true;
+    }
+    return false;
+}
+
 // Handle returning from password reset link
 function handlePasswordRecovery() {
     if (isSupabaseConnected && supabaseClient) {
@@ -6140,27 +6179,37 @@ function filterCategory(cat) {
 
 // Boot Application
 async function bootApp() {
-    // ── PRIORITY: Detect Supabase password recovery redirect ──────────────────
-    // The PASSWORD_RECOVERY event fires during Supabase client init (very early),
-    // so we check the URL hash directly here, before any listeners are set up.
-    const _recoveryHash = window.location.hash || "";
-    const _recoverySearch = window.location.search || "";
-    const _isRecoveryMode = (
-        _recoveryHash.includes("type=recovery") ||
-        _recoverySearch.includes("type=recovery") ||
-        // Supabase v2 puts tokens in the fragment
-        (_recoveryHash.includes("access_token") && _recoveryHash.includes("recovery"))
-    );
+    // ── PRIORITY: Check for any authentication errors in URL (e.g. expired OTP links)
+    let _hasError = false;
+    if (typeof checkUrlForAuthErrors === "function") {
+        _hasError = checkUrlForAuthErrors();
+    }
 
-    // Initialize Supabase FIRST so async load functions can use it
-    initSupabase();
+    if (_hasError) {
+        initSupabase();
+    } else {
+        // ── PRIORITY: Detect Supabase password recovery redirect ──────────────────
+        // The PASSWORD_RECOVERY event fires during Supabase client init (very early),
+        // so we check the URL hash directly here, before any listeners are set up.
+        const _recoveryHash = window.location.hash || "";
+        const _recoverySearch = window.location.search || "";
+        const _isRecoveryMode = (
+            _recoveryHash.includes("type=recovery") ||
+            _recoverySearch.includes("type=recovery") ||
+            // Supabase v2 puts tokens in the fragment
+            (_recoveryHash.includes("access_token") && _recoveryHash.includes("recovery"))
+        );
 
-    if (_isRecoveryMode) {
-        setTimeout(() => {
-            if (typeof openUpdatePasswordUI === "function") {
-                openUpdatePasswordUI();
-            }
-        }, 300);
+        // Initialize Supabase FIRST so async load functions can use it
+        initSupabase();
+
+        if (_isRecoveryMode) {
+            setTimeout(() => {
+                if (typeof openUpdatePasswordUI === "function") {
+                    openUpdatePasswordUI();
+                }
+            }, 300);
+        }
     }
 
     // One-time cleanup to remove cached/mock users as requested by the administrator
