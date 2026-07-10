@@ -6140,8 +6140,28 @@ function filterCategory(cat) {
 
 // Boot Application
 async function bootApp() {
+    // ── PRIORITY: Detect Supabase password recovery redirect ──────────────────
+    // The PASSWORD_RECOVERY event fires during Supabase client init (very early),
+    // so we check the URL hash directly here, before any listeners are set up.
+    const _recoveryHash = window.location.hash || "";
+    const _recoverySearch = window.location.search || "";
+    const _isRecoveryMode = (
+        _recoveryHash.includes("type=recovery") ||
+        _recoverySearch.includes("type=recovery") ||
+        // Supabase v2 puts tokens in the fragment
+        (_recoveryHash.includes("access_token") && _recoveryHash.includes("recovery"))
+    );
+
     // Initialize Supabase FIRST so async load functions can use it
     initSupabase();
+
+    if (_isRecoveryMode) {
+        setTimeout(() => {
+            if (typeof openUpdatePasswordUI === "function") {
+                openUpdatePasswordUI();
+            }
+        }, 300);
+    }
 
     // One-time cleanup to remove cached/mock users as requested by the administrator
     if (!localStorage.getItem("murekkep_cleanup_v1")) {
