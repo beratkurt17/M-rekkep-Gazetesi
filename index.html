@@ -634,7 +634,7 @@
                     <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 20px; font-family: var(--font-ui); font-size: 0.8rem; color: var(--text-secondary); cursor: pointer;">
                         <input type="checkbox" id="register-kvkk" required style="margin-top: 3px; cursor: pointer;">
                         <label for="register-kvkk" style="line-height: 1.4; user-select: none; cursor: pointer;">
-                            <span style="color: var(--text-primary); font-weight: 600;">KVKK Açık Rıza Metni'ni</span> ve üyelik şartlarını okudum, onaylıyorum.
+                            <span id="open-kvkk-btn" style="color: var(--accent-color); font-weight: 600; text-decoration: underline; cursor: pointer;">KVKK Açık Rıza Metni'ni</span> ve üyelik şartlarını okudum, onaylıyorum.
                         </label>
                     </div>
                     <div class="form-actions">
@@ -1268,6 +1268,26 @@
                     <!-- Comments dynamically rendered here -->
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- KVKK Modal Overlay -->
+    <div id="kvkk-overlay" class="overlay hidden" style="z-index: 1200; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); position: fixed; top: 0; left: 0; right: 0; bottom: 0;">
+        <div class="kvkk-modal-container" style="background: var(--bg-primary); border: 1px solid var(--border-color); width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; border-radius: 12px; padding: 25px; font-family: var(--font-ui); color: var(--text-primary); position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+            <button id="close-kvkk-modal" type="button" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-secondary); font-size: 1.2rem; cursor: pointer; font-weight: bold; transition: color 0.2s;">✕</button>
+            <h2 style="font-family: var(--font-header); font-size: 1.5rem; font-weight: 800; border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 16px; color: var(--accent-color);">KVKK Açık Rıza Metni</h2>
+            <div style="font-size: 0.85rem; line-height: 1.6; color: var(--text-secondary); display: flex; flex-direction: column; gap: 12px; font-family: var(--font-ui);">
+                <p style="margin: 0; font-weight: bold; color: var(--text-primary);">Mürekkep Gazetesi Kişisel Verilerin Korunması Kanunu (KVKK) Aydınlatma ve Açık Rıza Metni</p>
+                <p style="margin: 0;">Değerli Kullanıcımız, 6698 sayılı Kişisel Verilerin Korunması Kanunu uyarınca, Mürekkep Gazetesi ("Mürekkep") olarak, veri sorumlusu sıfatıyla, kișisel verilerinizin așağıda açıklanan amaçlar doğrultusunda kaydedilmesi, saklanması, güncellenmesi ve işlenmesi hususunda sizleri bilgilendirmek isteriz.</p>
+                <p style="margin: 0; font-weight: bold; color: var(--text-primary);">1. İşlenen Kişisel Verileriniz ve İşlenme Amaçları:</p>
+                <p style="margin: 0;">Üyelik oluştururken verdiğiniz kalem ismi (kullanıcı adı), e-posta adresi ve şifre verileriniz; hesabınızın doğrulanması, güvenliğinin sağlanması, site üzerindeki yazı yazma, alkışlama, yorum yapma ve bildirim alma gibi üyelik fonksiyonlarının yerine getirilmesi amacıyla işlenmektedir.</p>
+                <p style="margin: 0; font-weight: bold; color: var(--text-primary);">2. Kişisel Verilerinizin Aktarılması:</p>
+                <p style="margin: 0;">Mürekkep bünyesinde toplanan kişisel verileriniz, yasal yükümlülüklerin yerine getirilmesi amacıyla resmi merciler dışında hiçbir üçüncü şahıs, kurum veya kuruluşla paylaşılmamaktadır.</p>
+                <p style="margin: 0; font-weight: bold; color: var(--text-primary);">3. Haklarınız:</p>
+                <p style="margin: 0;">Dilediğiniz zaman hesabınızı ayarlar panelinden kalıcı olarak silebilirsiniz. Hesabınız silindiğinde tüm kişisel verileriniz sistemimizden kalıcı olarak temizlenecektir. Ayrıca kişisel verileriniz hakkında bilgi almak, düzeltilmesini talep etmek veya silinmesini istemek için bizimle iletişime geçebilirsiniz.</p>
+                <p style="margin: 0;">Üye kayıt formundaki onay kutucuğunu işaretleyerek, kişisel verilerinizin bu metinde belirtilen şartlar dahilinde işlenmesini kabul etmiş olursunuz.</p>
+            </div>
+            <button id="kvkk-confirm-btn" type="button" class="btn-publish-submit" style="width: 100%; margin-top: 20px; border-radius: 8px; height: 38px;">Anladım, Kabul Ediyorum</button>
         </div>
     </div>
 

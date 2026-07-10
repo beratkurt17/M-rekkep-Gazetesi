@@ -6096,6 +6096,38 @@ async function bootApp() {
         });
     }
 
+    // KVKK Modal Event Listeners
+    const openKvkkBtn = document.getElementById("open-kvkk-btn");
+    const closeKvkkModal = document.getElementById("close-kvkk-modal");
+    const kvkkOverlay = document.getElementById("kvkk-overlay");
+    const kvkkConfirmBtn = document.getElementById("kvkk-confirm-btn");
+
+    if (openKvkkBtn && kvkkOverlay) {
+        openKvkkBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            kvkkOverlay.classList.remove("hidden");
+        });
+    }
+    if (closeKvkkModal && kvkkOverlay) {
+        closeKvkkModal.addEventListener("click", () => {
+            kvkkOverlay.classList.add("hidden");
+        });
+    }
+    if (kvkkConfirmBtn && kvkkOverlay) {
+        kvkkConfirmBtn.addEventListener("click", () => {
+            kvkkOverlay.classList.add("hidden");
+            const kvkkCheckbox = document.getElementById("register-kvkk");
+            if (kvkkCheckbox) kvkkCheckbox.checked = true;
+        });
+    }
+    if (kvkkOverlay) {
+        kvkkOverlay.addEventListener("click", (e) => {
+            if (e.target === kvkkOverlay) {
+                kvkkOverlay.classList.add("hidden");
+            }
+        });
+    }
+
     // Forgot Password flow
     const forgotPasswordLink = document.getElementById("forgot-password-link");
     const sendResetBtn = document.getElementById("send-reset-btn");
