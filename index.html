@@ -631,6 +631,12 @@
                         <label for="register-password">Şifre (En az 6 karakter)</label>
                         <input type="password" id="register-password" placeholder="En az 6 karakter..." required class="form-control" minlength="6">
                     </div>
+                    <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 20px; font-family: var(--font-ui); font-size: 0.8rem; color: var(--text-secondary); cursor: pointer;">
+                        <input type="checkbox" id="register-kvkk" required style="margin-top: 3px; cursor: pointer;">
+                        <label for="register-kvkk" style="line-height: 1.4; user-select: none; cursor: pointer;">
+                            <span style="color: var(--text-primary); font-weight: 600;">KVKK Açık Rıza Metni'ni</span> ve üyelik şartlarını okudum, onaylıyorum.
+                        </label>
+                    </div>
                     <div class="form-actions">
                         <button type="submit" class="btn-publish-submit" style="width: 100%; border-radius: 8px;">Kayıt Ol</button>
                     </div>
@@ -964,10 +970,14 @@
             <!-- Account Section -->
             <div class="settings-section">
                 <h3 class="settings-section-title">Hesap Eylemleri</h3>
-                <div class="settings-row" style="display: flex; gap: 12px; margin-top:12px;">
-                    <button id="settings-logout-btn" class="settings-action-btn settings-action-danger" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <div class="settings-row" style="display: flex; gap: 12px; margin-top:12px; flex-wrap: wrap;">
+                    <button id="settings-logout-btn" class="settings-action-btn" style="flex: 1; min-width: 140px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                         <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
                         Çıkış Yap
+                    </button>
+                    <button id="settings-delete-account-btn" class="settings-action-btn settings-action-danger" style="flex: 1; min-width: 140px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        Hesabımı Kalıcı Olarak Sil
                     </button>
                 </div>
             </div>

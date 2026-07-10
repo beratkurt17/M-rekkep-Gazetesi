@@ -3372,6 +3372,62 @@ async function initAuth() {
     updateAuthUI();
 }
 
+async function deleteCurrentUserAccount() {
+    if (!currentUser) return;
+    
+    if (!confirm("Hesabınızı kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm verileriniz silinir.")) {
+        return;
+    }
+
+    const emailNorm = currentUser.email.toLowerCase().trim();
+
+    // 1. Remove from registered_users list
+    let list = [];
+    if (isSupabaseConnected && supabaseClient) {
+        try {
+            const { data } = await supabaseClient
+                .from('site_settings')
+                .select('value')
+                .eq('key', 'registered_users')
+                .maybeSingle();
+            if (data && data.value) {
+                list = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+            }
+            list = list.filter(u => u.email.toLowerCase().trim() !== emailNorm);
+            await supabaseClient
+                .from('site_settings')
+                .upsert({ key: 'registered_users', value: list });
+        } catch (e) {
+            console.error("Error removing user from Supabase list:", e);
+        }
+        
+        // Log out the user from Supabase auth
+        try {
+            await supabaseClient.auth.signOut();
+        } catch(e) {
+            console.error("Error signing out:", e);
+        }
+    } else {
+        try {
+            list = JSON.parse(localStorage.getItem("murekkep_registered_users") || "[]");
+            list = list.filter(u => u.email.toLowerCase().trim() !== emailNorm);
+            localStorage.setItem("murekkep_registered_users", JSON.stringify(list));
+        } catch(e) {}
+    }
+
+    // 2. Clear local variables and logout
+    currentUser = null;
+    sessionStorage.clear();
+    
+    // Clear user-specific locally cached data
+    localStorage.removeItem("murekkep_bookmarks");
+    
+    // Update UI and close modal
+    updateAuthUI();
+    closeSettingsModal();
+    showToast("👋 Hesabınız başarıyla kalıcı olarak silindi.");
+}
+
 // User Actions
 async function signUpUser(email, password, username) {
     if (email.toLowerCase() === "admin@murekkepgzt.com" || email.toLowerCase() === "editor@murekkepgzt.com") {
@@ -6148,6 +6204,13 @@ async function bootApp() {
     if (registerForm) {
         registerForm.addEventListener("submit", (e) => {
             e.preventDefault();
+            
+            const kvkkCheckbox = document.getElementById("register-kvkk");
+            if (kvkkCheckbox && !kvkkCheckbox.checked) {
+                showToast("⚠️ Lütfen KVKK Açık Rıza Metni'ni onaylayın.");
+                return;
+            }
+
             const username = document.getElementById("register-username").value.trim();
             const email = document.getElementById("register-email").value.trim();
             const password = document.getElementById("register-password").value.trim();
@@ -6293,6 +6356,14 @@ async function bootApp() {
         settingsLogoutBtn.addEventListener("click", () => {
             closeSettingsModal();
             signOutUser();
+        });
+    }
+
+    // Delete account permanently
+    const settingsDeleteAccountBtn = document.getElementById("settings-delete-account-btn");
+    if (settingsDeleteAccountBtn) {
+        settingsDeleteAccountBtn.addEventListener("click", () => {
+            deleteCurrentUserAccount();
         });
     }
 
