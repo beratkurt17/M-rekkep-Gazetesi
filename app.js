@@ -4013,7 +4013,7 @@ function backupDefaultSEO() {
     defaultSEO.twitterTitle = twTitleMeta ? twTitleMeta.getAttribute("content") : "";
     defaultSEO.twitterDescription = twDescMeta ? twDescMeta.getAttribute("content") : "";
     defaultSEO.twitterImage = twImgMeta ? twImgMeta.getAttribute("content") : "";
-    defaultSEO.canonicalHref = canonicalLink ? canonicalLink.getAttribute("href") : "https://murekkepgazetesi.com";
+    defaultSEO.canonicalHref = canonicalLink ? canonicalLink.getAttribute("href") : "https://murekkepgzt.com";
 }
 
 // Call backup function immediately
@@ -4143,8 +4143,8 @@ function updateJSONLD(article) {
             "@context": "https://schema.org",
             "@type": "NewsMediaOrganization",
             "name": "Mürekkep Gazetesi",
-            "url": "https://murekkepgazetesi.com",
-            "logo": "https://murekkepgazetesi.com/assets/logo.jpg",
+            "url": "https://murekkepgzt.com",
+            "logo": "https://murekkepgzt.com/assets/logo.jpg",
             "sameAs": [
                 "https://twitter.com/murekkepgazetesi",
                 "https://instagram.com/murekkepgazetesi"
