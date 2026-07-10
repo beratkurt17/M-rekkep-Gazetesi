@@ -607,9 +607,7 @@ async function saveAuthorProfiles() {
 
 // IO Functions for User Roles and Access Control
 const DEFAULT_USER_ROLES = [
-    { email: "admin@murekkepgzt.com", username: "Mürekkep Yöneticisi", role: "admin" },
-    { email: "editor@murekkepgzt.com", username: "Mürekkep Editörü", role: "editor" },
-    { email: "yonetici@murekkepgzt.com", username: "Mürekkep Yöneticisi 2", role: "admin" }
+    { email: "admin@murekkep.com", username: "Mürekkep Yöneticisi", role: "admin" }
 ];
 let userRoles = [];
 
@@ -762,7 +760,7 @@ function renderUsersManagementUI() {
 
     displayUsers.forEach(u => {
         const emailLower = u.email.toLowerCase().trim();
-        const isPredefinedAdmin = (emailLower === "admin@murekkepgzt.com");
+        const isPredefinedAdmin = (emailLower === "admin@murekkep.com");
         
         const row = document.createElement("div");
         row.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid var(--border-light); border-radius: 8px; background: rgba(255,255,255,0.01);";
@@ -801,7 +799,7 @@ window.updateUserRoleInAdmin = async function(email, newRole) {
     }
     
     const emailNorm = email.toLowerCase().trim();
-    if (emailNorm === "admin@murekkepgzt.com") {
+    if (emailNorm === "admin@murekkep.com") {
         showToast("✕ Ana yöneticinin yetkisi değiştirilemez.");
         return;
     }
@@ -839,7 +837,7 @@ window.deleteUserInAdmin = async function(email) {
     }
 
     const emailNorm = email.toLowerCase().trim();
-    if (emailNorm === "admin@murekkepgzt.com" || emailNorm === "yonetici@murekkepgzt.com") {
+    if (emailNorm === "admin@murekkep.com") {
         showToast("✕ Ana yöneticiler silinemez.");
         return;
     }
@@ -3430,7 +3428,7 @@ async function deleteCurrentUserAccount() {
 
 // User Actions
 async function signUpUser(email, password, username) {
-    if (email.toLowerCase() === "admin@murekkepgzt.com" || email.toLowerCase() === "editor@murekkepgzt.com") {
+    if (email.toLowerCase() === "admin@murekkep.com") {
         showToast("❌ Bu e-posta adresiyle yeni kayıt oluşturulamaz.");
         return;
     }
@@ -3527,18 +3525,15 @@ async function signInUser(email, password) {
     const emailNorm = (email || "").toLowerCase().trim();
     const passNorm = (password || "").toLowerCase().trim();
 
-    // Pre-defined Admin login intercept for testing and moderation
-    const isMockAdmin = (emailNorm === "admin@murekkepgzt.com" || emailNorm === "admin" || emailNorm === "yonetici@murekkepgzt.com" || emailNorm === "yonetici") && 
-        (passNorm === "murekkepadmin" || passNorm === "admin" || passNorm === "murekkep" || passNorm === "murekkepyonetici");
+    // Pre-defined Admin login intercept (admin@murekkep.com / murekkepadmin)
+    const isMockAdmin = (emailNorm === "admin@murekkep.com" || emailNorm === "admin") && passNorm === "murekkepadmin";
     
     if (isMockAdmin) {
-        const isYonetici = emailNorm.includes("yonetici");
-        const role = "admin";
         currentUser = {
-            id: isYonetici ? "yonetici_murekkep" : "admin_murekkep",
-            email: isYonetici ? "yonetici@murekkepgzt.com" : "admin@murekkepgzt.com",
-            username: isYonetici ? "Mürekkep Yöneticisi 2" : "Mürekkep Yöneticisi",
-            role: role,
+            id: "admin_murekkep",
+            email: "admin@murekkep.com",
+            username: "Mürekkep Yöneticisi",
+            role: "admin",
             isAdmin: true,
             isEditor: true
         };
@@ -3547,26 +3542,6 @@ async function signInUser(email, password) {
         updateAuthUI();
         closeAuthModal();
         showToast("👋 Yönetici olarak giriş yapıldı. Editör Modu aktif edilebilir.");
-        return;
-    }
-
-    // Pre-defined Editor login intercept
-    if ((emailNorm === "editor@murekkepgzt.com" || emailNorm === "editor") && 
-        (passNorm === "murekkepeditor" || passNorm === "mürekkepeditör" || passNorm === "editor" || passNorm === "editör" || passNorm === "murekkep")) {
-        const role = "editor";
-        currentUser = {
-            id: "editor_murekkep",
-            email: "editor@murekkepgzt.com",
-            username: "Mürekkep Editörü",
-            role: role,
-            isAdmin: false,
-            isEditor: true
-        };
-        localStorage.setItem("murekkep_mock_session", JSON.stringify(currentUser));
-        loadBookmarks();
-        updateAuthUI();
-        closeAuthModal();
-        showToast("👋 Editör olarak giriş yapıldı. Editör Modu aktif edilebilir.");
         return;
     }
 
