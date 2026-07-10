@@ -607,7 +607,7 @@ async function saveAuthorProfiles() {
 
 // IO Functions for User Roles and Access Control
 const DEFAULT_USER_ROLES = [
-    { email: "admin@murekkep.com", username: "Mürekkep", role: "admin" }
+    { email: "murekkep@admin.com", username: "Mürekkep", role: "admin" }
 ];
 let userRoles = [];
 
@@ -666,7 +666,7 @@ async function saveUserRoles() {
 function getUserRole(email) {
     if (!email) return "user";
     const emailNorm = email.toLowerCase().trim();
-    if (emailNorm === "admin@murekkep.com") return "admin";
+    if (emailNorm === "murekkep@admin.com") return "admin";
     const match = userRoles.find(u => u.email.toLowerCase().trim() === emailNorm);
     return match ? match.role : "user";
 }
@@ -761,7 +761,7 @@ function renderUsersManagementUI() {
 
     displayUsers.forEach(u => {
         const emailLower = u.email.toLowerCase().trim();
-        const isPredefinedAdmin = (emailLower === "admin@murekkep.com");
+        const isPredefinedAdmin = (emailLower === "murekkep@admin.com");
         
         const row = document.createElement("div");
         row.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid var(--border-light); border-radius: 8px; background: rgba(255,255,255,0.01);";
@@ -800,7 +800,7 @@ window.updateUserRoleInAdmin = async function(email, newRole) {
     }
     
     const emailNorm = email.toLowerCase().trim();
-    if (emailNorm === "admin@murekkep.com") {
+    if (emailNorm === "murekkep@admin.com") {
         showToast("✕ Ana yöneticinin yetkisi değiştirilemez.");
         return;
     }
@@ -838,7 +838,7 @@ window.deleteUserInAdmin = async function(email) {
     }
 
     const emailNorm = email.toLowerCase().trim();
-    if (emailNorm === "admin@murekkep.com") {
+    if (emailNorm === "murekkep@admin.com") {
         showToast("✕ Ana yöneticiler silinemez.");
         return;
     }
@@ -3380,7 +3380,7 @@ async function initAuth() {
                 currentUser = {
                     id: session.user.id,
                     email: session.user.email,
-                    username: emailLower === "admin@murekkep.com" ? "Mürekkep" : (session.user.user_metadata?.username || session.user.email.split("@")[0])
+                    username: emailLower === "murekkep@admin.com" ? "Mürekkep" : (session.user.user_metadata?.username || session.user.email.split("@")[0])
                 };
                 const role = getUserRole(currentUser.email);
                 currentUser.role = role;
@@ -3405,7 +3405,7 @@ async function initAuth() {
                     currentUser = {
                         id: session.user.id,
                         email: session.user.email,
-                        username: emailLower === "admin@murekkep.com" ? "Mürekkep" : (session.user.user_metadata?.username || session.user.email.split("@")[0])
+                        username: emailLower === "murekkep@admin.com" ? "Mürekkep" : (session.user.user_metadata?.username || session.user.email.split("@")[0])
                     };
                     const role = getUserRole(currentUser.email);
                     currentUser.role = role;
@@ -3507,7 +3507,7 @@ async function deleteCurrentUserAccount() {
 
 // User Actions
 async function signUpUser(email, password, username) {
-    if (email.toLowerCase() === "admin@murekkep.com") {
+    if (email.toLowerCase() === "murekkep@admin.com") {
         showToast("❌ Bu e-posta adresiyle yeni kayıt oluşturulamaz.");
         return;
     }
@@ -3604,13 +3604,13 @@ async function signInUser(email, password) {
     const emailNorm = (email || "").toLowerCase().trim();
     const passNorm = (password || "").toLowerCase().trim();
 
-    // Pre-defined Admin login intercept (admin@murekkep.com / murekkepadmin)
-    const isMockAdmin = (emailNorm === "admin@murekkep.com" || emailNorm === "admin") && passNorm === "murekkepadmin";
+    // Pre-defined Admin login intercept (murekkep@admin.com / murekkepakıyor)
+    const isMockAdmin = (emailNorm === "murekkep@admin.com") && (passNorm === "murekkepakıyor" || passNorm === "murekkepakiyor");
     
     if (isMockAdmin) {
         currentUser = {
             id: "admin_murekkep",
-            email: "admin@murekkep.com",
+            email: "murekkep@admin.com",
             username: "Mürekkep",
             role: "admin",
             isAdmin: true,
@@ -3637,7 +3637,7 @@ async function signInUser(email, password) {
                 currentUser = {
                     id: data.user.id,
                     email: data.user.email,
-                    username: emailLower === "admin@murekkep.com" ? "Mürekkep" : (data.user.user_metadata?.username || data.user.email.split("@")[0])
+                    username: emailLower === "murekkep@admin.com" ? "Mürekkep" : (data.user.user_metadata?.username || data.user.email.split("@")[0])
                 };
                 registerUserInList(currentUser.email, currentUser.username).catch(console.error);
                 

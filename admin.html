@@ -653,7 +653,7 @@
             <form id="admin-login-form">
                 <div class="form-group">
                     <label class="form-label">E-Posta Adresi</label>
-                    <input type="email" id="login-email" class="form-control" placeholder="admin@murekkep.com" required>
+                    <input type="email" id="login-email" class="form-control" placeholder="murekkep@admin.com" required>
                 </div>
                 <div class="form-group" style="margin-bottom: 25px;">
                     <label class="form-label">Şifre</label>
@@ -917,7 +917,7 @@
 
         // Default predefined roles
         const DEFAULT_USER_ROLES = [
-            { email: "admin@murekkep.com", username: "Mürekkep", role: "admin" }
+            { email: "murekkep@admin.com", username: "Mürekkep", role: "admin" }
         ];
 
         // SUPABASE CONNECTION ARGS (Same as app.js)
@@ -971,7 +971,7 @@
         function getUserRole(email) {
             if (!email) return "user";
             const emailNorm = email.toLowerCase().trim();
-            if (emailNorm === "admin@murekkep.com") return "admin";
+            if (emailNorm === "murekkep@admin.com") return "admin";
             const match = userRoles.find(u => u && u.email && u.email.toLowerCase().trim() === emailNorm);
             return match ? match.role : "user";
         }
@@ -1068,7 +1068,7 @@
                             currentUser = {
                                 id: session.user.id,
                                 email: email,
-                                username: email.toLowerCase().trim() === "admin@murekkep.com" ? "Mürekkep" : (session.user.user_metadata?.username || email.split('@')[0]),
+                                username: email.toLowerCase().trim() === "murekkep@admin.com" ? "Mürekkep" : (session.user.user_metadata?.username || email.split('@')[0]),
                                 role: role,
                                 isAdmin: role === 'admin',
                                 isEditor: true
@@ -1112,7 +1112,7 @@
 
             // Normalize short inputs to full email
             const resolvedEmail = emailNorm.includes("@") ? emailNorm :
-                (emailNorm === "admin" ? "admin@murekkep.com" : emailNorm);
+                (emailNorm === "admin" ? "murekkep@admin.com" : emailNorm);
 
             // Show loading
             const btn = document.getElementById("login-btn") || document.querySelector(".btn-login");
@@ -1135,7 +1135,7 @@
                             currentUser = {
                                 id: data.user.id,
                                 email: email,
-                                username: email.toLowerCase().trim() === "admin@murekkep.com" ? "Mürekkep" : (data.user.user_metadata?.username || email.split('@')[0]),
+                                username: email.toLowerCase().trim() === "murekkep@admin.com" ? "Mürekkep" : (data.user.user_metadata?.username || email.split('@')[0]),
                                 role: role,
                                 isAdmin: role === 'admin',
                                 isEditor: true
@@ -1165,7 +1165,7 @@
                 // Seed default mock accounts in localStorage if empty on first run
                 if (mockUsers.length === 0) {
                     mockUsers.push(
-                        { id: "u_default_admin", email: "admin@murekkep.com", username: "Mürekkep", password: "murekkepadmin" }
+                        { id: "u_default_admin", email: "murekkep@admin.com", username: "Mürekkep", password: "murekkepakıyor" }
                     );
                     localStorage.setItem("murekkep_mock_users", JSON.stringify(mockUsers));
                 }
@@ -1185,7 +1185,7 @@
                 authUser = {
                     id: matchedMockUser.id,
                     email: matchedMockUser.email,
-                    username: matchedMockUser.email.toLowerCase().trim() === "admin@murekkep.com" ? "Mürekkep" : matchedMockUser.username,
+                    username: matchedMockUser.email.toLowerCase().trim() === "murekkep@admin.com" ? "Mürekkep" : matchedMockUser.username,
                     role: resolvedRole, 
                     isAdmin: resolvedRole === 'admin', 
                     isEditor: true
@@ -1852,7 +1852,7 @@
             } catch(e) {}
 
             displayUsers.forEach(u => {
-                const isPredefinedAdmin = u.email.toLowerCase().trim() === 'admin@murekkep.com';
+                const isPredefinedAdmin = u.email.toLowerCase().trim() === 'murekkep@admin.com';
                 const roleLabels = {
                     "admin": "Yönetici (Admin)",
                     "editor": "Editör",
@@ -1960,7 +1960,7 @@
             }
 
             const emailNorm = email.toLowerCase().trim();
-            if (emailNorm === 'admin@murekkep.com') return;
+            if (emailNorm === 'murekkep@admin.com') return;
 
             userRoles = userRoles.filter(r => r.email.toLowerCase().trim() !== emailNorm);
 
@@ -2007,7 +2007,7 @@
             }
 
             const emailNorm = email.toLowerCase().trim();
-            if (emailNorm === 'admin@murekkep.com') {
+            if (emailNorm === 'murekkep@admin.com') {
                 showToast("✕ Ana yöneticiler silinemez.", "✕");
                 return;
             }
