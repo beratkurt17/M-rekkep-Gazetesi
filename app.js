@@ -1029,7 +1029,43 @@ async function saveAuthorFollowers(followersData) {
     }
 }
 
-// Helper for Username Migration across all components
+/** Remove a specific follower from the given author's follower list.
+ *  Only the profile owner (isOwnProfile) can do this; the UI only shows
+ *  the button when applicable, but we double-check here too. */
+window.removeFollower = async function(authorName, followerUsername) {
+    if (!currentUser) { showToast("❌ Giriş yapmalısınız."); return; }
+    if (!currentUser.username || currentUser.username.trim().toLowerCase() !== authorName.trim().toLowerCase()) {
+        showToast("❌ Yalnızca kendi profilinizden takipçi çıkarabilirsiniz.");
+        return;
+    }
+
+    let followersData = {};
+    try { followersData = JSON.parse(localStorage.getItem("murekkep_author_followers") || "{}"); } catch(e){}
+
+    if (!followersData[authorName]) { showToast("ℹ️ Takipçi bulunamadı."); return; }
+
+    const before = followersData[authorName].length;
+    followersData[authorName] = followersData[authorName].filter(f => {
+        if (typeof f === 'string') return f !== followerUsername && f !== currentUser.id;
+        if (f && typeof f === 'object') return (f.username || "").trim().toLowerCase() !== followerUsername.trim().toLowerCase();
+        return true;
+    });
+
+    if (followersData[authorName].length === before) {
+        showToast("ℹ️ Takipçi zaten listede yok.");
+        return;
+    }
+
+    localStorage.setItem("murekkep_author_followers", JSON.stringify(followersData));
+    await saveAuthorFollowers(followersData);
+
+    showToast(`✅ "${followerUsername}" takipçi listenizden çıkarıldı.`);
+
+    // Refresh the profile modal to reflect the change
+    window.openAuthorProfile(authorName, 'followers');
+};
+
+
 async function performUsernameMigration(oldName, newName) {
     if (!oldName || !newName || oldName === newName) return;
 
@@ -6943,16 +6979,24 @@ function switchAuthorModalTab(tabId) {
 }
 
 /** Build a person-card element and return it */
-function buildPersonCard(name, subText, onClickFn) {
+function buildPersonCard(name, subText, onClickFn, removeBtnHtml) {
     const card = document.createElement('div');
     card.className = 'person-card';
+    card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;background:var(--bg-secondary);border:1px solid var(--border-light);transition:background 0.18s;cursor:pointer;position:relative;';
     const av = document.createElement('div');
     av.className = 'person-card-avatar';
     av.textContent = name.substring(0,1).toUpperCase();
     const info = document.createElement('div');
+    info.style.cssText = 'flex:1;min-width:0;';
     info.innerHTML = `<div class="person-card-name">${name}</div><div class="person-card-sub">${subText}</div>`;
     card.appendChild(av);
     card.appendChild(info);
+    if (removeBtnHtml) {
+        const btnWrap = document.createElement('div');
+        btnWrap.innerHTML = removeBtnHtml;
+        btnWrap.addEventListener('click', e => e.stopPropagation());
+        card.appendChild(btnWrap);
+    }
     card.addEventListener('click', onClickFn);
     return card;
 }
@@ -7230,9 +7274,16 @@ window.openAuthorProfile = function(authorName, startTab) {
                     displayName = f.username || f.id;
                     openTarget = f.username || f.id;
                 }
+                // Show remove button only on own profile
+                const removeBtn = isOwnProfile
+                    ? `<button onclick="window.removeFollower('${authorName}', '${displayName.replace(/'/g, "\\'")}')"
+                        style="background:#c0392b;color:#fff;border:none;padding:4px 12px;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:background 0.2s;"
+                        onmouseover="this.style.background='#e74c3c'" onmouseout="this.style.background='#c0392b'"
+                        title="Bu takipçiyi çıkar">✕ Çıkar</button>`
+                    : null;
                 const card = buildPersonCard(displayName, 'Takipçi', () => {
                     window.openAuthorProfile(openTarget);
-                });
+                }, removeBtn);
                 followersContainer.appendChild(card);
             });
         }
