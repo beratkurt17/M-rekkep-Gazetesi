@@ -917,7 +917,7 @@
 
         // Default predefined roles
         const DEFAULT_USER_ROLES = [
-            { email: "admin@murekkep.com", username: "Mürekkep Yöneticisi", role: "admin" }
+            { email: "admin@murekkep.com", username: "Mürekkep", role: "admin" }
         ];
 
         // SUPABASE CONNECTION ARGS (Same as app.js)
@@ -1068,7 +1068,7 @@
                             currentUser = {
                                 id: session.user.id,
                                 email: email,
-                                username: session.user.user_metadata?.username || email.split('@')[0],
+                                username: email.toLowerCase().trim() === "admin@murekkep.com" ? "Mürekkep" : (session.user.user_metadata?.username || email.split('@')[0]),
                                 role: role,
                                 isAdmin: role === 'admin',
                                 isEditor: true
@@ -1135,7 +1135,7 @@
                             currentUser = {
                                 id: data.user.id,
                                 email: email,
-                                username: data.user.user_metadata?.username || email.split('@')[0],
+                                username: email.toLowerCase().trim() === "admin@murekkep.com" ? "Mürekkep" : (data.user.user_metadata?.username || email.split('@')[0]),
                                 role: role,
                                 isAdmin: role === 'admin',
                                 isEditor: true
@@ -1165,7 +1165,7 @@
                 // Seed default mock accounts in localStorage if empty on first run
                 if (mockUsers.length === 0) {
                     mockUsers.push(
-                        { id: "u_default_admin", email: "admin@murekkep.com", username: "Mürekkep Yöneticisi", password: "murekkepadmin" }
+                        { id: "u_default_admin", email: "admin@murekkep.com", username: "Mürekkep", password: "murekkepadmin" }
                     );
                     localStorage.setItem("murekkep_mock_users", JSON.stringify(mockUsers));
                 }
@@ -1185,7 +1185,7 @@
                 authUser = {
                     id: matchedMockUser.id,
                     email: matchedMockUser.email,
-                    username: matchedMockUser.username,
+                    username: matchedMockUser.email.toLowerCase().trim() === "admin@murekkep.com" ? "Mürekkep" : matchedMockUser.username,
                     role: resolvedRole, 
                     isAdmin: resolvedRole === 'admin', 
                     isEditor: true

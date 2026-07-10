@@ -607,7 +607,7 @@ async function saveAuthorProfiles() {
 
 // IO Functions for User Roles and Access Control
 const DEFAULT_USER_ROLES = [
-    { email: "admin@murekkep.com", username: "Mürekkep Yöneticisi", role: "admin" }
+    { email: "admin@murekkep.com", username: "Mürekkep", role: "admin" }
 ];
 let userRoles = [];
 
@@ -3376,10 +3376,11 @@ async function initAuth() {
         try {
             const { data: { session }, error } = await supabaseClient.auth.getSession();
             if (session && session.user) {
+                const emailLower = (session.user.email || "").toLowerCase().trim();
                 currentUser = {
                     id: session.user.id,
                     email: session.user.email,
-                    username: session.user.user_metadata?.username || session.user.email.split("@")[0]
+                    username: emailLower === "admin@murekkep.com" ? "Mürekkep" : (session.user.user_metadata?.username || session.user.email.split("@")[0])
                 };
                 const role = getUserRole(currentUser.email);
                 currentUser.role = role;
@@ -3400,10 +3401,11 @@ async function initAuth() {
         try {
             supabaseClient.auth.onAuthStateChange((event, session) => {
                 if (session && session.user) {
+                    const emailLower = (session.user.email || "").toLowerCase().trim();
                     currentUser = {
                         id: session.user.id,
                         email: session.user.email,
-                        username: session.user.user_metadata?.username || session.user.email.split("@")[0]
+                        username: emailLower === "admin@murekkep.com" ? "Mürekkep" : (session.user.user_metadata?.username || session.user.email.split("@")[0])
                     };
                     const role = getUserRole(currentUser.email);
                     currentUser.role = role;
@@ -3609,7 +3611,7 @@ async function signInUser(email, password) {
         currentUser = {
             id: "admin_murekkep",
             email: "admin@murekkep.com",
-            username: "Mürekkep Yöneticisi",
+            username: "Mürekkep",
             role: "admin",
             isAdmin: true,
             isEditor: true
@@ -3631,10 +3633,11 @@ async function signInUser(email, password) {
             if (error) throw error;
             
             if (data.user) {
+                const emailLower = (data.user.email || "").toLowerCase().trim();
                 currentUser = {
                     id: data.user.id,
                     email: data.user.email,
-                    username: data.user.user_metadata?.username || data.user.email.split("@")[0]
+                    username: emailLower === "admin@murekkep.com" ? "Mürekkep" : (data.user.user_metadata?.username || data.user.email.split("@")[0])
                 };
                 registerUserInList(currentUser.email, currentUser.username).catch(console.error);
                 
