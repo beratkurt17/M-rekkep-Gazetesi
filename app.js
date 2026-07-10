@@ -3748,6 +3748,9 @@ async function loadData() {
                     } else {
                         renderCategoryFeed(currentCategoryFilter);
                     }
+
+                    // Check for deep links on initial page load (cache hit)
+                    checkDeepLink();
                     return; // Cache hit, exit!
                 }
             }
@@ -3854,6 +3857,9 @@ async function loadData() {
     } else {
         renderCategoryFeed(currentCategoryFilter);
     }
+
+    // Check for deep links on initial page load (fetch/fallback)
+    checkDeepLink();
 }
 
 function loadLocalStorageFallback() {
@@ -3932,6 +3938,189 @@ const commentsTriggerBar = document.getElementById("comments-trigger-bar");
 const articleCommentBtn = document.getElementById("article-comment-btn");
 const articleEditorEditBtn = document.getElementById("article-editor-edit-btn");
 let editingArticleId = null;
+
+// SEO State & Management Helpers
+let isAppBooted = false;
+let defaultSEO = {
+    title: document.title,
+    description: "",
+    keywords: "",
+    author: "",
+    ogTitle: "",
+    ogDescription: "",
+    ogUrl: "",
+    ogImage: "",
+    twitterTitle: "",
+    twitterDescription: "",
+    twitterImage: "",
+    canonicalHref: ""
+};
+
+// Backup default SEO tags once DOM is fully loaded or when script runs
+function backupDefaultSEO() {
+    const descMeta = document.querySelector('meta[name="description"]');
+    const keyMeta = document.querySelector('meta[name="keywords"]');
+    const authMeta = document.querySelector('meta[name="author"]');
+    const ogTitleMeta = document.querySelector('meta[property="og:title"]');
+    const ogDescMeta = document.querySelector('meta[property="og:description"]');
+    const ogUrlMeta = document.querySelector('meta[property="og:url"]');
+    const ogImgMeta = document.querySelector('meta[property="og:image"]');
+    const twTitleMeta = document.querySelector('meta[name="twitter:title"]');
+    const twDescMeta = document.querySelector('meta[name="twitter:description"]');
+    const twImgMeta = document.querySelector('meta[name="twitter:image"]');
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
+
+    defaultSEO.title = document.title;
+    defaultSEO.description = descMeta ? descMeta.getAttribute("content") : "";
+    defaultSEO.keywords = keyMeta ? keyMeta.getAttribute("content") : "";
+    defaultSEO.author = authMeta ? authMeta.getAttribute("content") : "";
+    defaultSEO.ogTitle = ogTitleMeta ? ogTitleMeta.getAttribute("content") : "";
+    defaultSEO.ogDescription = ogDescMeta ? ogDescMeta.getAttribute("content") : "";
+    defaultSEO.ogUrl = ogUrlMeta ? ogUrlMeta.getAttribute("content") : "";
+    defaultSEO.ogImage = ogImgMeta ? ogImgMeta.getAttribute("content") : "";
+    defaultSEO.twitterTitle = twTitleMeta ? twTitleMeta.getAttribute("content") : "";
+    defaultSEO.twitterDescription = twDescMeta ? twDescMeta.getAttribute("content") : "";
+    defaultSEO.twitterImage = twImgMeta ? twImgMeta.getAttribute("content") : "";
+    defaultSEO.canonicalHref = canonicalLink ? canonicalLink.getAttribute("href") : "https://murekkepgazetesi.com";
+}
+
+// Call backup function immediately
+backupDefaultSEO();
+
+// Check for deep links on initial page load
+function checkDeepLink() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryArticleId = urlParams.get('article');
+    if (queryArticleId) {
+        setTimeout(() => {
+            openArticle(queryArticleId);
+        }, 100);
+    }
+}
+
+function updateSEOMetadata(article) {
+    const descMeta = document.querySelector('meta[name="description"]');
+    const keyMeta = document.querySelector('meta[name="keywords"]');
+    const authMeta = document.querySelector('meta[name="author"]');
+    const ogTitleMeta = document.querySelector('meta[property="og:title"]');
+    const ogDescMeta = document.querySelector('meta[property="og:description"]');
+    const ogUrlMeta = document.querySelector('meta[property="og:url"]');
+    const ogImgMeta = document.querySelector('meta[property="og:image"]');
+    const twTitleMeta = document.querySelector('meta[name="twitter:title"]');
+    const twDescMeta = document.querySelector('meta[name="twitter:description"]');
+    const twImgMeta = document.querySelector('meta[name="twitter:image"]');
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
+
+    if (article) {
+        const titleText = `${article.title} - Mürekkep Gazetesi`;
+        const descText = article.subtitle || article.title;
+        const authorText = article.author;
+        const keywordsText = `mürekkep, edebiyat, ${article.category}, ${article.author}, ${article.title.toLowerCase().replace(/[^a-z0-9ıışğçöü ]/gi, '').split(' ').join(', ')}`;
+        const articleUrl = `${window.location.origin}${window.location.pathname}?article=${article.id}`;
+        
+        let absImgUrl = article.image || 'assets/typewriter_birds.webp';
+        if (absImgUrl && !absImgUrl.startsWith('http')) {
+            absImgUrl = `${window.location.origin}/${absImgUrl}`;
+        }
+
+        // Update Document Title
+        document.title = titleText;
+
+        // Update standard Meta Tags
+        if (descMeta) descMeta.setAttribute("content", descText);
+        if (keyMeta) keyMeta.setAttribute("content", keywordsText);
+        if (authMeta) authMeta.setAttribute("content", authorText);
+
+        // Update Open Graph (Facebook, WhatsApp, etc.)
+        if (ogTitleMeta) ogTitleMeta.setAttribute("content", titleText);
+        if (ogDescMeta) ogDescMeta.setAttribute("content", descText);
+        if (ogUrlMeta) ogUrlMeta.setAttribute("content", articleUrl);
+        if (ogImgMeta) ogImgMeta.setAttribute("content", absImgUrl);
+
+        // Update Twitter Cards
+        if (twTitleMeta) twTitleMeta.setAttribute("content", titleText);
+        if (twDescMeta) twDescMeta.setAttribute("content", descText);
+        if (twImgMeta) twImgMeta.setAttribute("content", absImgUrl);
+
+        // Update Canonical Link
+        if (canonicalLink) canonicalLink.setAttribute("href", articleUrl);
+
+        // Update structured data (JSON-LD)
+        updateJSONLD(article);
+    } else {
+        // Restore defaults
+        document.title = defaultSEO.title;
+        if (descMeta) descMeta.setAttribute("content", defaultSEO.description);
+        if (keyMeta) keyMeta.setAttribute("content", defaultSEO.keywords);
+        if (authMeta) authMeta.setAttribute("content", defaultSEO.author);
+        
+        if (ogTitleMeta) ogTitleMeta.setAttribute("content", defaultSEO.ogTitle);
+        if (ogDescMeta) ogDescMeta.setAttribute("content", defaultSEO.ogDescription);
+        if (ogUrlMeta) ogUrlMeta.setAttribute("content", defaultSEO.ogUrl);
+        if (ogImgMeta) ogImgMeta.setAttribute("content", defaultSEO.ogImage);
+
+        if (twTitleMeta) twTitleMeta.setAttribute("content", defaultSEO.twitterTitle);
+        if (twDescMeta) twDescMeta.setAttribute("content", defaultSEO.twitterDescription);
+        if (twImgMeta) twImgMeta.setAttribute("content", defaultSEO.twitterImage);
+
+        if (canonicalLink) canonicalLink.setAttribute("href", defaultSEO.canonicalHref);
+
+        // Revert to default JSON-LD structure
+        updateJSONLD(null);
+    }
+}
+
+function updateJSONLD(article) {
+    let script = document.getElementById('seo-json-ld');
+    if (script) script.remove();
+
+    script = document.createElement('script');
+    script.id = 'seo-json-ld';
+    script.type = 'application/ld+json';
+
+    if (article) {
+        let absImgUrl = article.image || 'assets/typewriter_birds.webp';
+        if (absImgUrl && !absImgUrl.startsWith('http')) {
+            absImgUrl = `${window.location.origin}/${absImgUrl}`;
+        }
+        
+        script.text = JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "NewsArticle",
+            "headline": article.title,
+            "description": article.subtitle || article.title,
+            "image": [absImgUrl],
+            "datePublished": article.date,
+            "author": [{
+                "@type": "Person",
+                "name": article.author,
+                "url": `${window.location.origin}/#author-${encodeURIComponent(article.author)}`
+            }],
+            "publisher": {
+                "@type": "Organization",
+                "name": "Mürekkep Gazetesi",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": `${window.location.origin}/assets/logo.jpg`
+                }
+            },
+            "mainEntityOfPage": `${window.location.origin}/?article=${article.id}`
+        });
+    } else {
+        script.text = JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "NewsMediaOrganization",
+            "name": "Mürekkep Gazetesi",
+            "url": "https://murekkepgazetesi.com",
+            "logo": "https://murekkepgazetesi.com/assets/logo.jpg",
+            "sameAs": [
+                "https://twitter.com/murekkepgazetesi",
+                "https://instagram.com/murekkepgazetesi"
+            ]
+        });
+    }
+    document.head.appendChild(script);
+}
 
 // Auth DOM Elements
 const authOverlay = document.getElementById("auth-overlay");
@@ -4723,6 +4912,9 @@ async function openArticle(id) {
 
     activeArticleId = id;
 
+    // Update SEO tags and schema structure dynamically
+    updateSEOMetadata(article);
+
     // Track article view
     trackPageVisit("Yazı: " + article.title, article.id, article.category);
     
@@ -4918,6 +5110,9 @@ function closeArticle() {
     }
     unlockBodyScroll(); // restore page scroll
     activeArticleId = null;
+
+    // Restore default SEO tags
+    updateSEOMetadata(null);
 }
 
 // RENDER COMMENTS FOR ARTICLE
@@ -6148,6 +6343,9 @@ async function bootApp() {
             }
         });
     }
+
+    // Set app booted flag for SEO routing cleanup safety
+    isAppBooted = true;
 }
 
 // =============================================
@@ -7563,12 +7761,19 @@ function initDynamicViewport() {
 
         // Push state if overlay or drawer is open
         if (anyVisible && visibleOverlayId) {
-            if (!isHandlingPopstate && window.location.hash !== '#' + visibleOverlayId) {
-                history.pushState({ activeOverlay: visibleOverlayId }, '', '#' + visibleOverlayId);
+            if (visibleOverlayId === 'reading-overlay' && activeArticleId) {
+                const newUrl = window.location.pathname + `?article=${activeArticleId}`;
+                if (!isHandlingPopstate && window.location.search !== `?article=${activeArticleId}`) {
+                    history.pushState({ activeOverlay: visibleOverlayId, articleId: activeArticleId }, '', newUrl);
+                }
+            } else {
+                if (!isHandlingPopstate && window.location.hash !== '#' + visibleOverlayId) {
+                    history.pushState({ activeOverlay: visibleOverlayId }, '', '#' + visibleOverlayId);
+                }
             }
-        } else if (!anyVisible && !isHandlingPopstate && window.location.hash) {
+        } else if (isAppBooted && !anyVisible && !isHandlingPopstate && (window.location.hash || window.location.search)) {
             // Clean history when everything is closed
-            history.pushState(null, '', window.location.pathname + window.location.search);
+            history.pushState(null, '', window.location.pathname);
         }
     };
 
@@ -7592,6 +7797,17 @@ function initDynamicViewport() {
     window.addEventListener('popstate', (event) => {
         isHandlingPopstate = true;
         
+        // Parse parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryArticleId = urlParams.get('article');
+
+        // Check if query parameter for article is now empty, but we have an active article
+        if (!queryArticleId && activeArticleId) {
+            closeArticle();
+        } else if (queryArticleId && activeArticleId !== queryArticleId) {
+            openArticle(queryArticleId);
+        }
+
         // Hide open drawer first
         if (commentsDrawer && !commentsDrawer.classList.contains('hidden')) {
             closeCommentsDrawer();
@@ -7600,6 +7816,10 @@ function initDynamicViewport() {
         // Hide open overlays
         overlays.forEach(overlay => {
             if (!overlay.classList.contains('hidden')) {
+                // If it is reading-overlay and we actually want to open an article, don't close it
+                if (overlay.id === 'reading-overlay' && queryArticleId) {
+                    return;
+                }
                 // Find and click the close button to trigger all default cleanups
                 const closeBtn = overlay.querySelector('.btn-close-overlay, #close-share, .share-close-btn');
                 if (closeBtn) {
