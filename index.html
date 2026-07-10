@@ -651,6 +651,25 @@
                         <button type="submit" class="btn-publish-submit" style="width: 100%; border-radius: 8px;">Kayıt Ol</button>
                     </div>
                 </form>
+
+                <!-- Update Password Form -->
+                <form id="update-password-form" class="editor-form hidden">
+                    <header class="editor-studio-header" style="margin-bottom: 20px; text-align: center;">
+                        <h2 style="font-family: var(--font-header); font-size: 1.7rem; font-weight: 800; color: var(--text-primary);">Yeni Şifre Belirleyin</h2>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 5px; line-height: 1.5;">Hesabınız için en az 6 karakterden oluşan yeni bir şifre girin.</p>
+                    </header>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="update-password">Yeni Şifre</label>
+                        <input type="password" id="update-password" placeholder="Yeni şifreniz..." required class="form-control" minlength="6">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="update-password-confirm">Yeni Şifre (Tekrar)</label>
+                        <input type="password" id="update-password-confirm" placeholder="Yeni şifreniz (tekrar)..." required class="form-control" minlength="6">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-publish-submit" style="width: 100%; border-radius: 8px;">Şifreyi Güncelle</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

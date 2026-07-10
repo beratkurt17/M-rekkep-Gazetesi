@@ -3185,6 +3185,13 @@ function closeSettingsModal() {
 
 // Switch tabs between login and register inside auth card
 window.switchAuthTab = function(tab) {
+    const resetForm = document.getElementById("reset-form");
+    if (resetForm) resetForm.classList.add("hidden");
+    const updatePasswordForm = document.getElementById("update-password-form");
+    if (updatePasswordForm) updatePasswordForm.classList.add("hidden");
+    const authTabs = document.querySelector(".auth-tabs");
+    if (authTabs) authTabs.style.display = "flex";
+
     if (tab === 'login') {
         tabLogin.classList.add("active");
         tabRegister.classList.remove("active");
@@ -3436,6 +3443,11 @@ async function initAuth() {
         // Listen to auth state changes
         try {
             supabaseClient.auth.onAuthStateChange((event, session) => {
+                if (event === 'PASSWORD_RECOVERY') {
+                    if (typeof openUpdatePasswordUI === "function") {
+                        openUpdatePasswordUI();
+                    }
+                }
                 if (session && session.user) {
                     const emailLower = (session.user.email || "").toLowerCase().trim();
                     currentUser = {
@@ -3798,27 +3810,52 @@ async function sendPasswordReset(email) {
     }
 }
 
+// Open password update UI
+function openUpdatePasswordUI() {
+    const authOverlayEl = document.getElementById("auth-overlay");
+    if (authOverlayEl) {
+        authOverlayEl.classList.remove("hidden");
+        lockBodyScroll();
+    }
+    
+    const loginFormEl = document.getElementById("login-form");
+    if (loginFormEl) loginFormEl.classList.add("hidden");
+    
+    const registerFormEl = document.getElementById("register-form");
+    if (registerFormEl) registerFormEl.classList.add("hidden");
+    
+    const resetForm = document.getElementById("reset-form");
+    if (resetForm) resetForm.classList.add("hidden");
+    
+    const authTabs = document.querySelector(".auth-tabs");
+    if (authTabs) authTabs.style.display = "none";
+    
+    const updateForm = document.getElementById("update-password-form");
+    if (updateForm) {
+        updateForm.classList.remove("hidden");
+        const newPassInput = document.getElementById("update-password");
+        if (newPassInput) newPassInput.focus();
+    }
+}
+
 // Handle returning from password reset link
 function handlePasswordRecovery() {
-    if (!isSupabaseConnected || !supabaseClient) return;
-    supabaseClient.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'PASSWORD_RECOVERY') {
-            // Show password update modal
-            const newPass = prompt('İstenilen yeni şifrenizi girin (en az 6 karakter):');
-            if (!newPass || newPass.length < 6) {
-                showToast('❌ Şifre en az 6 karakter olmalıdır.');
-                return;
+    if (isSupabaseConnected && supabaseClient) {
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                openUpdatePasswordUI();
             }
-            const { error } = await supabaseClient.auth.updateUser({ password: newPass });
-            if (error) {
-                showToast('❌ Şifre güncellenemedi: ' + error.message);
-            } else {
-                showToast('✅ Şifreniz başarıyla güncellendi! Tekrar giriş yapabilirsiniz.');
-                await supabaseClient.auth.signOut();
-                updateAuthUI();
-            }
-        }
-    });
+        });
+    }
+
+    // Check URL parameters or hash immediately as the event might have already fired before this listener registered
+    const hash = window.location.hash || "";
+    const search = window.location.search || "";
+    if (hash.includes("type=recovery") || search.includes("type=recovery") || hash.includes("recovery") || search.includes("recovery")) {
+        setTimeout(() => {
+            openUpdatePasswordUI();
+        }, 300);
+    }
 }
 
 
@@ -6350,6 +6387,62 @@ async function bootApp() {
             const password = document.getElementById("register-password").value.trim();
             if (username && email && password) {
                 signUpUser(email, password, username);
+            }
+        });
+    }
+
+    const updatePasswordForm = document.getElementById("update-password-form");
+    if (updatePasswordForm) {
+        updatePasswordForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const newPass = document.getElementById("update-password").value;
+            const newPassConfirm = document.getElementById("update-password-confirm").value;
+
+            if (newPass.length < 6) {
+                showToast("❌ Şifre en az 6 karakter olmalıdır.");
+                return;
+            }
+
+            if (newPass !== newPassConfirm) {
+                showToast("❌ Girdiğiniz şifreler birbiriyle eşleşmiyor.");
+                return;
+            }
+
+            if (!isSupabaseConnected || !supabaseClient) {
+                showToast("❌ Şifre sıfırlama için internet bağlantısı gereklidir.");
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient.auth.updateUser({ password: newPass });
+                if (error) throw error;
+
+                showToast("✅ Şifreniz başarıyla güncellendi! Giriş yapabilirsiniz.");
+                
+                // Reset fields
+                document.getElementById("update-password").value = "";
+                document.getElementById("update-password-confirm").value = "";
+
+                // Close and transition to login
+                updatePasswordForm.classList.add("hidden");
+                const authTabs = document.querySelector(".auth-tabs");
+                if (authTabs) authTabs.style.display = "flex";
+                
+                const loginForm = document.getElementById("login-form");
+                if (loginForm) loginForm.classList.remove("hidden");
+                switchAuthTab("login");
+                
+                // Clear the hash and query parameters from the URL so reload doesn't trigger recovery again
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState(null, "", window.location.pathname);
+                }
+
+                await supabaseClient.auth.signOut();
+                updateAuthUI();
+                closeAuthModal();
+            } catch (err) {
+                console.error("Password update error:", err);
+                showToast("❌ Şifre güncellenemedi: " + (err.message || "Bilinmeyen hata"));
             }
         });
     }
