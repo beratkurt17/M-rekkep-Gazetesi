@@ -7121,7 +7121,8 @@ function getAuthorProfileData(authorName) {
         avatarType: "gradient",
         avatarVal: "linear-gradient(135deg, var(--accent-color), #d35400)",
         coverType: "gradient",
-        coverVal: "linear-gradient(135deg, var(--accent-color), #2b1111)"
+        coverVal: "linear-gradient(135deg, var(--accent-color), #2b1111)",
+        goalCount: 10
     };
     
     if (!authorName) return defaultProfile;
@@ -7609,6 +7610,62 @@ window.openAuthorProfile = function(authorName, startTab) {
     lockBodyScroll();
 };
 
+// Helper: Calculate weekly writing streak based on consecutive weeks of published articles
+function calculateAuthorStreak(authorName) {
+    if (!authorName) return 0;
+    const authorArticles = articles.filter(a => a.author && a.author.toLowerCase().trim() === authorName.toLowerCase().trim());
+    if (authorArticles.length === 0) return 0;
+
+    // Parse dates
+    const dates = authorArticles.map(a => {
+        const dt = a.created_at ? new Date(a.created_at) : (a.date ? new Date(a.date) : new Date());
+        return dt;
+    }).filter(d => !isNaN(d.getTime()));
+
+    if (dates.length === 0) return 0;
+
+    // Sort dates descending (newest first)
+    dates.sort((a, b) => b - a);
+
+    // Helper to get start of the week (Monday)
+    function getStartOfWeek(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is Sunday
+        const start = new Date(d.setDate(diff));
+        start.setHours(0,0,0,0);
+        return start;
+    }
+
+    const todayStartOfWeek = getStartOfWeek(new Date());
+    
+    // Group dates by week start date (in milliseconds for easy comparison)
+    const weekStarts = new Set();
+    dates.forEach(d => {
+        weekStarts.add(getStartOfWeek(d).getTime());
+    });
+
+    // Check if they published this week or last week (otherwise streak is broken / 0)
+    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+    const thisWeekTime = todayStartOfWeek.getTime();
+    const lastWeekTime = thisWeekTime - oneWeekMs;
+
+    if (!weekStarts.has(thisWeekTime) && !weekStarts.has(lastWeekTime)) {
+        return 0;
+    }
+
+    // Count back consecutive weeks
+    let streak = 0;
+    let currentCheckWeek = weekStarts.has(thisWeekTime) ? thisWeekTime : lastWeekTime;
+
+    while (weekStarts.has(currentCheckWeek)) {
+        streak++;
+        currentCheckWeek -= oneWeekMs;
+    }
+
+    return streak;
+}
+
 // Dynamic Dashboard Sync in Profile Modal
 function syncDashboardInProfile() {
     if (!currentUser) return;
@@ -7664,44 +7721,26 @@ function syncDashboardInProfile() {
         }
     }
 
-    // Weekly Goal Progress
-    const goalVal = localStorage.getItem(`murekkep_writer_goal_${currentUser.id}`) || "1";
+    // Goal Progress (reads from Supabase profile)
+    const authorName = currentUser.username || currentUser.email.split("@")[0];
+    const profile = getAuthorProfileData(authorName);
+    const goalVal = parseInt(profile.goalCount) || 10;
     
-    // Calculate published count in last 7 days
-    const last7Days = 7 * 24 * 60 * 60 * 1000;
-    const now = new Date();
-    const ownArticles = articles.filter(a => a.author && a.author.trim().toLowerCase() === currentUser.username.trim().toLowerCase());
-    
-    let publishedCount = 0;
-    ownArticles.forEach(a => {
-        let artDate = new Date();
-        try {
-            artDate = new Date(a.date);
-            if (isNaN(artDate.getTime())) {
-                artDate = new Date(); // fallback
-            }
-        } catch(e) {}
-        
-        if (now - artDate <= last7Days) {
-            publishedCount++;
-        }
-    });
+    // Count all user's published articles
+    const ownArticles = articles.filter(a => a.author && a.author.trim().toLowerCase() === authorName.trim().toLowerCase());
+    const publishedCount = ownArticles.length;
 
-    const goalPct = Math.min((publishedCount / parseInt(goalVal)) * 100, 100);
+    const goalPct = Math.min((publishedCount / goalVal) * 100, 100);
     const goalStatusEl = document.getElementById("author-modal-goal-status");
     const goalBarEl = document.getElementById("author-modal-goal-bar");
     
     if (goalStatusEl) goalStatusEl.innerText = `${publishedCount} / ${goalVal} Eser`;
     if (goalBarEl) goalBarEl.style.width = `${goalPct}%`;
 
-    // Streak & Read Time
-    const streakKey = `murekkep_writer_streak_${currentUser.id}`;
-    let streak = parseInt(localStorage.getItem(streakKey) || "0");
+    // Streak
+    const streak = calculateAuthorStreak(authorName);
     const streakEl = document.getElementById("author-modal-streak-val");
     if (streakEl) streakEl.innerText = streak;
-
-    const readtimeEl = document.getElementById("author-modal-stat-readtime-val");
-    if (readtimeEl) readtimeEl.innerText = `${statsWriter.totalReadTime} dk`;
 }
 
 // Global state variables for customizations
@@ -7832,12 +7871,16 @@ function initProfileCustomizer() {
                 coverVal = urlVal ? `url('${urlVal}')` : "linear-gradient(135deg, var(--accent-color), #2b1111)";
             }
             
+            const goalInput = document.getElementById('profile-goal-count-input');
+            const goalCount = goalInput ? parseInt(goalInput.value) || 10 : 10;
+
             saveAuthorProfileData(authorName, {
                 avatarType: type,
                 avatarVal: val,
                 coverType: coverType,
                 coverVal: coverVal,
                 bio: document.getElementById('profile-bio-input').value.trim(),
+                goalCount: goalCount,
                 socialInstagram: document.getElementById('social-instagram-input').value.trim(),
                 socialTwitter: document.getElementById('social-twitter-input').value.trim(),
                 socialWeb: document.getElementById('social-web-input').value.trim()
@@ -8042,11 +8085,13 @@ function openPopoverNear(element, defaultTab = 'avatar') {
         document.getElementById('cover-image-url-input').value = rawUrl;
     }
 
-    // Set Social link inputs and bio input
+    // Set Social link inputs, bio input and goal input
     document.getElementById('profile-bio-input').value = profile.bio || "";
     document.getElementById('social-instagram-input').value = profile.socialInstagram || "";
     document.getElementById('social-twitter-input').value = profile.socialTwitter || "";
     document.getElementById('social-web-input').value = profile.socialWeb || "";
+    const goalInput = document.getElementById('profile-goal-count-input');
+    if (goalInput) goalInput.value = profile.goalCount || 10;
 
     // Reset Popover Tab display
     const popTabBtns = document.querySelectorAll('.profile-popover-tab-btn');

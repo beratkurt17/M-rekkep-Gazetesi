@@ -1080,8 +1080,8 @@
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
                             <!-- Goal Status -->
                             <div style="background: var(--bg-primary); border: 1px solid var(--border-light); padding: 12px; border-radius: 8px;">
-                                <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase;">HAFTALIK HEDEF</div>
-                                <div id="author-modal-goal-status" style="font-family: var(--font-header); font-size: 1rem; font-weight: 900; color: var(--text-primary); margin-top: 4px;">0 / 1 Eser</div>
+                                <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase;">YAZMA HEDEFİ</div>
+                                <div id="author-modal-goal-status" style="font-family: var(--font-header); font-size: 1rem; font-weight: 900; color: var(--text-primary); margin-top: 4px;">0 / 10 Eser</div>
                                 <div style="width: 100%; height: 4px; background: var(--border-light); border-radius: 2px; overflow: hidden; margin-top: 6px;">
                                     <div id="author-modal-goal-bar" style="width: 0%; height: 100%; background: var(--accent-color); transition: width 0.3s ease;"></div>
                                 </div>
@@ -1093,12 +1093,6 @@
                                 <div style="font-family: var(--font-header); font-size: 1.15rem; font-weight: 900; color: var(--text-primary); margin-top: 4px; display: flex; align-items: center; gap: 4px;">
                                     🔥 <span id="author-modal-streak-val">0</span> Hf.
                                 </div>
-                            </div>
-
-                            <!-- Read Time -->
-                            <div style="background: var(--bg-primary); border: 1px solid var(--border-light); padding: 12px; border-radius: 8px; display: flex; flex-direction: column; justify-content: center;">
-                                <div style="font-size: 0.6rem; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase;">TOPLAM OKUNMA</div>
-                                <div id="author-modal-stat-readtime-val" style="font-family: var(--font-header); font-size: 1.1rem; font-weight: 900; color: var(--text-primary); margin-top: 4px;">0 dk</div>
                             </div>
                         </div>
                     </div>
@@ -1256,6 +1250,10 @@
                 <div class="profile-input-group">
                     <label for="social-web-input">Kişisel Web Sitesi</label>
                     <input type="url" id="social-web-input" class="form-control" style="font-size:0.8rem; height:32px; padding: 6px 12px; background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-primary); border-radius: 6px;" placeholder="https://siteniz.com">
+                </div>
+                <div class="profile-input-group">
+                    <label for="profile-goal-count-input">Yazma Hedefi (Eser Sayısı)</label>
+                    <input type="number" id="profile-goal-count-input" class="form-control" style="font-size:0.8rem; height:32px; padding: 6px 12px; background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-primary); border-radius: 6px; width: 100%; box-sizing: border-box;" min="1" max="100" value="10">
                 </div>
             </div>
         </div>
