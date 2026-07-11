@@ -4681,8 +4681,18 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
         const displaySubtitle = truncateText(subtitle, 140);
 
         if (styleType === 'siir' || art.category === 'siir') {
-            // Render as poem style
-            const poemLines = art.content ? art.content.replace(/<[^>]*>/g, "").split("\n").slice(0, 5).join("\n") : subtitle;
+            const poemLines = art.content
+                ? art.content
+                    .replace(/<br\s*\/?>/gi, "\n")
+                    .replace(/<\/p>/gi, "\n")
+                    .replace(/<\/div>/gi, "\n")
+                    .replace(/<[^>]*>/g, "")
+                    .split("\n")
+                    .map(line => line.trim())
+                    .filter(Boolean)
+                    .slice(0, 4)
+                    .join("<br>")
+                : subtitle;
             const poemImage = art.image && art.image !== "undefined" ? art.image : "assets/poetry_flowers.webp";
             cardHTML = `
                 <article class="article-card poem-card" data-id="${art.id}" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
