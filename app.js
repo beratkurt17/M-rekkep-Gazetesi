@@ -2875,6 +2875,9 @@ function toggleFollowState(authorName) {
     
     localStorage.setItem("murekkep_author_followers", JSON.stringify(followersData));
     saveAuthorFollowers(followersData);
+    if (typeof updateArticleDetailFollowButton === 'function') {
+        updateArticleDetailFollowButton(authorName);
+    }
     return true;
 }
 
@@ -5188,6 +5191,11 @@ async function openArticle(id) {
         detailAvatarContainer.innerHTML = getAuthorAvatarHtml(article.author, 44);
     }
 
+    // Update follow button next to author name in reader overlay
+    if (typeof updateArticleDetailFollowButton === 'function') {
+        updateArticleDetailFollowButton(article.author);
+    }
+
     // Show Overlay with fade/slide animations
     readingOverlay.classList.remove("hidden");
     lockBodyScroll(); // lock page scroll
@@ -5348,6 +5356,57 @@ function closeArticle() {
     // Restore default SEO tags
     updateSEOMetadata(null);
 }
+
+// Update the follow button in the open article detail overlay
+function updateArticleDetailFollowButton(authorName) {
+    const detailFollowBtn = document.querySelector(".btn-follow");
+    if (!detailFollowBtn) return;
+    
+    const readingOverlay = document.getElementById("reading-overlay");
+    if (!readingOverlay || readingOverlay.classList.contains("hidden") || !activeArticleId) return;
+    const article = articles.find(a => a.id === activeArticleId);
+    if (!article || article.author !== authorName) return;
+    
+    const isOwnArticle = currentUser && currentUser.username &&
+        currentUser.username.trim().toLowerCase() === authorName.trim().toLowerCase();
+        
+    if (isOwnArticle) {
+        detailFollowBtn.style.display = 'none';
+    } else {
+        detailFollowBtn.style.display = '';
+        
+        let followersData = {};
+        try { followersData = JSON.parse(localStorage.getItem('murekkep_author_followers') || '{}'); } catch(e){}
+        const followersList = followersData[authorName] || [];
+        
+        const isFollowing = currentUser && followersList.some(f => {
+            if (typeof f === 'string') return f === currentUser.id;
+            return f && f.id === currentUser.id;
+        });
+        
+        if (isFollowing) {
+            detailFollowBtn.textContent = '✓ Takip Ediliyor';
+        } else {
+            detailFollowBtn.textContent = 'Takip Et';
+        }
+        
+        const newFollowBtn = detailFollowBtn.cloneNode(true);
+        detailFollowBtn.parentNode.replaceChild(newFollowBtn, detailFollowBtn);
+        newFollowBtn.addEventListener('click', () => window.toggleFollowFromArticle(authorName));
+    }
+}
+
+window.toggleFollowFromArticle = function(authorName) {
+    if (toggleFollowState(authorName)) {
+        const authorModal = document.getElementById("author-modal");
+        if (authorModal && !authorModal.classList.contains("hidden")) {
+            const authorModalName = document.getElementById("author-modal-name");
+            if (authorModalName && authorModalName.innerText === authorName) {
+                window.openAuthorProfile(authorName);
+            }
+        }
+    }
+};
 
 // RENDER COMMENTS FOR ARTICLE
 function renderArticleComments(articleId) {
@@ -7913,7 +7972,7 @@ function openPopoverNear(element, defaultTab = 'avatar') {
     popover.style.top = `${top}px`;
     popover.style.left = `${left}px`;
     popover.style.position = 'absolute';
-    
+    popover.classList.remove('hidden');
 }
 
 // Initialize Autocomplete Writer Search Box
