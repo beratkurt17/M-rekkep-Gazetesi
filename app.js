@@ -3160,9 +3160,12 @@ function renderProfileTabUI() {
         if (statReadtime) statReadtime.innerText = `${statsWriter.totalReadTime} dk`;
         
         // Goal Sync
-        const goalVal = localStorage.getItem(`murekkep_writer_goal_${currentUser.id}`) || "1";
-        const goalSelect = document.getElementById("writer-goal-select");
-        if (goalSelect) goalSelect.value = goalVal;
+        const authorName = currentUser.username || currentUser.email.split("@")[0];
+        const profile = getAuthorProfileData(authorName);
+        const goalVal = parseInt(profile.goalCount) || 10;
+        
+        const goalInput = document.getElementById("writer-goal-input");
+        if (goalInput) goalInput.value = goalVal;
         
         // Calculate goal progress for last 7 days
         const now = new Date();
@@ -8220,14 +8223,17 @@ window.toggleFollowAuthor = function(authorName) {
 // Handle Goal Updates from UI
 window.updateWriterGoal = function(goal) {
     if (!currentUser) return;
-    const key = `murekkep_writer_goal_${currentUser.id}`;
-    localStorage.setItem(key, goal);
+    const authorName = currentUser.username || currentUser.email.split("@")[0];
+    const goalVal = parseInt(goal) || 10;
+    
+    // Save to profile customizer (updates memory and Supabase)
+    saveAuthorProfileData(authorName, { goalCount: goalVal });
     
     // Sync UI elements
-    const stats = getAuthorStats(currentUser.username);
+    const stats = getAuthorStats(authorName);
     const now = new Date();
     const oneDay = 24 * 60 * 60 * 1000;
-    const authorArticles = articles.filter(a => a.author && a.author.trim().toLowerCase() === currentUser.username.trim().toLowerCase());
+    const authorArticles = articles.filter(a => a.author && a.author.trim().toLowerCase() === authorName.trim().toLowerCase());
     
     let last7DaysCount = 0;
     const months = {
@@ -8250,7 +8256,6 @@ window.updateWriterGoal = function(goal) {
         }
     });
     
-    const goalVal = parseInt(goal) || 1;
     const progressPct = Math.min(100, Math.round((last7DaysCount / goalVal) * 100));
     
     const goalStatusEl = document.getElementById("writer-goal-status");
@@ -8259,16 +8264,12 @@ window.updateWriterGoal = function(goal) {
     if (goalStatusEl) goalStatusEl.innerText = `${last7DaysCount} / ${goalVal} Eser`;
     if (goalBarEl) goalBarEl.style.width = `${progressPct}%`;
     
-    const streakKey = `murekkep_writer_streak_${currentUser.id}`;
-    let streak = parseInt(localStorage.getItem(streakKey) || "0");
-    if (last7DaysCount >= goalVal && streak === 0) {
-        streak = 1;
-        localStorage.setItem(streakKey, "1");
-    }
+    // Streak
+    const streak = calculateAuthorStreak(authorName);
     const streakEl = document.getElementById("writer-goal-streak-val");
     if (streakEl) streakEl.innerText = streak;
     
-    showToast(`🎯 Yazım hedefi güncellendi: Haftada ${goalVal} Eser!`);
+    showToast(`🎯 Yazım hedefi güncellendi: ${goalVal} Eser!`);
 };
 
 // Bind close button for author modal

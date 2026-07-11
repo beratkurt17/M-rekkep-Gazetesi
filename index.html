@@ -869,17 +869,13 @@
                 <div style="background: rgba(201, 64, 64, 0.01); border: 1px dashed var(--border-color); padding: 12px; border-radius: 8px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <span style="font-family: var(--font-ui); font-size: 0.7rem; font-weight: 700; color: var(--text-primary);">Haftalık Eser Hedefim:</span>
-                        <select id="writer-goal-select" onchange="window.updateWriterGoal(this.value)" style="font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-light); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; font-family: var(--font-ui);">
-                            <option value="1">Haftada 1 Eser</option>
-                            <option value="2">Haftada 2 Eser</option>
-                            <option value="4">Haftada 4 Eser</option>
-                        </select>
+                        <input type="number" id="writer-goal-input" onchange="window.updateWriterGoal(this.value)" style="width: 55px; font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-light); background: var(--bg-primary); color: var(--text-primary); text-align: center; font-family: var(--font-ui);" min="1" max="100" value="10">
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <div style="flex: 1;">
                             <div style="display: flex; justify-content: space-between; font-size: 0.62rem; color: var(--text-secondary); margin-bottom: 4px;">
                                 <span>Son 7 Gündeki İlerleme:</span>
-                                <span id="writer-goal-status">0 / 1 Eser</span>
+                                <span id="writer-goal-status">0 / 10 Eser</span>
                             </div>
                             <div style="width: 100%; height: 4px; background: var(--border-light); border-radius: 2px; overflow: hidden;">
                                 <div id="writer-goal-bar" style="width: 0%; height: 100%; background: var(--accent-color); transition: width 0.3s ease;"></div>
