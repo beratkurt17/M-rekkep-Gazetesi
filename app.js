@@ -1133,6 +1133,18 @@ async function performUsernameMigration(oldName, newName) {
                 art.author = newName;
             }
         });
+
+        if (isSupabaseConnected && supabaseClient) {
+            try {
+                await supabaseClient
+                    .from('articles')
+                    .update({ author: newName })
+                    .eq('author', oldName);
+                console.log(`Successfully migrated Supabase articles author from ${oldName} to ${newName}`);
+            } catch(e) {
+                console.warn("Could not update article authors on Supabase:", e);
+            }
+        }
     } catch (e) {}
 }
 
