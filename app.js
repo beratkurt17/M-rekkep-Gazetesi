@@ -7734,10 +7734,36 @@ function syncDashboardInProfile() {
     const publishedCount = ownArticles.length;
 
     const goalPct = Math.min((publishedCount / goalVal) * 100, 100);
-    const goalStatusEl = document.getElementById("author-modal-goal-status");
+    const currentEl = document.getElementById("author-modal-goal-current");
+    const inputEl = document.getElementById("author-modal-goal-input");
     const goalBarEl = document.getElementById("author-modal-goal-bar");
     
-    if (goalStatusEl) goalStatusEl.innerText = `${publishedCount} / ${goalVal} Eser`;
+    if (currentEl) currentEl.innerText = publishedCount;
+    if (inputEl) {
+        inputEl.value = goalVal;
+        
+        // Remove existing listener to prevent duplicate attachments, and add new one
+        const clone = inputEl.cloneNode(true);
+        inputEl.parentNode.replaceChild(clone, inputEl);
+        
+        clone.addEventListener("change", (e) => {
+            const newVal = parseInt(e.target.value) || 10;
+            saveAuthorProfileData(authorName, { goalCount: newVal });
+            
+            // Re-sync progress bar and other UI targets
+            const newPct = Math.min((publishedCount / newVal) * 100, 100);
+            if (goalBarEl) goalBarEl.style.width = `${newPct}%`;
+            
+            const mainGoalInput = document.getElementById("writer-goal-input");
+            if (mainGoalInput) mainGoalInput.value = newVal;
+            
+            const popoverGoalInput = document.getElementById("profile-goal-count-input");
+            if (popoverGoalInput) popoverGoalInput.value = newVal;
+            
+            showToast(`🎯 Hedefiniz ${newVal} Eser olarak güncellendi!`);
+        });
+    }
+    
     if (goalBarEl) goalBarEl.style.width = `${goalPct}%`;
 
     // Streak
