@@ -7311,7 +7311,11 @@ window.openAuthorProfile = function(authorName, startTab) {
 
     // Apply Cover
     const coverEl = document.getElementById('author-modal-cover');
-    if (coverEl) coverEl.style.background = profile.coverVal || "linear-gradient(135deg, var(--accent-color), #2b1111)";
+    if (coverEl) {
+        const bgVal = profile.coverVal || "linear-gradient(135deg, var(--accent-color), #2b1111)";
+        coverEl.style.background = bgVal;
+        coverEl.style.backgroundImage = bgVal;
+    }
 
     // Apply Avatar
     const avatarEl = document.getElementById('author-modal-avatar');
