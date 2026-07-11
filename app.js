@@ -5102,8 +5102,6 @@ function renderCategoryFeed(category) {
                             <span>•</span>
                             <span>${art.date}</span>
                             <span>•</span>
-                            <span>${art.readTime || (art.content ? calculateReadTime(art.content) : '3 dk okuma')}</span>
-                            <span>•</span>
                             <span style="display: inline-flex; align-items: center; gap: 4px;"><svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: currentColor;"><path d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm-1.78 12.77c-.31.31-.69.43-1.07.43-.38 0-.76-.12-1.07-.43-.59-.59-.59-1.54 0-2.12l4.9-4.9c.59-.59 1.54-.59 2.12 0 .59.59.59 1.54 0 2.12l-4.88 4.9zm4.78-4.78c.31-.31.69-.43 1.07-.43.38 0 .76.12 1.07.43.59.59.59 1.54 0 2.12l-4.9 4.9c-.3.3-.68.44-1.06.44-.38 0-.76-.14-1.06-.44-.59-.59-.59-1.54 0-2.12l4.95-4.91z"/></svg>${art.claps}</span>
                         </div>
                     </div>
@@ -5241,7 +5239,7 @@ async function openArticle(id) {
 
     // Dynamic loading of article body content
     if (isSupabaseConnected && !article.content) {
-        detailReadtime.innerText = article.readTime || "...";
+        if (detailReadtime) detailReadtime.innerText = article.readTime || "...";
         detailContent.innerHTML = `
             <div class="content-loader">
                 <div class="spinner"></div>
@@ -5276,7 +5274,7 @@ async function openArticle(id) {
     }
 
     // Update readTime and fill content
-    detailReadtime.innerText = article.readTime || calculateReadTime(article.content || '');
+    if (detailReadtime) detailReadtime.innerText = article.readTime || calculateReadTime(article.content || '');
     detailContent.innerHTML = article.content || '<p style="color: var(--text-secondary);">Yazı içeriği bulunamadı.</p>';
 
     // Update bookmark UI state
@@ -7893,25 +7891,39 @@ function openPopoverNear(element, defaultTab = 'avatar') {
         document.getElementById('avatar-sub-gradient').classList.remove('hidden');
         // Highlight active gradient preset card
         const presetCards = document.querySelectorAll('#avatar-sub-gradient .preset-card');
+        let hasActiveGrad = false;
         presetCards.forEach(c => {
-            if (c.getAttribute('data-gradient') === profile.avatarVal) {
+            if (profile.avatarVal && c.getAttribute('data-gradient') === profile.avatarVal) {
                 c.classList.add('active');
+                hasActiveGrad = true;
             } else {
                 c.classList.remove('active');
             }
         });
-        selectedAvatarGradient = profile.avatarVal;
+        if (!hasActiveGrad && presetCards.length > 0) {
+            presetCards[0].classList.add('active');
+            selectedAvatarGradient = presetCards[0].getAttribute('data-gradient');
+        } else {
+            selectedAvatarGradient = profile.avatarVal;
+        }
     } else if (profile.avatarType === 'emoji') {
         document.getElementById('avatar-sub-emoji').classList.remove('hidden');
         const emojiCircles = document.querySelectorAll('.preset-emoji-circle');
+        let hasActiveEmoji = false;
         emojiCircles.forEach(c => {
-            if (c.getAttribute('data-emoji') === profile.avatarVal) {
+            if (profile.avatarVal && c.getAttribute('data-emoji') === profile.avatarVal) {
                 c.classList.add('active');
+                hasActiveEmoji = true;
             } else {
                 c.classList.remove('active');
             }
         });
-        selectedAvatarEmoji = profile.avatarVal;
+        if (!hasActiveEmoji && emojiCircles.length > 0) {
+            emojiCircles[0].classList.add('active');
+            selectedAvatarEmoji = emojiCircles[0].getAttribute('data-emoji');
+        } else {
+            selectedAvatarEmoji = profile.avatarVal;
+        }
     } else if (profile.avatarType === 'image') {
         document.getElementById('avatar-sub-image').classList.remove('hidden');
         document.getElementById('avatar-image-url-input').value = profile.avatarVal || "";
@@ -7919,14 +7931,21 @@ function openPopoverNear(element, defaultTab = 'avatar') {
 
     // Set Cover presets
     const coverCards = document.querySelectorAll('#popover-panel-cover .preset-card');
+    let hasActiveCover = false;
     coverCards.forEach(c => {
-        if (c.getAttribute('data-cover') === profile.coverVal) {
+        if (profile.coverVal && c.getAttribute('data-cover') === profile.coverVal) {
             c.classList.add('active');
+            hasActiveCover = true;
         } else {
             c.classList.remove('active');
         }
     });
-    selectedCoverVal = profile.coverVal;
+    if (!hasActiveCover && coverCards.length > 0) {
+        coverCards[0].classList.add('active');
+        selectedCoverVal = coverCards[0].getAttribute('data-cover');
+    } else {
+        selectedCoverVal = profile.coverVal;
+    }
 
     // Set Social link inputs
     document.getElementById('social-instagram-input').value = profile.socialInstagram || "";
