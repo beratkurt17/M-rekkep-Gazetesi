@@ -1211,8 +1211,16 @@
 
         <!-- Section: Cover Edit -->
         <div id="popover-panel-cover" class="popover-panel hidden">
-            <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">Kapak Görseli / Gradyan Seçin</label>
-            <div class="preset-grid" style="margin-top: 10px;">
+            <div class="profile-input-group" style="margin-bottom: 10px;">
+                <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">Kapak Türü</label>
+                <select id="cover-type-select" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-light); font-family: var(--font-ui); background: var(--bg-primary); color: var(--text-primary); width: 100%;">
+                    <option value="gradient">Renk Gradyanı</option>
+                    <option value="image">Kapak Resmi (URL)</option>
+                </select>
+            </div>
+
+            <!-- Panel Sub: Gradient Cover Select -->
+            <div id="cover-sub-gradient" class="preset-grid" style="margin-top: 10px;">
                 <div class="preset-card active" data-cover="linear-gradient(135deg, #2b1111, #5d1a1a)" style="background: linear-gradient(135deg, #2b1111, #5d1a1a)"></div>
                 <div class="preset-card" data-cover="linear-gradient(135deg, #0b251a, #134e5e)" style="background: linear-gradient(135deg, #0b251a, #134e5e)"></div>
                 <div class="preset-card" data-cover="linear-gradient(135deg, #0a192f, #1b3a4b)" style="background: linear-gradient(135deg, #0a192f, #1b3a4b)"></div>
@@ -1221,6 +1229,12 @@
                 <div class="preset-card" data-cover="linear-gradient(135deg, #1e3c72, #2a5298)" style="background: linear-gradient(135deg, #1e3c72, #2a5298)"></div>
                 <div class="preset-card" data-cover="linear-gradient(135deg, #eaddca, #c8b9a6)" style="background: linear-gradient(135deg, #eaddca, #c8b9a6)"></div>
                 <div class="preset-card" data-cover="linear-gradient(135deg, #e74c3c, #f1c40f)" style="background: linear-gradient(135deg, #e74c3c, #f1c40f)"></div>
+            </div>
+
+            <!-- Panel Sub: Image Cover URL Select -->
+            <div id="cover-sub-image" class="profile-input-group hidden" style="margin-top: 10px;">
+                <label for="cover-image-url-input">Kapak Resmi URL Adresi</label>
+                <input type="url" id="cover-image-url-input" class="form-control" style="font-size:0.8rem; height:34px; padding: 6px 12px; background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-primary); border-radius: 6px; width: 100%; box-sizing: border-box;" placeholder="https://resim-linki.com/kapak.jpg">
             </div>
         </div>
 

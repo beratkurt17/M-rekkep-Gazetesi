@@ -7120,6 +7120,7 @@ function getAuthorProfileData(authorName) {
         socialWeb: "",
         avatarType: "gradient",
         avatarVal: "linear-gradient(135deg, var(--accent-color), #d35400)",
+        coverType: "gradient",
         coverVal: "linear-gradient(135deg, var(--accent-color), #2b1111)"
     };
     
@@ -7315,6 +7316,13 @@ window.openAuthorProfile = function(authorName, startTab) {
         const bgVal = profile.coverVal || "linear-gradient(135deg, var(--accent-color), #2b1111)";
         coverEl.style.background = bgVal;
         coverEl.style.backgroundImage = bgVal;
+        if (profile.coverType === 'image' || bgVal.startsWith('url(')) {
+            coverEl.style.backgroundSize = "cover";
+            coverEl.style.backgroundPosition = "center";
+        } else {
+            coverEl.style.backgroundSize = "";
+            coverEl.style.backgroundPosition = "";
+        }
     }
 
     // Apply Avatar
@@ -7773,8 +7781,23 @@ function initProfileCustomizer() {
         });
     });
 
+    // Cover Type dropdown change
+    const coverTypeSelect = document.getElementById('cover-type-select');
+    if (coverTypeSelect) {
+        coverTypeSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            document.getElementById('cover-sub-gradient').classList.add('hidden');
+            document.getElementById('cover-sub-image').classList.add('hidden');
+            if (val === 'gradient') {
+                document.getElementById('cover-sub-gradient').classList.remove('hidden');
+            } else if (val === 'image') {
+                document.getElementById('cover-sub-image').classList.remove('hidden');
+            }
+        });
+    }
+
     // Preset Cover select clicks
-    const coverCards = document.querySelectorAll('#popover-panel-cover .preset-card');
+    const coverCards = document.querySelectorAll('#cover-sub-gradient .preset-card');
     coverCards.forEach(card => {
         card.addEventListener('click', () => {
             coverCards.forEach(c => c.classList.remove('active'));
@@ -7799,11 +7822,21 @@ function initProfileCustomizer() {
             } else if (type === 'image') {
                 val = document.getElementById('avatar-image-url-input').value.trim() || "";
             }
+
+            const coverType = coverTypeSelect ? coverTypeSelect.value : 'gradient';
+            let coverVal = "";
+            if (coverType === 'gradient') {
+                coverVal = selectedCoverVal || "linear-gradient(135deg, var(--accent-color), #2b1111)";
+            } else if (coverType === 'image') {
+                const urlVal = document.getElementById('cover-image-url-input').value.trim();
+                coverVal = urlVal ? `url('${urlVal}')` : "linear-gradient(135deg, var(--accent-color), #2b1111)";
+            }
             
             saveAuthorProfileData(authorName, {
                 avatarType: type,
                 avatarVal: val,
-                coverVal: selectedCoverVal || "linear-gradient(135deg, var(--accent-color), #2b1111)",
+                coverType: coverType,
+                coverVal: coverVal,
                 socialInstagram: document.getElementById('social-instagram-input').value.trim(),
                 socialTwitter: document.getElementById('social-twitter-input').value.trim(),
                 socialWeb: document.getElementById('social-web-input').value.trim()
@@ -7976,21 +8009,36 @@ function openPopoverNear(element, defaultTab = 'avatar') {
     }
 
     // Set Cover presets
-    const coverCards = document.querySelectorAll('#popover-panel-cover .preset-card');
-    let hasActiveCover = false;
-    coverCards.forEach(c => {
-        if (profile.coverVal && c.getAttribute('data-cover') === profile.coverVal) {
-            c.classList.add('active');
-            hasActiveCover = true;
+    const coverTypeSelect = document.getElementById('cover-type-select');
+    if (coverTypeSelect) coverTypeSelect.value = profile.coverType || 'gradient';
+
+    document.getElementById('cover-sub-gradient').classList.add('hidden');
+    document.getElementById('cover-sub-image').classList.add('hidden');
+
+    if ((profile.coverType || 'gradient') === 'gradient') {
+        document.getElementById('cover-sub-gradient').classList.remove('hidden');
+        const coverCards = document.querySelectorAll('#cover-sub-gradient .preset-card');
+        let hasActiveCover = false;
+        coverCards.forEach(c => {
+            if (profile.coverVal && c.getAttribute('data-cover') === profile.coverVal) {
+                c.classList.add('active');
+                hasActiveCover = true;
+            } else {
+                c.classList.remove('active');
+            }
+        });
+        if (!hasActiveCover && coverCards.length > 0) {
+            coverCards[0].classList.add('active');
+            selectedCoverVal = coverCards[0].getAttribute('data-cover');
         } else {
-            c.classList.remove('active');
+            selectedCoverVal = profile.coverVal;
         }
-    });
-    if (!hasActiveCover && coverCards.length > 0) {
-        coverCards[0].classList.add('active');
-        selectedCoverVal = coverCards[0].getAttribute('data-cover');
     } else {
-        selectedCoverVal = profile.coverVal;
+        document.getElementById('cover-sub-image').classList.remove('hidden');
+        const rawUrl = (profile.coverVal && profile.coverVal.startsWith('url('))
+            ? profile.coverVal.replace(/^url\(['"]?/, '').replace(/['"]?\)$/, '')
+            : profile.coverVal || '';
+        document.getElementById('cover-image-url-input').value = rawUrl;
     }
 
     // Set Social link inputs
