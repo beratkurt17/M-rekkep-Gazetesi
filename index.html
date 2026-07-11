@@ -1164,7 +1164,7 @@
         <div class="profile-popover-tabs">
             <button class="profile-popover-tab-btn active" id="popover-tab-avatar-btn">Avatar</button>
             <button class="profile-popover-tab-btn" id="popover-tab-cover-btn">Kapak</button>
-            <button class="profile-popover-tab-btn" id="popover-tab-socials-btn">Bağlantılar</button>
+            <button class="profile-popover-tab-btn" id="popover-tab-socials-btn">Hakkında & Linkler</button>
         </div>
 
         <!-- Section: Avatar Edit -->
@@ -1241,6 +1241,10 @@
         <!-- Section: Links/Bio Edit -->
         <div id="popover-panel-socials" class="popover-panel hidden">
             <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div class="profile-input-group">
+                    <label for="profile-bio-input">Hakkımda / Biyografi</label>
+                    <textarea id="profile-bio-input" class="form-control" style="font-size:0.8rem; height:70px; padding: 6px 12px; background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-primary); border-radius: 6px; resize: vertical; width: 100%; box-sizing: border-box; font-family: var(--font-ui);" placeholder="Kendinizden bahsedin..."></textarea>
+                </div>
                 <div class="profile-input-group">
                     <label for="social-instagram-input">Instagram Kullanıcı Adı</label>
                     <input type="text" id="social-instagram-input" class="form-control" style="font-size:0.8rem; height:32px; padding: 6px 12px; background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-primary); border-radius: 6px;" placeholder="kullanıcı_adı">

@@ -7837,6 +7837,7 @@ function initProfileCustomizer() {
                 avatarVal: val,
                 coverType: coverType,
                 coverVal: coverVal,
+                bio: document.getElementById('profile-bio-input').value.trim(),
                 socialInstagram: document.getElementById('social-instagram-input').value.trim(),
                 socialTwitter: document.getElementById('social-twitter-input').value.trim(),
                 socialWeb: document.getElementById('social-web-input').value.trim()
@@ -8041,7 +8042,8 @@ function openPopoverNear(element, defaultTab = 'avatar') {
         document.getElementById('cover-image-url-input').value = rawUrl;
     }
 
-    // Set Social link inputs
+    // Set Social link inputs and bio input
+    document.getElementById('profile-bio-input').value = profile.bio || "";
     document.getElementById('social-instagram-input').value = profile.socialInstagram || "";
     document.getElementById('social-twitter-input').value = profile.socialTwitter || "";
     document.getElementById('social-web-input').value = profile.socialWeb || "";
