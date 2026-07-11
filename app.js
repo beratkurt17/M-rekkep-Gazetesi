@@ -2219,22 +2219,35 @@ function populateShareSentences(article) {
     const paragraphs = tempDiv.querySelectorAll("p, blockquote");
 
     const sentences = [];
-    paragraphs.forEach(p => {
-        const text = p.textContent.trim();
-        if (!text) return;
-        
-        // Clean extra spaces and split into sentences by punctuation (. ? !) followed by space or end
-        const cleanText = text.replace(/\s+/g, ' ').trim();
-        const matches = cleanText.match(/[^.!?]+[.!?]+(?=\s|$)/g);
-        if (matches) {
-            matches.forEach(s => {
-                const cleanS = s.trim();
-                if (cleanS) sentences.push(cleanS);
-            });
-        } else if (cleanText) {
-            sentences.push(cleanText);
-        }
-    });
+    if (article.category === 'siir') {
+        // For poems, preserve line structure and treat each verse as a selectable item
+        const lines = tempDiv.innerHTML
+            .replace(/<br\s*\/?>/gi, "\n")
+            .replace(/<\/p>/gi, "\n")
+            .replace(/<\/div>/gi, "\n")
+            .replace(/<[^>]*>/g, "")
+            .split("\n")
+            .map(line => line.trim())
+            .filter(Boolean);
+        lines.forEach(l => sentences.push(l));
+    } else {
+        // For prose, split into sentences by punctuation
+        paragraphs.forEach(p => {
+            const text = p.textContent.trim();
+            if (!text) return;
+            
+            const cleanText = text.replace(/\s+/g, ' ').trim();
+            const matches = cleanText.match(/[^.!?]+[.!?]+(?=\s|$)/g);
+            if (matches) {
+                matches.forEach(s => {
+                    const cleanS = s.trim();
+                    if (cleanS) sentences.push(cleanS);
+                });
+            } else if (cleanText) {
+                sentences.push(cleanText);
+            }
+        });
+    }
 
     if (sentences.length === 0) {
         listEl.innerHTML = `<div style="color:var(--text-secondary); font-size:0.8rem; text-align:center; padding:20px;">Bu makalede seçilebilir cümle bulunamadı.</div>`;
@@ -2252,11 +2265,12 @@ function populateShareSentences(article) {
             // Toggle selection
             item.classList.toggle("selected");
 
-            // Compile all selected sentences in order with spaces
+            // Compile selected items (join with newlines for poems, spaces for other articles)
             const selectedItems = listEl.querySelectorAll(".share-paragraph-item.selected");
+            const separator = (shareCurrentArticle && shareCurrentArticle.category === 'siir') ? "\n" : " ";
             const compiledText = Array.from(selectedItems)
                 .map(el => el.textContent)
-                .join(" ")
+                .join(separator)
                 .substring(0, 280);
 
             const quoteInput = document.getElementById("share-quote-input");
@@ -2307,27 +2321,33 @@ function closeShareModal() {
     }
 }
 
-// Canvas text wrapping helper
+// Canvas text wrapping helper that respects explicit newlines
 function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
-    const words = text.split(' ');
-    let line = '';
+    const sourceLines = text.split('\n');
     let currentY = y;
     const lines = [];
 
-    for (let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + ' ';
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > maxWidth && n > 0) {
-            lines.push({ text: line.trim(), y: currentY });
-            line = words[n] + ' ';
-            currentY += lineHeight;
-        } else {
-            line = testLine;
+    sourceLines.forEach(srcLine => {
+        const words = srcLine.split(' ');
+        let line = '';
+        
+        for (let n = 0; n < words.length; n++) {
+            const testLine = line + words[n] + ' ';
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > maxWidth && n > 0) {
+                lines.push({ text: line.trim(), y: currentY });
+                line = words[n] + ' ';
+                currentY += lineHeight;
+            } else {
+                line = testLine;
+            }
         }
-    }
-    lines.push({ text: line.trim(), y: currentY });
+        lines.push({ text: line.trim(), y: currentY });
+        currentY += lineHeight;
+    });
+
     lines.forEach(l => ctx.fillText(l.text, x, l.y));
-    return currentY + lineHeight;
+    return currentY;
 }
 
 // Render a share card on canvas
