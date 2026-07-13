@@ -5987,10 +5987,12 @@ detailClapBtn.addEventListener("click", async () => {
     if (!activeArticleId) return;
 
     const storageKey = `clapped_articles_${currentUser.id}`;
-    const clappedArticles = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    let clappedArticles = JSON.parse(localStorage.getItem(storageKey) || "[]");
     
-    if (!clappedArticles.includes(activeArticleId)) {
-        let updatedClaps = 0;
+    let updatedClaps = 0;
+    const clappedIndex = clappedArticles.indexOf(activeArticleId);
+
+    if (clappedIndex === -1) {
         // Increment claps
         articles = articles.map(art => {
             if (art.id === activeArticleId) {
@@ -6025,13 +6027,43 @@ detailClapBtn.addEventListener("click", async () => {
         if (clappedArt && clappedArt.author) {
             createNotification(clappedArt.author, 'clap', currentUser.username, `"${clappedArt.title}" isimli eserinizi alkışladı.`, { articleId: clappedArt.id });
         }
+    } else {
+        // Withdraw/Undo clap
+        articles = articles.map(art => {
+            if (art.id === activeArticleId) {
+                art.claps = Math.max(0, art.claps - 1);
+                updatedClaps = art.claps;
+                detailClapCount.innerText = art.claps;
+            }
+            return art;
+        });
 
-        // Dynamic feed refresh if in list view, or dynamic grid refresh
-        if (currentCategoryFilter === "all") {
-            renderNewspaperGrid();
+        clappedArticles.splice(clappedIndex, 1);
+        localStorage.setItem(storageKey, JSON.stringify(clappedArticles));
+
+        if (isSupabaseConnected) {
+            try {
+                await supabaseClient
+                    .from('articles')
+                    .update({ claps: updatedClaps })
+                    .eq('id', activeArticleId);
+            } catch (err) {
+                console.error("Error updating claps on Supabase:", err);
+            }
+            clearSupabaseCache();
         } else {
-            renderCategoryFeed(currentCategoryFilter);
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
         }
+
+        detailClapBtn.classList.remove("clapped");
+        showToast("Alkış geri çekildi.");
+    }
+
+    // Dynamic feed refresh if in list view, or dynamic grid refresh
+    if (currentCategoryFilter === "all") {
+        renderNewspaperGrid();
+    } else {
+        renderCategoryFeed(currentCategoryFilter);
     }
 });
 
