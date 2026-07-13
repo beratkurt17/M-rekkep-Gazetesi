@@ -5317,8 +5317,9 @@ async function openArticle(id) {
     detailImage.src = article.image || 'assets/typewriter_birds.webp';
     detailImage.onerror = function() { this.onerror=null; this.src='assets/typewriter_birds.webp'; };
     
-    // Check if clapped previously in this session
-    const clappedArticles = JSON.parse(sessionStorage.getItem("clapped_articles") || "[]");
+    // Check if clapped previously
+    const storageKey = currentUser ? `clapped_articles_${currentUser.id}` : null;
+    const clappedArticles = storageKey ? JSON.parse(localStorage.getItem(storageKey) || "[]") : [];
     if (clappedArticles.includes(id)) {
         detailClapBtn.classList.add("clapped");
     } else {
@@ -5985,7 +5986,8 @@ detailClapBtn.addEventListener("click", async () => {
     }
     if (!activeArticleId) return;
 
-    const clappedArticles = JSON.parse(sessionStorage.getItem("clapped_articles") || "[]");
+    const storageKey = `clapped_articles_${currentUser.id}`;
+    const clappedArticles = JSON.parse(localStorage.getItem(storageKey) || "[]");
     
     if (!clappedArticles.includes(activeArticleId)) {
         let updatedClaps = 0;
@@ -6000,7 +6002,7 @@ detailClapBtn.addEventListener("click", async () => {
         });
 
         clappedArticles.push(activeArticleId);
-        sessionStorage.setItem("clapped_articles", JSON.stringify(clappedArticles));
+        localStorage.setItem(storageKey, JSON.stringify(clappedArticles));
 
         if (isSupabaseConnected) {
             try {
