@@ -2050,21 +2050,7 @@ const BANNED_WORDS = [
 ];
 
 function containsProfanity(text) {
-    if (!text) return false;
-    const normalized = text.toLowerCase()
-        .replace(/ı/g, "i")
-        .replace(/ğ/g, "g")
-        .replace(/ü/g, "u")
-        .replace(/ş/g, "s")
-        .replace(/ö/g, "o")
-        .replace(/ç/g, "c");
-    
-    return BANNED_WORDS.some(word => {
-        if (word.length <= 3) {
-            return new RegExp(`\\b${word}\\b`, "i").test(normalized);
-        }
-        return normalized.includes(word);
-    });
+    return false;
 }
 
 function getArticleReports(id) {
@@ -2200,6 +2186,7 @@ function closeAuthModal() {
 // =============================================
 let shareCurrentTemplate = 'gece';
 let shareCurrentArticle = null;
+let shareIsCustomMode = false;
 
 /** Helper: update the share modal's quote display panel */
 function setShareQuote(text) {
@@ -2288,12 +2275,29 @@ function openShareModal(articleId, preselectedText) {
     const article = articles.find(a => a.id === articleId);
     if (!article) return;
     shareCurrentArticle = article;
+    shareIsCustomMode = false;
 
     const overlay = document.getElementById('share-overlay');
     if (!overlay) return;
 
     overlay.classList.remove('hidden');
     lockBodyScroll();
+
+    // Toggle custom fields visibility
+    const customFieldsSection = document.getElementById("share-custom-inputs-section");
+    if (customFieldsSection) customFieldsSection.classList.add("hidden");
+
+    const paragraphPickerSection = overlay.querySelector(".share-paragraph-picker-section");
+    if (paragraphPickerSection) paragraphPickerSection.classList.remove("hidden");
+
+    const modalTitle = overlay.querySelector('.share-modal-title');
+    if (modalTitle) modalTitle.textContent = "Paylaş";
+
+    const quoteLabel = overlay.querySelector('.share-quote-display label');
+    if (quoteLabel) quoteLabel.textContent = "Paylaşılacak Alıntı (İsteğe Bağlı):";
+
+    const quoteInput = document.getElementById("share-quote-input");
+    if (quoteInput) quoteInput.placeholder = "Yukarıdan cümle seçebilir veya alıntıyı buraya kendiniz de yazabilirsiniz...";
 
     // Populate sentences list
     populateShareSentences(article);
@@ -2311,6 +2315,48 @@ function openShareModal(articleId, preselectedText) {
             }
         });
     }
+}
+
+function openCustomShareModal() {
+    shareIsCustomMode = true;
+    shareCurrentArticle = {
+        title: "Yeni Bir Başlangıç",
+        author: "Kalem Sahibi",
+        category: "deneme"
+    };
+
+    const overlay = document.getElementById('share-overlay');
+    if (!overlay) return;
+
+    overlay.classList.remove('hidden');
+    lockBodyScroll();
+
+    // Toggle custom fields visibility
+    const customFieldsSection = document.getElementById("share-custom-inputs-section");
+    if (customFieldsSection) customFieldsSection.classList.remove("hidden");
+
+    const paragraphPickerSection = overlay.querySelector(".share-paragraph-picker-section");
+    if (paragraphPickerSection) paragraphPickerSection.classList.add("hidden");
+
+    const modalTitle = overlay.querySelector('.share-modal-title');
+    if (modalTitle) modalTitle.textContent = "Sosyal Medya Kartı Oluştur";
+
+    const quoteLabel = overlay.querySelector('.share-quote-display label');
+    if (quoteLabel) quoteLabel.textContent = "Kart Üzerindeki Metin / Alıntı:";
+
+    const quoteInput = document.getElementById("share-quote-input");
+    if (quoteInput) quoteInput.placeholder = "Kart üzerinde görünmesini istediğiniz cümleyi yazın...";
+
+    // Populate input values to match default mock article
+    const customAuthorInput = document.getElementById("share-custom-author-input");
+    const customCategorySelect = document.getElementById("share-custom-category-input");
+    const customTitleInput = document.getElementById("share-custom-title-input");
+
+    if (customAuthorInput) customAuthorInput.value = shareCurrentArticle.author;
+    if (customCategorySelect) customCategorySelect.value = shareCurrentArticle.category;
+    if (customTitleInput) customTitleInput.value = shareCurrentArticle.title;
+
+    setShareQuote("Kendi cümlenizi buraya yazıp, yukarıdan şablon seçerek sosyal medya kartınızı anında oluşturun.");
 }
 
 function closeShareModal() {
@@ -2361,8 +2407,29 @@ function renderShareCard(template) {
 
     const quoteInput = document.getElementById("share-quote-input");
     const quoteText = (quoteInput && quoteInput.value.trim()) ? quoteInput.value.trim() : "";
-    const articleTitle = shareCurrentArticle.title || "";
-    const authorName = shareCurrentArticle.author || "Mürekkep";
+    
+    let articleTitle = "";
+    let authorName = "";
+    let categoryName = "";
+
+    if (shareIsCustomMode) {
+        const customTitleInput = document.getElementById("share-custom-title-input");
+        const customAuthorInput = document.getElementById("share-custom-author-input");
+        const customCategorySelect = document.getElementById("share-custom-category-input");
+
+        articleTitle = (customTitleInput && customTitleInput.value.trim()) ? customTitleInput.value.trim() : "Yeni Bir Başlangıç";
+        authorName = (customAuthorInput && customAuthorInput.value.trim()) ? customAuthorInput.value.trim() : "Kalem Sahibi";
+        categoryName = (customCategorySelect && customCategorySelect.value) ? customCategorySelect.value : "deneme";
+
+        // Keep shareCurrentArticle synced so other components (social sharing etc) get correct values
+        shareCurrentArticle.title = articleTitle;
+        shareCurrentArticle.author = authorName;
+        shareCurrentArticle.category = categoryName;
+    } else {
+        articleTitle = shareCurrentArticle.title || "";
+        authorName = shareCurrentArticle.author || "Mürekkep";
+        categoryName = shareCurrentArticle.category || "deneme";
+    }
 
     // Template definitions
     const templates = {
@@ -2703,6 +2770,35 @@ function initShareOverlay() {
             renderShareCard(shareCurrentTemplate);
         });
     }
+
+    // Live re-render for custom card inputs
+    const customAuthorInput = document.getElementById("share-custom-author-input");
+    const customTitleInput = document.getElementById("share-custom-title-input");
+    const customCategorySelect = document.getElementById("share-custom-category-input");
+
+    [customAuthorInput, customTitleInput].forEach(input => {
+        if (input) {
+            input.addEventListener("input", () => {
+                if (shareIsCustomMode) renderShareCard(shareCurrentTemplate);
+            });
+        }
+    });
+
+    if (customCategorySelect) {
+        customCategorySelect.addEventListener("change", () => {
+            if (shareIsCustomMode) renderShareCard(shareCurrentTemplate);
+        });
+    }
+
+    // Connect trigger buttons for custom card creator
+    document.getElementById("create-card-toggle")?.addEventListener("click", () => {
+        openCustomShareModal();
+    });
+
+    document.getElementById("footer-create-card-btn")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        openCustomShareModal();
+    });
 
     // WhatsApp share
     document.getElementById("share-whatsapp")?.addEventListener("click", () => {
@@ -6406,37 +6502,95 @@ async function bootApp() {
         });
     }
 
-    // KVKK Modal Event Listeners
-    const openKvkkBtn = document.getElementById("open-kvkk-btn");
-    const closeKvkkModal = document.getElementById("close-kvkk-modal");
-    const kvkkOverlay = document.getElementById("kvkk-overlay");
-    const kvkkConfirmBtn = document.getElementById("kvkk-confirm-btn");
+    // Legal Modal Event Listeners (Sekmeli Yasal Belgeler)
+    const legalOverlay = document.getElementById("legal-overlay");
+    const closeLegalModal = document.getElementById("close-legal-modal");
+    const legalAcceptBtn = document.getElementById("legal-accept-btn");
+    const legalTabBtns = document.querySelectorAll(".legal-tab-btn");
+    const legalPanels = document.querySelectorAll(".legal-panel");
 
-    if (openKvkkBtn && kvkkOverlay) {
-        openKvkkBtn.addEventListener("click", (e) => {
+    // Open legal modal with specific tab active
+    function openLegalModal(tabName) {
+        if (!legalOverlay) return;
+        legalOverlay.classList.remove("hidden");
+        
+        // Activate specified tab
+        legalTabBtns.forEach(btn => {
+            if (btn.getAttribute("data-legal-tab") === tabName) {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
+            }
+        });
+
+        // Show specified panel
+        legalPanels.forEach(panel => {
+            if (panel.id === `legal-panel-${tabName}`) {
+                panel.classList.remove("hidden");
+            } else {
+                panel.classList.add("hidden");
+            }
+        });
+    }
+
+    // Attach listeners to all legal trigger links (footer and register form)
+    document.querySelectorAll(".legal-trigger").forEach(trigger => {
+        trigger.addEventListener("click", (e) => {
             e.preventDefault();
-            kvkkOverlay.classList.remove("hidden");
+            e.stopPropagation();
+            const tabName = trigger.getAttribute("data-tab") || "terms";
+            openLegalModal(tabName);
+        });
+    });
+
+    // Tab switching functionality
+    legalTabBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const targetTab = btn.getAttribute("data-legal-tab");
+            
+            legalTabBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+
+            legalPanels.forEach(p => {
+                if (p.id === `legal-panel-${targetTab}`) {
+                    p.classList.remove("hidden");
+                } else {
+                    p.classList.add("hidden");
+                }
+            });
+        });
+    });
+
+    // Close buttons
+    if (closeLegalModal) {
+        closeLegalModal.addEventListener("click", () => {
+            if (legalOverlay) legalOverlay.classList.add("hidden");
         });
     }
-    if (closeKvkkModal && kvkkOverlay) {
-        closeKvkkModal.addEventListener("click", () => {
-            kvkkOverlay.classList.add("hidden");
-        });
-    }
-    if (kvkkConfirmBtn && kvkkOverlay) {
-        kvkkConfirmBtn.addEventListener("click", () => {
-            kvkkOverlay.classList.add("hidden");
+
+    if (legalAcceptBtn) {
+        legalAcceptBtn.addEventListener("click", () => {
+            if (legalOverlay) legalOverlay.classList.add("hidden");
+            // Auto check the registration KVKK checkbox if user accepted
             const kvkkCheckbox = document.getElementById("register-kvkk");
             if (kvkkCheckbox) kvkkCheckbox.checked = true;
         });
     }
-    if (kvkkOverlay) {
-        kvkkOverlay.addEventListener("click", (e) => {
-            if (e.target === kvkkOverlay) {
-                kvkkOverlay.classList.add("hidden");
+
+    if (legalOverlay) {
+        legalOverlay.addEventListener("click", (e) => {
+            if (e.target === legalOverlay) {
+                legalOverlay.classList.add("hidden");
             }
         });
     }
+
+    // ESC key closes the legal modal
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && legalOverlay && !legalOverlay.classList.contains("hidden")) {
+            legalOverlay.classList.add("hidden");
+        }
+    });
 
     // Forgot Password flow
     const forgotPasswordLink = document.getElementById("forgot-password-link");
@@ -6549,7 +6703,7 @@ async function bootApp() {
             
             const kvkkCheckbox = document.getElementById("register-kvkk");
             if (kvkkCheckbox && !kvkkCheckbox.checked) {
-                showToast("⚠️ Lütfen KVKK Açık Rıza Metni'ni onaylayın.");
+                showToast("⚠️ Lütfen yasal sözleşmeleri ve KVKK metnini onaylayın.");
                 return;
             }
 

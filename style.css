@@ -4809,5 +4809,199 @@ button, a, input, textarea, select {
     }
 }
 
+/* =============================================
+   LEGAL MODAL & FOOTER BOTTOM STYLES
+   ============================================= */
+
+.legal-modal-container {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    width: 90%;
+    max-width: 700px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    padding: 25px;
+    font-family: var(--font-ui);
+    color: var(--text-primary);
+    position: relative;
+    box-shadow: var(--shadow-lg);
+    animation: legalModalFade 0.3s ease-out;
+}
+
+@keyframes legalModalFade {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.legal-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    font-weight: bold;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.legal-modal-close:hover {
+    color: var(--accent-color);
+    transform: scale(1.1);
+}
+
+.legal-modal-title {
+    font-family: var(--font-header);
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 15px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 10px;
+}
+
+.legal-tabs-nav {
+    display: flex;
+    gap: 5px;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 18px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+
+.legal-tab-btn {
+    background: none;
+    border: none;
+    padding: 8px 14px;
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.legal-tab-btn:hover {
+    color: var(--accent-color);
+}
+
+.legal-tab-btn.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+}
+
+.legal-modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 8px;
+    margin-bottom: 15px;
+    max-height: 48vh;
+}
+
+/* Custom scrollbar for legal content */
+.legal-modal-content::-webkit-scrollbar {
+    width: 6px;
+}
+.legal-modal-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+.legal-modal-content::-webkit-scrollbar-thumb {
+    background: var(--border-light);
+    border-radius: 3px;
+}
+.legal-modal-content::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+.legal-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+}
+
+.legal-panel h3 {
+    font-family: var(--font-header);
+    font-size: 1.15rem;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+    font-weight: 700;
+}
+
+.legal-panel p strong {
+    color: var(--text-primary);
+}
+
+.legal-panel.hidden {
+    display: none !important;
+}
+
+.legal-modal-footer {
+    border-top: 1px solid var(--border-light);
+    padding-top: 15px;
+}
+
+/* Footer Bottom Bar Links */
+.footer-bottom-bar {
+    grid-column: span 3;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border-light);
+    padding-top: 15px;
+    margin-top: 20px;
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.footer-bottom-links {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.footer-bottom-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.footer-bottom-links a:hover {
+    color: var(--accent-color);
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .footer-bottom-bar {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .footer-bottom-links {
+        justify-content: center;
+        gap: 10px;
+    }
+}
+
+
 
 

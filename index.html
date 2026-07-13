@@ -151,6 +151,10 @@
                 <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                 <span>Yazı Yaz</span>
             </button>
+            <button id="create-card-toggle" class="btn-utility" style="border-color: var(--border-color); color: var(--text-primary); background: transparent;">
+                <svg viewBox="0 0 24 24" style="width: 15px; height: 15px; fill: currentColor; margin-right: 6px; display: inline-block; vertical-align: middle;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H6c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1zm-4.5-9L11 14.5l-1.5-2L7 16h10l-3.5-6z"/></svg>
+                <span>Kart Oluştur</span>
+            </button>
         </div>
     </div>
 
@@ -227,6 +231,17 @@
                         <svg viewBox="0 0 24 24" style="width: 17px; height: 17px; fill: currentColor; flex-shrink:0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
                         <span>@murekkepgazetesi</span>
                     </a>
+                </div>
+            </div>
+            <div class="footer-bottom-bar">
+                <div>© 2026 Mürekkep Gazetesi. Tüm Hakları Saklıdır.</div>
+                <div class="footer-bottom-links">
+                    <a id="footer-create-card-btn" style="color: var(--accent-color); font-weight: 700; cursor: pointer; text-decoration: underline;">Sosyal Medya Kartı Oluştur</a>
+                    <span>|</span>
+                    <a class="legal-trigger" data-tab="terms">Kullanım Koşulları</a>
+                    <a class="legal-trigger" data-tab="copyright">Telif Hakları</a>
+                    <a class="legal-trigger" data-tab="privacy">Gizlilik Politikası</a>
+                    <a class="legal-trigger" data-tab="kvkk">KVKK Aydınlatma</a>
                 </div>
             </div>
         </footer>
@@ -644,7 +659,7 @@
                     <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 20px; font-family: var(--font-ui); font-size: 0.8rem; color: var(--text-secondary); cursor: pointer;">
                         <input type="checkbox" id="register-kvkk" required style="margin-top: 3px; cursor: pointer;">
                         <label for="register-kvkk" style="line-height: 1.4; user-select: none; cursor: pointer;">
-                            <span id="open-kvkk-btn" style="color: var(--accent-color); font-weight: 600; text-decoration: underline; cursor: pointer;">KVKK Açık Rıza Metni'ni</span> ve üyelik şartlarını okudum, onaylıyorum.
+                            <span id="open-kvkk-btn" class="legal-trigger" data-tab="kvkk" style="color: var(--accent-color); font-weight: 600; text-decoration: underline; cursor: pointer;">KVKK Açık Rıza Metni'ni</span> ve <span id="open-terms-btn" class="legal-trigger" data-tab="terms" style="color: var(--accent-color); font-weight: 600; text-decoration: underline; cursor: pointer;">üyelik şartlarını</span> okudum, onaylıyorum.
                         </label>
                     </div>
                     <div class="form-actions">
@@ -726,6 +741,32 @@
             <!-- Canvas Preview -->
             <div class="share-canvas-wrapper">
                 <canvas id="share-canvas" width="1080" height="1080"></canvas>
+            </div>
+
+            <!-- Custom Card Inputs (Visible only in Custom Mode) -->
+            <div id="share-custom-inputs-section" class="hidden" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="share-custom-author-input" style="display: block; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Yazar İsmi</label>
+                        <input type="text" id="share-custom-author-input" class="form-control" style="font-size: 0.8rem; height: 36px; padding: 6px 12px; background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-primary); border-radius: 6px; width: 100%;" placeholder="Kalem Sahibi">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="share-custom-category-input" style="display: block; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Kategori</label>
+                        <select id="share-custom-category-input" style="font-family: var(--font-ui); font-size: 0.8rem; height: 36px; padding: 6px; border-radius: 6px; border: 1px solid var(--border-light); background: var(--bg-secondary); color: var(--text-primary); width: 100%; box-sizing: border-box;">
+                            <option value="siir">ŞİİR</option>
+                            <option value="oyku">ÖYKÜ</option>
+                            <option value="deneme" selected>DENEME</option>
+                            <option value="kitap">KİTAP</option>
+                            <option value="roportaj">RÖPORTAJ</option>
+                            <option value="kose-yazilari">KÖŞE YAZILARI</option>
+                            <option value="haber">HABER</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="share-custom-title-input" style="display: block; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Başlık / Eser Adı (İsteğe Bağlı)</label>
+                    <input type="text" id="share-custom-title-input" class="form-control" style="font-size: 0.8rem; height: 36px; padding: 6px 12px; background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-primary); border-radius: 6px; width: 100%;" placeholder="Yeni Bir Başlangıç">
+                </div>
             </div>
 
             <!-- Spotify-style Lyric/Sentence Picker -->
@@ -1296,23 +1337,75 @@
         </div>
     </div>
 
-    <!-- KVKK Modal Overlay -->
-    <div id="kvkk-overlay" class="overlay hidden" style="z-index: 1200; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); position: fixed; top: 0; left: 0; right: 0; bottom: 0;">
-        <div class="kvkk-modal-container" style="background: var(--bg-primary); border: 1px solid var(--border-color); width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; border-radius: 12px; padding: 25px; font-family: var(--font-ui); color: var(--text-primary); position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
-            <button id="close-kvkk-modal" type="button" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-secondary); font-size: 1.2rem; cursor: pointer; font-weight: bold; transition: color 0.2s;">✕</button>
-            <h2 style="font-family: var(--font-header); font-size: 1.5rem; font-weight: 800; border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 16px; color: var(--accent-color);">KVKK Açık Rıza Metni</h2>
-            <div style="font-size: 0.85rem; line-height: 1.6; color: var(--text-secondary); display: flex; flex-direction: column; gap: 12px; font-family: var(--font-ui);">
-                <p style="margin: 0; font-weight: bold; color: var(--text-primary);">Mürekkep Gazetesi Kişisel Verilerin Korunması Kanunu (KVKK) Aydınlatma ve Açık Rıza Metni</p>
-                <p style="margin: 0;">Değerli Kullanıcımız, 6698 sayılı Kişisel Verilerin Korunması Kanunu uyarınca, Mürekkep Gazetesi ("Mürekkep") olarak, veri sorumlusu sıfatıyla, kișisel verilerinizin așağıda açıklanan amaçlar doğrultusunda kaydedilmesi, saklanması, güncellenmesi ve işlenmesi hususunda sizleri bilgilendirmek isteriz.</p>
-                <p style="margin: 0; font-weight: bold; color: var(--text-primary);">1. İşlenen Kişisel Verileriniz ve İşlenme Amaçları:</p>
-                <p style="margin: 0;">Üyelik oluştururken verdiğiniz kalem ismi (kullanıcı adı), e-posta adresi ve şifre verileriniz; hesabınızın doğrulanması, güvenliğinin sağlanması, site üzerindeki yazı yazma, alkışlama, yorum yapma ve bildirim alma gibi üyelik fonksiyonlarının yerine getirilmesi amacıyla işlenmektedir.</p>
-                <p style="margin: 0; font-weight: bold; color: var(--text-primary);">2. Kişisel Verilerinizin Aktarılması:</p>
-                <p style="margin: 0;">Mürekkep bünyesinde toplanan kişisel verileriniz, yasal yükümlülüklerin yerine getirilmesi amacıyla resmi merciler dışında hiçbir üçüncü şahıs, kurum veya kuruluşla paylaşılmamaktadır.</p>
-                <p style="margin: 0; font-weight: bold; color: var(--text-primary);">3. Haklarınız:</p>
-                <p style="margin: 0;">Dilediğiniz zaman hesabınızı ayarlar panelinden kalıcı olarak silebilirsiniz. Hesabınız silindiğinde tüm kişisel verileriniz sistemimizden kalıcı olarak temizlenecektir. Ayrıca kişisel verileriniz hakkında bilgi almak, düzeltilmesini talep etmek veya silinmesini istemek için bizimle iletişime geçebilirsiniz.</p>
-                <p style="margin: 0;">Üye kayıt formundaki onay kutucuğunu işaretleyerek, kişisel verilerinizin bu metinde belirtilen şartlar dahilinde işlenmesini kabul etmiş olursunuz.</p>
+    <!-- Unified Legal Agreements Modal Overlay -->
+    <div id="legal-overlay" class="overlay hidden" style="z-index: 1200; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); position: fixed; top: 0; left: 0; right: 0; bottom: 0;">
+        <div class="legal-modal-container">
+            <button id="close-legal-modal" class="legal-modal-close" type="button" aria-label="Kapat">✕</button>
+            <h2 class="legal-modal-title">Yasal Bilgiler & Sözleşmeler</h2>
+            
+            <!-- Tabs Navigation -->
+            <div class="legal-tabs-nav">
+                <button class="legal-tab-btn active" data-legal-tab="terms">Kullanım Sözleşmesi</button>
+                <button class="legal-tab-btn" data-legal-tab="copyright">Telif Hakları</button>
+                <button class="legal-tab-btn" data-legal-tab="privacy">Gizlilik & Çerezler</button>
+                <button class="legal-tab-btn" data-legal-tab="kvkk">KVKK Aydınlatma</button>
             </div>
-            <button id="kvkk-confirm-btn" type="button" class="btn-publish-submit" style="width: 100%; margin-top: 20px; border-radius: 8px; height: 38px;">Anladım, Kabul Ediyorum</button>
+            
+            <div class="legal-modal-content">
+                <!-- Tab Panel: Terms of Use -->
+                <div id="legal-panel-terms" class="legal-panel">
+                    <h3>Kullanım Koşulları ve Üyelik Sözleşmesi</h3>
+                    <p><strong>1. Taraflar ve Konu</strong></p>
+                    <p>İşbu Kullanım Koşulları ve Üyelik Sözleşmesi, Mürekkep Gazetesi ("Mürekkep" veya "Platform") ile Platform'a üye olan kullanıcılar arasındaki ilişkileri, hak ve yükümlülükleri düzenler. Sitemizi kullanarak veya üye olarak bu şartları kabul etmiş sayılırsınız.</p>
+                    <p><strong>2. Üyelik Şartları ve Sorumluluklar</strong></p>
+                    <p>Üye, kayıt olurken verdiği bilgilerin doğruluğunu beyan eder. Hesabın ve şifrenin güvenliğinden tamamen üyenin kendisi sorumludur. 13 yaşından küçük kullanıcıların platforma üye olabilmesi için veli/vasi onayı gerekmektedir.</p>
+                    <p><strong>3. İçerik ve Davranış Kuralları</strong></p>
+                    <p>Üyeler, Mürekkep üzerinde yayınladıkları tüm yazılardan, yorumlardan ve içeriklerden kişisel olarak sorumludur. Sitede hakaret, nefret söylemi, şiddet teşviki, müstehcenlik, üçüncü kişilerin haklarını ihlal eden içerikler veya intihal (kopyalama) barındıran eserlerin yayınlanması kesinlikle yasaktır.</p>
+                    <p><strong>4. Moderasyon ve Haklar</strong></p>
+                    <p>Platform yönetimi (editörler), topluluk kurallarına, yasalara veya site işleyişine aykırı gördüğü içerikleri önceden haber vermeksizin düzenleme, yayından kaldırma veya ilgili üyenin hesabını askıya alma/silme hakkını saklı tutar.</p>
+                </div>
+                
+                <!-- Tab Panel: Copyright -->
+                <div id="legal-panel-copyright" class="legal-panel hidden">
+                    <h3>Telif Hakları ve Fikri Mülkiyet Politikası</h3>
+                    <p><strong>1. Eserlerin Telif Hakkı Sahipliği</strong></p>
+                    <p>Mürekkep Gazetesi üzerinde yayınladığınız tüm şiir, öykü, deneme, inceleme ve diğer edebi/fikri eserlerin telif hakkı ve mülkiyeti <strong>tamamen size (yazara) aittir</strong>. Yazarlar, kendi eserlerini başka mecralarda da yayınlamakta özgürdür.</p>
+                    <p><strong>2. Yayın Lisansı ve Haklar</strong></p>
+                    <p>Eserinizi Mürekkep Gazetesi'nde yayınlayarak; eserin Mürekkep platformu üzerinden ücretsiz olarak dijital ortamda yayınlanması, yayılması, arşivlenmesi ve sosyal medya hesaplarımızda (yazar ismi belirtilerek) tanıtım amacıyla paylaşılması için Mürekkep'e <strong>münhasır olmayan (non-exclusive), telifsiz ve süresiz bir dijital yayım lisansı</strong> vermiş olursunuz. Yazar dilediği zaman eserini sistemden silebilir ve bu lisansı sonlandırabilir.</p>
+                    <p><strong>3. Özgünlük ve İntihal Taahhüdü</strong></p>
+                    <p>Yazarlar, yayınladıkları her eserin tamamen özgün ve kendilerine ait olduğunu, üçüncü şahısların telif haklarını ihlal etmediğini kabul, beyan ve taahhüt eder. İntihal (başkasına ait eseri kendi adı altında yayınlama) durumunda tüm hukuki ve cezai sorumluluk doğrudan eseri gönderen yazara aittir. Mürekkep bu konuda hiçbir sorumluluk kabul etmez.</p>
+                    <p><strong>4. Telif İhlali Bildirimleri (Take-Down)</strong></p>
+                    <p>Mürekkep üzerindeki bir yazının telif haklarınızı ihlal ettiğini düşünüyorsanız, hak sahipliği belgelerinizle birlikte lütfen <strong>murekkepgazetesi0@gmail.com</strong> e-posta adresi üzerinden bizimle iletişime geçin. İlgili içerikler yasal incelemenin ardından ivedilikle yayından kaldırılacaktır.</p>
+                </div>
+                
+                <!-- Tab Panel: Privacy & Cookies -->
+                <div id="legal-panel-privacy" class="legal-panel hidden">
+                    <h3>Gizlilik ve Çerez Politikası</h3>
+                    <p><strong>1. Toplanan Veriler ve Amacı</strong></p>
+                    <p>Mürekkep Gazetesi, üyelik kaydı sırasında yalnızca kullanıcı adı (kalem ismi), e-posta adresi ve şifrenizi şifrelenmiş olarak toplar. Bu veriler, üyelik işlemlerinin yürütülmesi ve platform güvenliği için zorunludur.</p>
+                    <p><strong>2. Çerez (Cookie) Kullanımı</strong></p>
+                    <p>Sitemizde, kullanıcı deneyiminizi iyileştirmek adına sadece oturum yönetimi (giriş durumunuzu hatırlama) ve arayüz tercihlerinizi (örn. Gece Okuması modu) saklamak için zorunlu ve işlevsel çerezler kullanılmaktadır. Reklam veya üçüncü taraf takip çerezleri kullanılmamaktadır.</p>
+                    <p><strong>3. Veri Güvenliği ve Paylaşım</strong></p>
+                    <p>Kişisel verileriniz, veri sorumlusu olarak Mürekkep bünyesinde güvenli bir şekilde saklanır ve yasal zorunluluklar haricinde hiçbir üçüncü taraf veya ticari kuruluşla paylaşılmaz.</p>
+                </div>
+                
+                <!-- Tab Panel: KVKK -->
+                <div id="legal-panel-kvkk" class="legal-panel hidden">
+                    <h3>KVKK Aydınlatma Metni</h3>
+                    <p><strong>Mürekkep Kişisel Verilerin Korunması Kanunu (KVKK) Aydınlatma Metni</strong></p>
+                    <p>6698 sayılı Kişisel Verilerin Korunması Kanunu uyarınca, Mürekkep Gazetesi olarak, kişisel verilerinizin işlenme amaçları, yöntemleri ve haklarınız konusunda sizleri bilgilendiriyoruz.</p>
+                    <p><strong>1. Veri Sorumlusu</strong></p>
+                    <p>Kullanıcı verilerinizin toplanması ve korunmasında Mürekkep Gazetesi Yayın Kurulu veri sorumlusu sıfatıyla hareket etmektedir.</p>
+                    <p><strong>2. Kişisel Verilerin İşlenme Amacı ve Hukuki Sebebi</strong></p>
+                    <p>Kalem ismi, e-posta adresi ve şifre verileriniz; hesabınızın doğrulanması, sitemizdeki yazı yazma, yorum yapma, bildirim ve üyelik fonksiyonlarının sağlıklı bir şekilde sunulabilmesi amacıyla işlenmektedir. Hukuki sebep, kullanıcının açık rızası ve üyelik sözleşmesinin kurulmasıdır.</p>
+                    <p><strong>3. Veri Sahibinin Hakları</strong></p>
+                    <p>Dilediğiniz zaman profilinizin "Ayarlar" sekmesinden hesabınızı ve dolayısıyla tüm kişisel verilerinizi kalıcı olarak silebilirsiniz. Ayrıca, kişisel verilerinizin işlenip işlenmediğini öğrenme, bilgi talep etme ve verilerinizin düzeltilmesini isteme haklarına sahipsiniz.</p>
+                </div>
+            </div>
+            
+            <div class="legal-modal-footer">
+                <button id="legal-accept-btn" type="button" class="btn-publish-submit" style="width: 100%; border-radius: 8px; height: 38px;">Okudum, Anladım</button>
+            </div>
         </div>
     </div>
 
