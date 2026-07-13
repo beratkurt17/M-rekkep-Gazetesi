@@ -5023,7 +5023,7 @@ function updateHeaderMeta() {
     const pageIndicator = document.getElementById("header-page-indicator");
     
     // Calculate dynamically
-    const baseDate = new Date("2026-05-11");
+    const baseDate = new Date("2026-07-13");
     const now = new Date();
     
     // 1. Calculate Issue Number (Sayı) - increases every week
