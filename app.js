@@ -5018,6 +5018,37 @@ function ensureLayoutSlotIds() {
     }
 }
 
+function updateHeaderMeta() {
+    const headerDateIndicator = document.getElementById("header-date-indicator");
+    const pageIndicator = document.getElementById("header-page-indicator");
+    
+    // Calculate dynamically
+    const baseDate = new Date("2026-05-11");
+    const now = new Date();
+    
+    // 1. Calculate Issue Number (Sayı) - increases every week
+    const diffTime = Math.max(0, now - baseDate);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const issueNum = Math.floor(diffDays / 7) + 1;
+    const issueStr = String(issueNum).padStart(2, '0');
+    
+    // 2. Calculate Turkish Month & Year
+    const TurkishMonths = [
+        "OCAK", "ŞUBAT", "MART", "NİSAN", "MAYIS", "HAZİRAN",
+        "TEMMUZ", "AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK"
+    ];
+    const monthName = TurkishMonths[now.getMonth()];
+    const year = now.getFullYear();
+    
+    if (headerDateIndicator) {
+        headerDateIndicator.innerText = `${monthName} ${year}`;
+    }
+    
+    if (pageIndicator) {
+        pageIndicator.innerText = `SAYI: ${issueStr} / SAYFA: ${String(currentPage).padStart(2, '0')}`;
+    }
+}
+
 // RENDER NEWSPAPER FRONT-PAGE GRID
 function renderNewspaperGrid() {
     mainGrid.className = "newspaper-grid"; // ensure grid class is set
@@ -5084,10 +5115,7 @@ function renderNewspaperGrid() {
     _slotArticleIdx = 0; // reset slot index before rendering
 
     // Update Header page label
-    const pageIndicator = document.getElementById("header-page-indicator");
-    if (pageIndicator) {
-        pageIndicator.innerText = `SAYI: 01 / SAYFA: ${String(currentPage).padStart(2, '0')}`;
-    }
+    updateHeaderMeta();
 
     // Gather global comments for the "Okur Yorumları" section
     const recentComments = comments.slice(-3).reverse();
