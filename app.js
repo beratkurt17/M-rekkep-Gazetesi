@@ -1427,6 +1427,15 @@ window.renderLayoutConfigurator = function() {
                 heightBtnsHtml += `<button type="button" onclick="window.updateSlotHeight('${colKey}', ${index}, ${h})" title="${h}x Yükseklik" style="background:${isActive ? '#1565c0' : 'var(--bg-primary)'}; color:${isActive ? '#fff' : 'var(--text-secondary)'}; border:1px solid ${isActive ? '#1565c0' : 'var(--border-light)'}; font-family:var(--font-ui); font-size:0.65rem; font-weight:700; padding:2px 7px; border-radius:4px; cursor:pointer;">${h}↕</button>`;
             }
 
+            const slotsInCol = layoutConfig[colKey] || [];
+            let upDownBtnsHtml = '';
+            if (index > 0) {
+                upDownBtnsHtml += `<button type="button" onclick="window.quickMoveSlotUpDown('${colKey}', ${index}, 'up')" title="Yukarı Taşı" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: currentColor;"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg></button>`;
+            }
+            if (index < slotsInCol.length - 1) {
+                upDownBtnsHtml += `<button type="button" onclick="window.quickMoveSlotUpDown('${colKey}', ${index}, 'down')" title="Aşağı Taşı" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: currentColor;"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg></button>`;
+            }
+
             const row = document.createElement("div");
             row.className = "layout-slot-row";
             row.style.cssText = "display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-light); padding: 10px; border-radius: 8px; margin-bottom: 8px; font-family: var(--font-ui);";
@@ -1437,9 +1446,12 @@ window.renderLayoutConfigurator = function() {
                         ${valueOptions}
                     </select>
                     ${styleSelect}
-                    <button type="button" onclick="window.removeSlotFromColumn('${colKey}', ${index})" style="background: none; border: none; color: var(--accent-color); cursor: pointer; padding: 4px; margin-left: auto;" title="Slotu Kaldır">
-                        <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                    </button>
+                    <div style="display: flex; gap: 2px; align-items: center; margin-left: auto;">
+                        ${upDownBtnsHtml}
+                        <button type="button" onclick="window.removeSlotFromColumn('${colKey}', ${index})" style="background: none; border: none; color: var(--accent-color); cursor: pointer; padding: 4px;" title="Slotu Kaldır">
+                            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Editable Slot Label -->
@@ -1514,9 +1526,18 @@ function wrapSlotInEditorControls(slot, index, colKey, cardHTML, colWeight) {
     let moveButtons = '';
     ['col1', 'col2', 'col3'].forEach(col => {
         if (col !== colKey) {
-            moveButtons += `<button type="button" onclick="event.stopPropagation(); window.quickMoveSlot('${colKey}', ${index}, '${col}')" title="${colLabels[col]} Sütuna Taşı" style="background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-secondary); font-family: var(--font-ui); font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-weight: 700;">${colLabels[col].split(' ')[0]}</button>`;
+            moveButtons += `<button type="button" onclick="event.stopPropagation(); window.quickMoveSlot('${colKey}', ${index}, '${col}')" title="${colLabels[col]} Sütuna Taşı" style="background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-secondary); font-family: var(--font-ui); font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-weight: 700;">${colLabels[col]}</button>`;
         }
     });
+
+    let upDownButtons = '';
+    const slotsInCol = layoutConfig[colKey] || [];
+    if (index > 0) {
+        upDownButtons += `<button type="button" onclick="event.stopPropagation(); window.quickMoveSlotUpDown('${colKey}', ${index}, 'up')" title="Yukarı Taşı" style="background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-secondary); font-family: var(--font-ui); font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-weight: 700;">▲</button>`;
+    }
+    if (index < slotsInCol.length - 1) {
+        upDownButtons += `<button type="button" onclick="event.stopPropagation(); window.quickMoveSlotUpDown('${colKey}', ${index}, 'down')" title="Aşağı Taşı" style="background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-secondary); font-family: var(--font-ui); font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-weight: 700;">▼</button>`;
+    }
 
     const sizeKeys = ['compact', 'normal', 'large'];
     const sizeLabels = { compact: 'S – Kompakt', normal: 'M – Normal', large: 'L – Büyük' };
@@ -1572,6 +1593,7 @@ function wrapSlotInEditorControls(slot, index, colKey, cardHTML, colWeight) {
                         <span style="color: var(--text-secondary); font-weight: 700; font-size: 0.6rem;">KONUM:</span>
                         <div style="display: flex; gap: 2px;">
                             ${moveButtons}
+                            ${upDownButtons}
                         </div>
                     </div>
                     
@@ -1750,8 +1772,22 @@ function renderSlotHelper(slot, index, sorted, headlines, recentComments) {
             `;
         }
     } else if (slot.type === 'category') {
-        // Sequential slot fill: pull next article from the current page's pool
-        const art = _pageArticles[_slotArticleIdx++];
+        // Find all slots of category slot.value to determine its index occurrence
+        const C = slot.value;
+        const allSlots = [
+            ...(layoutConfig.col1 || []),
+            ...(layoutConfig.col2 || []),
+            ...(layoutConfig.col3 || [])
+        ];
+        const sameCategorySlots = allSlots.filter(s => s.type === 'category' && s.value === C);
+        const slotOccurrenceIndex = sameCategorySlots.indexOf(slot);
+        const totalSlotsOfCategory = sameCategorySlots.length > 0 ? sameCategorySlots.length : 1;
+
+        const slotHeadline = headlines[currentPage - 1];
+        const categoryArticles = sorted.filter(art => art.category === C && (!slotHeadline || art.id !== slotHeadline.id));
+
+        const articleIndex = (currentPage - 1) * totalSlotsOfCategory + (slotOccurrenceIndex >= 0 ? slotOccurrenceIndex : 0);
+        const art = categoryArticles[articleIndex];
         if (!art) {
             if (isEditorModeActive) {
                 return `
@@ -2006,6 +2042,28 @@ window.quickMoveSlot = function(colKey, index, targetCol) {
     renderLayoutConfigurator();
     const colNames = { col1: 'Sol', col2: 'Orta', col3: 'Sağ' };
     showToast(`📦 Slot, ${colNames[colKey]} sütunundan ${colNames[targetCol]} sütununa taşındı!`);
+};
+
+window.quickMoveSlotUpDown = function(colKey, index, direction) {
+    if (!layoutConfig || !layoutConfig[colKey] || !layoutConfig[colKey][index]) return;
+    const slots = layoutConfig[colKey];
+    if (direction === 'up' && index > 0) {
+        const temp = slots[index];
+        slots[index] = slots[index - 1];
+        slots[index - 1] = temp;
+    } else if (direction === 'down' && index < slots.length - 1) {
+        const temp = slots[index];
+        slots[index] = slots[index + 1];
+        slots[index + 1] = temp;
+    } else {
+        return;
+    }
+    saveLayoutConfig();
+    renderNewspaperGrid();
+    renderLayoutConfigurator();
+    const dirLabel = direction === 'up' ? 'yukarı' : 'aşağı';
+    const colNames = { col1: 'Sol', col2: 'Orta', col3: 'Sağ' };
+    showToast(`↕️ Slot ${colNames[colKey]} sütununda ${dirLabel} taşındı!`);
 };
 
 window.addCustomCategory = async function() {
@@ -4781,7 +4839,7 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
         "haber": "EDEBİYAT HABERLERİ",
         "yarismalar": "YARIŞMA"
     };
-    const categoryLabel = art.corner_name ? art.corner_name.toUpperCase() : "";
+    const categoryLabel = art.corner_name ? art.corner_name.toUpperCase() : defaultCategoryLabel;
 
     let cardHTML = "";
 
