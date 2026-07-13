@@ -293,21 +293,21 @@ let comments = [];
 const DEFAULT_LAYOUT = {
     colWidths: { col1: 1, col2: 2, col3: 1 },
     col1: [
-        { type: "category", value: "kitap", label: "Kitap İncelemesi", size: "normal", slotWidth: 1, style: "standard" },
-        { type: "category", value: "roportaj", label: "Yazar Röportajı", size: "normal", slotWidth: 1, style: "standard" },
-        { type: "category", value: "haber", label: "Edebiyat Haberleri", size: "normal", slotWidth: 1, style: "standard" }
+        { id: "slot_kitap_default", type: "category", value: "kitap", label: "Kitap İncelemesi", size: "normal", slotWidth: 1, style: "standard" },
+        { id: "slot_roportaj_default", type: "category", value: "roportaj", label: "Yazar Röportajı", size: "normal", slotWidth: 1, style: "standard" },
+        { id: "slot_haber_default", type: "category", value: "haber", label: "Edebiyat Haberleri", size: "normal", slotWidth: 1, style: "standard" }
     ],
     col2: [
-        { type: "system", value: "headline", label: "Manşet", size: "large", slotWidth: 2, style: "headline" },
-        { type: "system", value: "editor_note", label: "Editörün Notu", size: "normal", slotWidth: 2, style: "standard" },
-        { type: "category", value: "siir", label: "Haftanın Şiiri", size: "normal", slotWidth: 2, style: "poem" },
-        { type: "category", value: "yarismalar", label: "Aylık Yarışma", size: "normal", slotWidth: 1, style: "standard" },
-        { type: "category", value: "kose-yazilari", label: "Köşe Yazısı", size: "normal", slotWidth: 1, style: "columnist" }
+        { id: "slot_headline_default", type: "system", value: "headline", label: "Manşet", size: "large", slotWidth: 2, style: "headline" },
+        { id: "slot_editor_note_default", type: "system", value: "editor_note", label: "Editörün Notu", size: "normal", slotWidth: 2, style: "standard" },
+        { id: "slot_siir_default", type: "category", value: "siir", label: "Haftanın Şiiri", size: "normal", slotWidth: 2, style: "poem" },
+        { id: "slot_yarismalar_default", type: "category", value: "yarismalar", label: "Aylık Yarışma", size: "normal", slotWidth: 1, style: "standard" },
+        { id: "slot_kose_yazilari_default", type: "category", value: "kose-yazilari", label: "Köşe Yazısı", size: "normal", slotWidth: 1, style: "columnist" }
     ],
     col3: [
-        { type: "category", value: "deneme", label: "Deneme", size: "normal", slotWidth: 1, style: "standard" },
-        { type: "category", value: "oyku", label: "Hikaye Köşesi", size: "normal", slotWidth: 1, style: "standard" },
-        { type: "system", value: "recent_comments", label: "Okur Yorumları", size: "normal", slotWidth: 1, style: "standard" }
+        { id: "slot_deneme_default", type: "category", value: "deneme", label: "Deneme", size: "normal", slotWidth: 1, style: "standard" },
+        { id: "slot_oyku_default", type: "category", value: "oyku", label: "Hikaye Köşesi", size: "normal", slotWidth: 1, style: "standard" },
+        { id: "slot_recent_comments_default", type: "system", value: "recent_comments", label: "Okur Yorumları", size: "normal", slotWidth: 1, style: "standard" }
     ]
 };
 
@@ -1772,22 +1772,7 @@ function renderSlotHelper(slot, index, sorted, headlines, recentComments) {
             `;
         }
     } else if (slot.type === 'category') {
-        // Find all slots of category slot.value to determine its index occurrence
-        const C = slot.value;
-        const allSlots = [
-            ...(layoutConfig.col1 || []),
-            ...(layoutConfig.col2 || []),
-            ...(layoutConfig.col3 || [])
-        ];
-        const sameCategorySlots = allSlots.filter(s => s.type === 'category' && s.value === C);
-        const slotOccurrenceIndex = sameCategorySlots.indexOf(slot);
-        const totalSlotsOfCategory = sameCategorySlots.length > 0 ? sameCategorySlots.length : 1;
-
-        const slotHeadline = headlines[currentPage - 1];
-        const categoryArticles = sorted.filter(art => art.category === C && (!slotHeadline || art.id !== slotHeadline.id));
-
-        const articleIndex = (currentPage - 1) * totalSlotsOfCategory + (slotOccurrenceIndex >= 0 ? slotOccurrenceIndex : 0);
-        const art = categoryArticles[articleIndex];
+        const art = _slotArticleMap[slot.id];
         if (!art) {
             if (isEditorModeActive) {
                 return `
@@ -4597,6 +4582,7 @@ let currentPage = 1;
 // Shared state for sequential slot filling
 let _slotArticleIdx = 0;
 let _pageArticles = [];
+let _slotArticleMap = {};
 
 // Function to sort articles by claps descending
 function getSortedArticles() {
@@ -5014,9 +5000,30 @@ function changePage(page) {
     }, 300);
 }
 
+function ensureLayoutSlotIds() {
+    if (!layoutConfig) return;
+    let changed = false;
+    ['col1', 'col2', 'col3'].forEach(colKey => {
+        if (layoutConfig[colKey]) {
+            layoutConfig[colKey].forEach((slot, idx) => {
+                if (!slot.id) {
+                    slot.id = `slot_${colKey}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                    changed = true;
+                }
+            });
+        }
+    });
+    if (changed) {
+        saveLayoutConfig();
+    }
+}
+
 // RENDER NEWSPAPER FRONT-PAGE GRID
 function renderNewspaperGrid() {
     mainGrid.className = "newspaper-grid"; // ensure grid class is set
+
+    // Ensure all slots have unique IDs
+    ensureLayoutSlotIds();
 
     const sorted = getSortedArticles();
 
@@ -5054,6 +5061,26 @@ function renderNewspaperGrid() {
     if (_pageArticles.length > categorySlotCount) {
         _pageArticles = _pageArticles.slice(0, categorySlotCount);
     }
+    
+    // Map page articles stably to category slots based on alphabetical ID sorting
+    const allCategorySlots = [];
+    ['col1', 'col2', 'col3'].forEach(colKey => {
+        if (layoutConfig[colKey]) {
+            layoutConfig[colKey].forEach(s => {
+                if (s.type === 'category') {
+                    allCategorySlots.push(s);
+                }
+            });
+        }
+    });
+    const sortedSlots = allCategorySlots.slice().sort((a, b) => a.id.localeCompare(b.id));
+    _slotArticleMap = {};
+    sortedSlots.forEach((slot, idx) => {
+        if (_pageArticles[idx]) {
+            _slotArticleMap[slot.id] = _pageArticles[idx];
+        }
+    });
+
     _slotArticleIdx = 0; // reset slot index before rendering
 
     // Update Header page label
