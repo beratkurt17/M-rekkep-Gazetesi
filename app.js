@@ -5082,7 +5082,6 @@ function renderNewspaperGrid() {
     }
 
     // Slice articles for this page (sequential, clap-sorted)
-    const pageStartIdx = (currentPage - 1) * pageCapacity;
     
     // One headline per page = first article of each page's pool
     const headlines = [];
@@ -5106,15 +5105,15 @@ function renderNewspaperGrid() {
 
     // Sort slots by ID for stable assignment across renders
     const sortedSlots = allCategorySlots.slice().sort((a, b) => a.id.localeCompare(b.id));
-    const categorySlotCount = sortedSlots.length;
+    const totalCategorySlots = sortedSlots.length;
 
     // Get all articles for this page (skip headlines of all pages)
     const headlineIds = new Set(headlines.map(h => h && h.id).filter(Boolean));
     const nonHeadlineArticles = sorted.filter(art => !headlineIds.has(art.id));
 
     // Each page gets a fresh "window" of articles
-    const pageStartIdx = (currentPage - 1) * categorySlotCount;
-    const pageArticles = nonHeadlineArticles.slice(pageStartIdx, pageStartIdx + categorySlotCount);
+    const slotPageStartIdx = (currentPage - 1) * totalCategorySlots;
+    const pageArticles = nonHeadlineArticles.slice(slotPageStartIdx, slotPageStartIdx + totalCategorySlots);
 
     sortedSlots.forEach((slot, idx) => {
         _slotArticleMap[slot.id] = pageArticles[idx] || null;
