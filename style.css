@@ -1034,44 +1034,30 @@ body {
     display: grid;
     grid-template-columns: var(--col-widths, 1fr 2fr 1fr);
     gap: 24px;
-    align-items: stretch; /* Stretch items to match row height */
+    align-items: start;
 }
 
-/* Base grid item positioning for mobile */
-.newspaper-grid > * {
-    grid-column: span var(--col-span, 1);
-    grid-row: span var(--row-span, 1);
+/* Card components styled like print columns */
+.news-column {
+    display: grid;
+    gap: 16px;
+    align-items: start;
+    /* grid-template-columns set dynamically via JS based on colWidth */
+}
+
+/* Vertical grid dividers on larger screens */
+.newspaper-grid > *:not(:last-child) {
     position: relative;
 }
 
-/* On desktop screens, apply row-aligned flat grid layout */
-@media screen and (min-width: 769px) {
-    .newspaper-grid > * {
-        grid-column: var(--col-start, auto) / span var(--col-span, 1);
-        grid-row: var(--row-start, auto) / span var(--row-span, 1);
-    }
-}
-
-/* Disable old column-level vertical dividers */
 .newspaper-grid > *:not(:last-child)::after {
-    display: none !important;
-}
-
-/* Flat grid item dividers for col1 & col2 on desktop */
-.col1-item, .col2-item {
-    position: relative;
-}
-@media screen and (min-width: 769px) {
-    .col1-item::after, .col2-item::after {
-        content: "";
-        position: absolute;
-        right: -13px; /* Centered in the 24px grid gap */
-        top: 0;
-        bottom: 0;
-        width: 1px;
-        background-color: var(--border-color);
-        pointer-events: none;
-    }
+    content: "";
+    position: absolute;
+    right: -13px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background-color: var(--border-color);
 }
 
 .article-card {

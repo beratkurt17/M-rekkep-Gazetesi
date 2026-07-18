@@ -1492,7 +1492,7 @@ window.renderLayoutConfigurator = function() {
     });
 };
 
-function wrapSlotInEditorControls(slot, index, colKey, cardHTML, colWeight, colStart, colSpan, rowStart, dividerClass) {
+function wrapSlotInEditorControls(slot, index, colKey, cardHTML, colWeight) {
     if (!cardHTML.trim()) return "";
     
     // Prepare values list for inline content and design selections
@@ -1560,7 +1560,7 @@ function wrapSlotInEditorControls(slot, index, colKey, cardHTML, colWeight, colS
     }
  
     return `
-        <div class="editor-slot-wrapper slot-size-${currentSize} slot-height-${currentSlotHeight} ${dividerClass || ''}" style="--col-start: ${colStart}; --col-span: ${currentSlotWidth}; --row-start: ${rowStart}; --row-span: ${currentSlotHeight}; min-width: 0; position: relative; border: 2px solid var(--accent-color); margin-bottom: 16px; border-radius: 8px; background: rgba(201, 64, 64, 0.01); display: flex; flex-direction: column; overflow: hidden; height: 100%;">
+        <div class="editor-slot-wrapper slot-size-${currentSize} slot-height-${currentSlotHeight}" style="grid-column: span ${currentSlotWidth}; grid-row: span ${currentSlotHeight}; min-width: 0; position: relative; border: 2px solid var(--accent-color); margin-bottom: 16px; border-radius: 8px; background: rgba(201, 64, 64, 0.01); display: flex; flex-direction: column; overflow: hidden;">
             <!-- Editor Toolbar -->
             <div class="slot-editor-toolbar" style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-light); padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; font-family: var(--font-ui); z-index: 10;">
                 <!-- Toolbar Row 1: Content, Style Selectors and Actions -->
@@ -5163,89 +5163,106 @@ function renderNewspaperGrid() {
     // Apply column template dynamically based on colWidths
     mainGrid.style.gridTemplateColumns = `${col1W}fr ${col2W}fr ${col3W}fr`;
 
-    let gridHTML = "";
-    
-    // Render Width Bars (Row 1)
+    let col1HTML = "";
+    let col2HTML = "";
+    let col3HTML = "";
+
+    // Render columns dynamically from layoutConfig
+    if (layoutConfig.col1) {
+        layoutConfig.col1.forEach((slot, index) => {
+            let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
+            if (!slotHTML) return;
+            if (isEditorModeActive) {
+                slotHTML = wrapSlotInEditorControls(slot, index, 'col1', slotHTML, col1W);
+            } else {
+                const sz = slot.size || 'normal';
+                const sw = slot.slotWidth || 1;
+                const sh = slot.slotHeight || 1;
+                slotHTML = `<div class="slot-size-${sz} slot-height-${sh}" style="grid-column: span ${sw}; grid-row: span ${sh}; min-width: 0; display: flex; flex-direction: column;">
+                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
+                        ${slotHTML}
+                    </div>
+                </div>`;
+            }
+            col1HTML += slotHTML;
+        });
+    }
+    if (layoutConfig.col2) {
+        layoutConfig.col2.forEach((slot, index) => {
+            let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
+            if (!slotHTML) return;
+            if (isEditorModeActive) {
+                slotHTML = wrapSlotInEditorControls(slot, index, 'col2', slotHTML, col2W);
+            } else {
+                const sz = slot.size || 'normal';
+                const sw = slot.slotWidth || 1;
+                const sh = slot.slotHeight || 1;
+                slotHTML = `<div class="slot-size-${sz} slot-height-${sh}" style="grid-column: span ${sw}; grid-row: span ${sh}; min-width: 0; display: flex; flex-direction: column;">
+                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
+                        ${slotHTML}
+                    </div>
+                </div>`;
+            }
+            col2HTML += slotHTML;
+        });
+    }
+    if (layoutConfig.col3) {
+        layoutConfig.col3.forEach((slot, index) => {
+            let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
+            if (!slotHTML) return;
+            if (isEditorModeActive) {
+                slotHTML = wrapSlotInEditorControls(slot, index, 'col3', slotHTML, col3W);
+            } else {
+                const sz = slot.size || 'normal';
+                const sw = slot.slotWidth || 1;
+                const sh = slot.slotHeight || 1;
+                slotHTML = `<div class="slot-size-${sz} slot-height-${sh}" style="grid-column: span ${sw}; grid-row: span ${sh}; min-width: 0; display: flex; flex-direction: column;">
+                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
+                        ${slotHTML}
+                    </div>
+                </div>`;
+            }
+            col3HTML += slotHTML;
+        });
+    }
+
+    // Append inline page-level "+" buttons and col-width controls when in Editor Mode
     if (isEditorModeActive) {
         const cw = layoutConfig.colWidths || { col1: 1, col2: 2, col3: 1 };
-        
-        function colWidthBar(colKey, colLabel, colW, colStart, colSpan) {
+
+        function colWidthBar(colKey, colLabel, colW) {
             const cur = cw[colKey] || 1;
             const opts = [1, 2, 3];
             const btns = opts.map(n => {
                 const active = cur === n;
                 return `<button type="button" onclick="event.stopPropagation(); window.quickSetColWidth('${colKey}', ${n})" style="background:${active ? 'var(--accent-color)' : 'var(--bg-secondary)'}; color:${active ? '#fff' : 'var(--text-secondary)'}; border:1px solid ${active ? 'var(--accent-color)' : 'var(--border-light)'}; font-family:var(--font-ui); font-size:0.65rem; font-weight:700; padding:2px 8px; border-radius:4px; cursor:pointer;">${n}x</button>`;
             }).join('');
-            
-            const dividerClass = colKey !== 'col3' ? 'col1-item' : '';
-            return `<div class="${dividerClass}" style="--col-start: ${colStart}; --col-span: ${colSpan}; --row-start: 1; --row-span: 1; display:flex; align-items:center; gap:6px; padding:6px 10px; background:var(--bg-secondary); border-radius:6px; border:1px solid var(--border-light); margin-bottom:12px;">
+            return `<div style="grid-column: 1 / -1; display:flex; align-items:center; gap:6px; margin-bottom:12px; padding:6px 10px; background:var(--bg-secondary); border-radius:6px; border:1px solid var(--border-light);">
                 <span style="font-family:var(--font-ui); font-size:0.65rem; font-weight:700; color:var(--text-secondary); flex:1;">${colLabel} Genişliği:</span>
                 ${btns}
             </div>`;
         }
-        
-        gridHTML += colWidthBar('col1', 'Sol Sütun', col1W, 1, col1W);
-        gridHTML += colWidthBar('col2', 'Orta Sütun', col2W, col1W + 1, col2W);
-        gridHTML += colWidthBar('col3', 'Sağ Sütun', col3W, col1W + col2W + 1, col3W);
+
+        col1HTML = colWidthBar('col1', 'Sol Sütun', col1W) + col1HTML + `
+            <button class="btn-add-slot-page" onclick="window.quickAddSlot('col1')" style="grid-column: 1 / -1; background: none; border: 2px dashed var(--border-color); width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-top: 10px; margin-bottom: 20px; transition: all 0.2s ease;">
+                + Sol Sütuna Slot Ekle
+            </button>`;
+        col2HTML = colWidthBar('col2', 'Orta Sütun', col2W) + col2HTML + `
+            <button class="btn-add-slot-page" onclick="window.quickAddSlot('col2')" style="grid-column: 1 / -1; background: none; border: 2px dashed var(--border-color); width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-top: 10px; margin-bottom: 20px; transition: all 0.2s ease;">
+                + Orta Sütuna Slot Ekle
+            </button>`;
+        col3HTML = colWidthBar('col3', 'Sağ Sütun', col3W) + col3HTML + `
+            <button class="btn-add-slot-page" onclick="window.quickAddSlot('col3')" style="grid-column: 1 / -1; background: none; border: 2px dashed var(--border-color); width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-top: 10px; margin-bottom: 20px; transition: all 0.2s ease;">
+                + Sağ Sütuna Slot Ekle
+            </button>`;
     }
 
-    const startRows = { col1: 1, col2: 1, col3: 1 };
-    if (isEditorModeActive) {
-        startRows.col1 = 2;
-        startRows.col2 = 2;
-        startRows.col3 = 2;
-    }
-
-    const renderColSlots = (colKey, colStart, colSpan, dividerClass) => {
-        let colHTML = "";
-        const slots = layoutConfig[colKey] || [];
-        slots.forEach((slot, index) => {
-            let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
-            if (!slotHTML) return;
-            
-            const sz = slot.size || 'normal';
-            const sw = slot.slotWidth || 1;
-            const sh = slot.slotHeight || 1;
-            
-            const currentRow = startRows[colKey];
-            startRows[colKey] += sh;
-            
-            if (isEditorModeActive) {
-                slotHTML = wrapSlotInEditorControls(slot, index, colKey, slotHTML, colSpan, colStart, sw, currentRow, dividerClass);
-            } else {
-                slotHTML = `<div class="slot-size-${sz} slot-height-${sh} ${dividerClass}" style="--col-start: ${colStart}; --col-span: ${sw}; --row-start: ${currentRow}; --row-span: ${sh}; min-width: 0; display: flex; flex-direction: column; height: 100%;">
-                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%; height: 100%;">
-                        ${slotHTML}
-                    </div>
-                </div>`;
-            }
-            colHTML += slotHTML;
-        });
-        return colHTML;
-    };
-
-    gridHTML += renderColSlots('col1', 1, col1W, 'col1-item');
-    gridHTML += renderColSlots('col2', col1W + 1, col2W, 'col2-item');
-    gridHTML += renderColSlots('col3', col1W + col2W + 1, col3W, '');
-
-    // Add "+" slot buttons at the very bottom in Editor Mode
-    if (isEditorModeActive) {
-        const maxTotalRow = Math.max(startRows.col1, startRows.col2, startRows.col3);
-        
-        function addSlotBtn(colKey, colLabel, colStart, colSpan) {
-            const dividerClass = colKey !== 'col3' ? 'col1-item' : '';
-            return `
-                <button class="btn-add-slot-page ${dividerClass}" onclick="window.quickAddSlot('${colKey}')" style="--col-start: ${colStart}; --col-span: ${colSpan}; --row-start: ${maxTotalRow}; --row-span: 1; background: none; border: 2px dashed var(--border-color); width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-top: 10px; margin-bottom: 20px; transition: all 0.2s ease; height: auto;">
-                    + ${colLabel} Sütuna Slot Ekle
-                </button>`;
-        }
-        
-        gridHTML += addSlotBtn('col1', 'Sol', 1, col1W);
-        gridHTML += addSlotBtn('col2', 'Orta', col1W + 1, col2W);
-        gridHTML += addSlotBtn('col3', 'Sağ', col1W + col2W + 1, col3W);
-    }
-
-    mainGrid.innerHTML = gridHTML;
+    // Assembly — three separate column containers
+    mainGrid.innerHTML = `
+        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col1W}, 1fr); gap: 16px; align-content: start;">${col1HTML}</div>
+        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col2W}, 1fr); gap: 16px; align-content: start;">${col2HTML}</div>
+        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col3W}, 1fr); gap: 16px; align-content: start;">${col3HTML}</div>
+    `;
 
     // Render Bottom Pagination Controls
     const paginationEl = document.getElementById("newspaper-pagination");
