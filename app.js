@@ -1492,7 +1492,7 @@ window.renderLayoutConfigurator = function() {
     });
 };
 
-function wrapSlotInEditorControls(slot, index, colKey, cardHTML, colWeight) {
+function wrapSlotInEditorControls(slot, index, colKey, cardHTML, colWeight, colStart, colSpan, rowStart, dividerClass) {
     if (!cardHTML.trim()) return "";
     
     // Prepare values list for inline content and design selections
@@ -1516,12 +1516,12 @@ function wrapSlotInEditorControls(slot, index, colKey, cardHTML, colWeight) {
         { value: "poem", label: "Şiir Tasarımı" },
         { value: "list", label: "Liste Tasarımı" }
     ];
-
+ 
     const slotLabel = slot.type === 'system' ? 'Sistem' : 'Köşe';
     const currentSize = slot.size || 'normal';
     const currentSlotWidth = slot.slotWidth || 1;
     const currentSlotHeight = slot.slotHeight || 1;
-
+ 
     const colLabels = { col1: '◀ Sol', col2: '■ Orta', col3: 'Sağ ▶' };
     let moveButtons = '';
     ['col1', 'col2', 'col3'].forEach(col => {
@@ -1529,7 +1529,7 @@ function wrapSlotInEditorControls(slot, index, colKey, cardHTML, colWeight) {
             moveButtons += `<button type="button" onclick="event.stopPropagation(); window.quickMoveSlot('${colKey}', ${index}, '${col}')" title="${colLabels[col]} Sütuna Taşı" style="background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-secondary); font-family: var(--font-ui); font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-weight: 700;">${colLabels[col]}</button>`;
         }
     });
-
+ 
     let upDownButtons = '';
     const slotsInCol = layoutConfig[colKey] || [];
     if (index > 0) {
@@ -1538,7 +1538,7 @@ function wrapSlotInEditorControls(slot, index, colKey, cardHTML, colWeight) {
     if (index < slotsInCol.length - 1) {
         upDownButtons += `<button type="button" onclick="event.stopPropagation(); window.quickMoveSlotUpDown('${colKey}', ${index}, 'down')" title="Aşağı Taşı" style="background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-secondary); font-family: var(--font-ui); font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-weight: 700;">▼</button>`;
     }
-
+ 
     const sizeKeys = ['compact', 'normal', 'large'];
     const sizeLabels = { compact: 'S – Kompakt', normal: 'M – Normal', large: 'L – Büyük' };
     let sizeButtons = '';
@@ -1546,21 +1546,21 @@ function wrapSlotInEditorControls(slot, index, colKey, cardHTML, colWeight) {
         const isActive = currentSize === sk;
         sizeButtons += `<button type="button" onclick="event.stopPropagation(); window.quickResizeSlot('${colKey}', ${index}, '${sk}')" title="${sizeLabels[sk]}" style="background:${isActive ? 'var(--accent-color)' : 'var(--bg-secondary)'}; color:${isActive ? '#fff' : 'var(--text-secondary)'}; border:1px solid ${isActive ? 'var(--accent-color)' : 'var(--border-light)'}; font-family: var(--font-ui); font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-weight: 700;">${sk === 'compact' ? 'S' : sk === 'normal' ? 'M' : 'L'}</button>`;
     });
-
+ 
     let widthButtons = '';
     for (let w = 1; w <= 3; w++) {
         const isActive = currentSlotWidth === w;
         widthButtons += `<button type="button" onclick="event.stopPropagation(); window.quickSetSlotWidth('${colKey}', ${index}, ${w})" title="${w}x Genişlik" style="background:${isActive ? '#2e7d32' : 'var(--bg-secondary)'}; color:${isActive ? '#fff' : 'var(--text-secondary)'}; border:1px solid ${isActive ? '#2e7d32' : 'var(--border-light)'}; font-family: var(--font-ui); font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-weight: 700;">${w}x</button>`;
     }
-
+ 
     let heightButtons = '';
     for (let h = 1; h <= 3; h++) {
         const isActive = currentSlotHeight === h;
         heightButtons += `<button type="button" onclick="event.stopPropagation(); window.quickSetSlotHeight('${colKey}', ${index}, ${h})" title="${h}x Yükseklik" style="background:${isActive ? '#1565c0' : 'var(--bg-secondary)'}; color:${isActive ? '#fff' : 'var(--text-secondary)'}; border:1px solid ${isActive ? '#1565c0' : 'var(--border-light)'}; font-family: var(--font-ui); font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-weight: 700;">${h}↕</button>`;
     }
-
+ 
     return `
-        <div class="editor-slot-wrapper slot-size-${currentSize} slot-height-${currentSlotHeight}" style="grid-column: span ${currentSlotWidth}; grid-row: span ${currentSlotHeight}; min-width: 0; position: relative; border: 2px solid var(--accent-color); margin-bottom: 16px; border-radius: 8px; background: rgba(201, 64, 64, 0.01); display: flex; flex-direction: column; overflow: hidden;">
+        <div class="editor-slot-wrapper slot-size-${currentSize} slot-height-${currentSlotHeight} ${dividerClass || ''}" style="--col-start: ${colStart}; --col-span: ${currentSlotWidth}; --row-start: ${rowStart}; --row-span: ${currentSlotHeight}; min-width: 0; position: relative; border: 2px solid var(--accent-color); margin-bottom: 16px; border-radius: 8px; background: rgba(201, 64, 64, 0.01); display: flex; flex-direction: column; overflow: hidden; height: 100%;">
             <!-- Editor Toolbar -->
             <div class="slot-editor-toolbar" style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-light); padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; font-family: var(--font-ui); z-index: 10;">
                 <!-- Toolbar Row 1: Content, Style Selectors and Actions -->
@@ -4864,7 +4864,7 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
                 : subtitle;
             const poemImage = art.image && art.image !== "undefined" ? art.image : "assets/poetry_flowers.webp";
             cardHTML = `
-                <article class="article-card poem-card" data-id="${art.id}" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                <article class="article-card poem-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
                     <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
                     <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.35rem; font-weight: 900; margin: 6px 0 2px 0;">${art.title}</h3>
                     <span class="card-author" style="font-family: var(--font-ui); font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 12px; font-weight: 500;">${authorHtml}</span>
@@ -4874,23 +4874,23 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
                             <img src="${poemImage}" alt="Edebi Görsel" class="card-image" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror=null;this.src='assets/poetry_flowers.webp';">
                         </div>
                     </div>
-                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: 10px; display: block; text-align: left;">► OKU</span>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; text-align: left; padding-top: 8px;">► OKU</span>
                 </article>
             `;
         } else if (styleType === 'roportaj' || art.category === 'roportaj') {
             // Render as horizontal card style
             const roportajImage = art.image && art.image !== "undefined" ? art.image : "assets/author_zeynep.webp";
             cardHTML = `
-                <article class="article-card article-card-horizontal" data-id="${art.id}" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                <article class="article-card article-card-horizontal" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
                     <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
                     <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.25rem; font-weight: 900; margin: 6px 0 12px 0;">${art.title}</h3>
-                    <div style="display: flex; gap: 12px; align-items: flex-start; width: 100%;">
+                    <div style="display: flex; gap: 12px; align-items: flex-start; width: 100%; height: 100%;">
                         <div class="card-image-box" style="width: 80px; height: 90px; flex-shrink: 0; border: 1px solid var(--border-light); margin: 0;">
                             <img src="${roportajImage}" alt="${art.title}" class="card-image" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
                         </div>
-                        <div class="card-text" style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+                        <div class="card-text" style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%;">
                             <p class="card-preview" style="font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; margin: 0 0 6px 0;">${displaySubtitle}</p>
-                            <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block;">► OKU</span>
+                            <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block; margin-top: auto; padding-top: 8px;">► OKU</span>
                         </div>
                     </div>
                 </article>
@@ -4899,7 +4899,7 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
             // Render as columnist card style
             const koseImage = art.image && art.image !== "undefined" ? art.image : "assets/author_mehmet.webp";
             cardHTML = `
-                <article class="article-card columnist-card" data-id="${art.id}" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                <article class="article-card columnist-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
                     <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
                     <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.15rem; font-weight: 900; margin: 6px 0 2px 0;">${art.title}</h3>
                     <span class="card-author" style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--text-secondary); display: block; margin-bottom: 10px; font-weight: 500;">${authorHtml}</span>
@@ -4909,7 +4909,7 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
                             <img src="${koseImage}" alt="${author}" class="columnist-avatar" style="width: 100%; height: 100%; object-fit: cover;">
                         </div>
                     </div>
-                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: 8px; display: block;">► OKU</span>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; padding-top: 8px;">► OKU</span>
                 </article>
             `;
         } else if (styleType === 'haber' || art.category === 'haber') {
@@ -4928,18 +4928,18 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
                 `;
             }
             cardHTML = `
-                <article class="article-card" data-id="${art.id}" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                <article class="article-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
                     <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
                     <div class="news-list" style="margin-top: 10px; margin-bottom: 10px;">
                         ${newsItemsHTML}
                     </div>
-                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block;">► OKU</span>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block; margin-top: auto; padding-top: 8px;">► OKU</span>
                 </article>
             `;
         } else if (styleType === 'yarisma' || art.category === 'yarismalar') {
             // Render as contest card style
             cardHTML = `
-                <article class="article-card contest-card" data-id="${art.id}" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                <article class="article-card contest-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
                     <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
                     <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.15rem; font-weight: 900; margin: 6px 0 6px 0;">${art.title}</h3>
                     <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
@@ -4949,14 +4949,14 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
                         </div>
                         <svg class="contest-icon" viewBox="0 0 24 24" style="width: 45px; height: 45px; fill: var(--text-secondary); opacity: 0.6; flex-shrink: 0;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                     </div>
-                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: 8px; display: block;">► OKU</span>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; padding-top: 8px;">► OKU</span>
                 </article>
             `;
         } else {
             // Default standard card
             const isKitap = art.category === 'kitap';
             cardHTML = `
-                <article class="article-card" data-id="${art.id}" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                <article class="article-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
                     <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
                     <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.25rem; font-weight: 900; margin: 6px 0 4px 0;">${art.title}</h3>
                     <span class="card-author" style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--text-secondary); display: block; margin-bottom: 10px; font-weight: 500;">${authorHtml}</span>
@@ -4964,7 +4964,7 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
                         <img src="${image}" alt="${art.title}" class="card-image" style="width: 100%; height: 100%; object-fit: ${isKitap ? 'contain' : 'cover'}; background-color: ${isKitap ? 'var(--bg-secondary)' : 'transparent'};" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
                     </div>
                     <p class="card-preview" style="font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; margin-bottom: 8px;">${displaySubtitle}</p>
-                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block;">► OKU</span>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block; margin-top: auto; padding-top: 8px;">► OKU</span>
                 </article>
             `;
         }
@@ -5163,106 +5163,89 @@ function renderNewspaperGrid() {
     // Apply column template dynamically based on colWidths
     mainGrid.style.gridTemplateColumns = `${col1W}fr ${col2W}fr ${col3W}fr`;
 
-    let col1HTML = "";
-    let col2HTML = "";
-    let col3HTML = "";
-
-    // Render columns dynamically from layoutConfig
-    if (layoutConfig.col1) {
-        layoutConfig.col1.forEach((slot, index) => {
-            let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
-            if (!slotHTML) return;
-            if (isEditorModeActive) {
-                slotHTML = wrapSlotInEditorControls(slot, index, 'col1', slotHTML, col1W);
-            } else {
-                const sz = slot.size || 'normal';
-                const sw = slot.slotWidth || 1;
-                const sh = slot.slotHeight || 1;
-                slotHTML = `<div class="slot-size-${sz} slot-height-${sh}" style="grid-column: span ${sw}; grid-row: span ${sh}; min-width: 0; display: flex; flex-direction: column;">
-                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
-                        ${slotHTML}
-                    </div>
-                </div>`;
-            }
-            col1HTML += slotHTML;
-        });
-    }
-    if (layoutConfig.col2) {
-        layoutConfig.col2.forEach((slot, index) => {
-            let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
-            if (!slotHTML) return;
-            if (isEditorModeActive) {
-                slotHTML = wrapSlotInEditorControls(slot, index, 'col2', slotHTML, col2W);
-            } else {
-                const sz = slot.size || 'normal';
-                const sw = slot.slotWidth || 1;
-                const sh = slot.slotHeight || 1;
-                slotHTML = `<div class="slot-size-${sz} slot-height-${sh}" style="grid-column: span ${sw}; grid-row: span ${sh}; min-width: 0; display: flex; flex-direction: column;">
-                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
-                        ${slotHTML}
-                    </div>
-                </div>`;
-            }
-            col2HTML += slotHTML;
-        });
-    }
-    if (layoutConfig.col3) {
-        layoutConfig.col3.forEach((slot, index) => {
-            let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
-            if (!slotHTML) return;
-            if (isEditorModeActive) {
-                slotHTML = wrapSlotInEditorControls(slot, index, 'col3', slotHTML, col3W);
-            } else {
-                const sz = slot.size || 'normal';
-                const sw = slot.slotWidth || 1;
-                const sh = slot.slotHeight || 1;
-                slotHTML = `<div class="slot-size-${sz} slot-height-${sh}" style="grid-column: span ${sw}; grid-row: span ${sh}; min-width: 0; display: flex; flex-direction: column;">
-                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
-                        ${slotHTML}
-                    </div>
-                </div>`;
-            }
-            col3HTML += slotHTML;
-        });
-    }
-
-    // Append inline page-level "+" buttons and col-width controls when in Editor Mode
+    let gridHTML = "";
+    
+    // Render Width Bars (Row 1)
     if (isEditorModeActive) {
         const cw = layoutConfig.colWidths || { col1: 1, col2: 2, col3: 1 };
-
-        function colWidthBar(colKey, colLabel, colW) {
+        
+        function colWidthBar(colKey, colLabel, colW, colStart, colSpan) {
             const cur = cw[colKey] || 1;
             const opts = [1, 2, 3];
             const btns = opts.map(n => {
                 const active = cur === n;
                 return `<button type="button" onclick="event.stopPropagation(); window.quickSetColWidth('${colKey}', ${n})" style="background:${active ? 'var(--accent-color)' : 'var(--bg-secondary)'}; color:${active ? '#fff' : 'var(--text-secondary)'}; border:1px solid ${active ? 'var(--accent-color)' : 'var(--border-light)'}; font-family:var(--font-ui); font-size:0.65rem; font-weight:700; padding:2px 8px; border-radius:4px; cursor:pointer;">${n}x</button>`;
             }).join('');
-            return `<div style="grid-column: 1 / -1; display:flex; align-items:center; gap:6px; margin-bottom:12px; padding:6px 10px; background:var(--bg-secondary); border-radius:6px; border:1px solid var(--border-light);">
+            
+            const dividerClass = colKey !== 'col3' ? 'col1-item' : '';
+            return `<div class="${dividerClass}" style="--col-start: ${colStart}; --col-span: ${colSpan}; --row-start: 1; --row-span: 1; display:flex; align-items:center; gap:6px; padding:6px 10px; background:var(--bg-secondary); border-radius:6px; border:1px solid var(--border-light); margin-bottom:12px;">
                 <span style="font-family:var(--font-ui); font-size:0.65rem; font-weight:700; color:var(--text-secondary); flex:1;">${colLabel} Genişliği:</span>
                 ${btns}
             </div>`;
         }
-
-        col1HTML = colWidthBar('col1', 'Sol Sütun', col1W) + col1HTML + `
-            <button class="btn-add-slot-page" onclick="window.quickAddSlot('col1')" style="grid-column: 1 / -1; background: none; border: 2px dashed var(--border-color); width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-top: 10px; margin-bottom: 20px; transition: all 0.2s ease;">
-                + Sol Sütuna Slot Ekle
-            </button>`;
-        col2HTML = colWidthBar('col2', 'Orta Sütun', col2W) + col2HTML + `
-            <button class="btn-add-slot-page" onclick="window.quickAddSlot('col2')" style="grid-column: 1 / -1; background: none; border: 2px dashed var(--border-color); width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-top: 10px; margin-bottom: 20px; transition: all 0.2s ease;">
-                + Orta Sütuna Slot Ekle
-            </button>`;
-        col3HTML = colWidthBar('col3', 'Sağ Sütun', col3W) + col3HTML + `
-            <button class="btn-add-slot-page" onclick="window.quickAddSlot('col3')" style="grid-column: 1 / -1; background: none; border: 2px dashed var(--border-color); width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-top: 10px; margin-bottom: 20px; transition: all 0.2s ease;">
-                + Sağ Sütuna Slot Ekle
-            </button>`;
+        
+        gridHTML += colWidthBar('col1', 'Sol Sütun', col1W, 1, col1W);
+        gridHTML += colWidthBar('col2', 'Orta Sütun', col2W, col1W + 1, col2W);
+        gridHTML += colWidthBar('col3', 'Sağ Sütun', col3W, col1W + col2W + 1, col3W);
     }
 
-    // Assembly
-    mainGrid.innerHTML = `
-        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col1W}, 1fr); gap: 16px; align-content: start;">${col1HTML}</div>
-        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col2W}, 1fr); gap: 16px; align-content: start;">${col2HTML}</div>
-        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col3W}, 1fr); gap: 16px; align-content: start;">${col3HTML}</div>
-    `;
+    const startRows = { col1: 1, col2: 1, col3: 1 };
+    if (isEditorModeActive) {
+        startRows.col1 = 2;
+        startRows.col2 = 2;
+        startRows.col3 = 2;
+    }
+
+    const renderColSlots = (colKey, colStart, colSpan, dividerClass) => {
+        let colHTML = "";
+        const slots = layoutConfig[colKey] || [];
+        slots.forEach((slot, index) => {
+            let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
+            if (!slotHTML) return;
+            
+            const sz = slot.size || 'normal';
+            const sw = slot.slotWidth || 1;
+            const sh = slot.slotHeight || 1;
+            
+            const currentRow = startRows[colKey];
+            startRows[colKey] += sh;
+            
+            if (isEditorModeActive) {
+                slotHTML = wrapSlotInEditorControls(slot, index, colKey, slotHTML, colSpan, colStart, sw, currentRow, dividerClass);
+            } else {
+                slotHTML = `<div class="slot-size-${sz} slot-height-${sh} ${dividerClass}" style="--col-start: ${colStart}; --col-span: ${sw}; --row-start: ${currentRow}; --row-span: ${sh}; min-width: 0; display: flex; flex-direction: column; height: 100%;">
+                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%; height: 100%;">
+                        ${slotHTML}
+                    </div>
+                </div>`;
+            }
+            colHTML += slotHTML;
+        });
+        return colHTML;
+    };
+
+    gridHTML += renderColSlots('col1', 1, col1W, 'col1-item');
+    gridHTML += renderColSlots('col2', col1W + 1, col2W, 'col2-item');
+    gridHTML += renderColSlots('col3', col1W + col2W + 1, col3W, '');
+
+    // Add "+" slot buttons at the very bottom in Editor Mode
+    if (isEditorModeActive) {
+        const maxTotalRow = Math.max(startRows.col1, startRows.col2, startRows.col3);
+        
+        function addSlotBtn(colKey, colLabel, colStart, colSpan) {
+            const dividerClass = colKey !== 'col3' ? 'col1-item' : '';
+            return `
+                <button class="btn-add-slot-page ${dividerClass}" onclick="window.quickAddSlot('${colKey}')" style="--col-start: ${colStart}; --col-span: ${colSpan}; --row-start: ${maxTotalRow}; --row-span: 1; background: none; border: 2px dashed var(--border-color); width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-top: 10px; margin-bottom: 20px; transition: all 0.2s ease; height: auto;">
+                    + ${colLabel} Sütuna Slot Ekle
+                </button>`;
+        }
+        
+        gridHTML += addSlotBtn('col1', 'Sol', 1, col1W);
+        gridHTML += addSlotBtn('col2', 'Orta', col1W + 1, col2W);
+        gridHTML += addSlotBtn('col3', 'Sağ', col1W + col2W + 1, col3W);
+    }
+
+    mainGrid.innerHTML = gridHTML;
 
     // Render Bottom Pagination Controls
     const paginationEl = document.getElementById("newspaper-pagination");
