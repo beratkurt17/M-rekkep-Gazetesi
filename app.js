@@ -5093,48 +5093,34 @@ function renderNewspaperGrid() {
     const slotHeadline = headlines[currentPage - 1];
 
     _slotArticleMap = {};
-    const usedArticleIds = new Set();
-    
-    // We iterate through all pages up to currentPage to stably allocate articles to slots by category
-    for (let p = 1; p <= currentPage; p++) {
-        // 1. Headline for page p
-        const pageHeadline = headlines[p - 1];
-        if (pageHeadline) {
-            usedArticleIds.add(pageHeadline.id);
-        }
-        
-        // 2. Category slots on page p
-        const pageCategorySlots = [];
-        ['col1', 'col2', 'col3'].forEach(colKey => {
-            if (layoutConfig[colKey]) {
-                layoutConfig[colKey].forEach(s => {
-                    if (s.type === 'category') {
-                        pageCategorySlots.push(s);
-                    }
-                });
-            }
-        });
-        
-        // Sort slots to ensure stable allocation order
-        const sortedSlots = pageCategorySlots.slice().sort((a, b) => a.id.localeCompare(b.id));
-        
-        sortedSlots.forEach(slot => {
-            // Find the highest clapped article of this category that is not yet used
-            const matchedArt = sorted.find(art => art.category === slot.value && !usedArticleIds.has(art.id));
-            if (matchedArt) {
-                if (p === currentPage) {
-                    _slotArticleMap[slot.id] = matchedArt;
-                }
-                usedArticleIds.add(matchedArt.id);
-            } else {
-                if (p === currentPage) {
-                    _slotArticleMap[slot.id] = null;
-                }
-            }
-        });
-    }
 
-    _pageArticles = Object.values(_slotArticleMap).filter(Boolean);
+    // Count how many category slots there are total
+    const allCategorySlots = [];
+    ['col1', 'col2', 'col3'].forEach(colKey => {
+        if (layoutConfig[colKey]) {
+            layoutConfig[colKey].forEach(s => {
+                if (s.type === 'category') allCategorySlots.push(s);
+            });
+        }
+    });
+
+    // Sort slots by ID for stable assignment across renders
+    const sortedSlots = allCategorySlots.slice().sort((a, b) => a.id.localeCompare(b.id));
+    const categorySlotCount = sortedSlots.length;
+
+    // Get all articles for this page (skip headlines of all pages)
+    const headlineIds = new Set(headlines.map(h => h && h.id).filter(Boolean));
+    const nonHeadlineArticles = sorted.filter(art => !headlineIds.has(art.id));
+
+    // Each page gets a fresh "window" of articles
+    const pageStartIdx = (currentPage - 1) * categorySlotCount;
+    const pageArticles = nonHeadlineArticles.slice(pageStartIdx, pageStartIdx + categorySlotCount);
+
+    sortedSlots.forEach((slot, idx) => {
+        _slotArticleMap[slot.id] = pageArticles[idx] || null;
+    });
+
+    _pageArticles = pageArticles;
 
     _slotArticleIdx = 0; // reset slot index before rendering
 
@@ -5167,17 +5153,22 @@ function renderNewspaperGrid() {
     let col2HTML = "";
     let col3HTML = "";
 
-    // Render columns dynamically from layoutConfig
     if (layoutConfig.col1) {
         layoutConfig.col1.forEach((slot, index) => {
             let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
-            if (!slotHTML) return;
             if (isEditorModeActive) {
+                if (!slotHTML.trim()) return;
                 slotHTML = wrapSlotInEditorControls(slot, index, 'col1', slotHTML, col1W);
             } else {
                 const sz = slot.size || 'normal';
                 const sw = slot.slotWidth || 1;
                 const sh = slot.slotHeight || 1;
+                if (!slotHTML.trim()) {
+                    // For system slots that have no content (e.g. no headline yet), skip entirely
+                    if (slot.type === 'system') return;
+                    // For category slots, still render a grid cell (may be empty placeholder)
+                    slotHTML = '<div></div>';
+                }
                 slotHTML = `<div class="slot-size-${sz} slot-height-${sh}" style="grid-column: span ${sw}; grid-row: span ${sh}; min-width: 0; display: flex; flex-direction: column;">
                     <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
                         ${slotHTML}
@@ -5190,13 +5181,17 @@ function renderNewspaperGrid() {
     if (layoutConfig.col2) {
         layoutConfig.col2.forEach((slot, index) => {
             let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
-            if (!slotHTML) return;
             if (isEditorModeActive) {
+                if (!slotHTML.trim()) return;
                 slotHTML = wrapSlotInEditorControls(slot, index, 'col2', slotHTML, col2W);
             } else {
                 const sz = slot.size || 'normal';
                 const sw = slot.slotWidth || 1;
                 const sh = slot.slotHeight || 1;
+                if (!slotHTML.trim()) {
+                    if (slot.type === 'system') return;
+                    slotHTML = '<div></div>';
+                }
                 slotHTML = `<div class="slot-size-${sz} slot-height-${sh}" style="grid-column: span ${sw}; grid-row: span ${sh}; min-width: 0; display: flex; flex-direction: column;">
                     <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
                         ${slotHTML}
@@ -5209,13 +5204,17 @@ function renderNewspaperGrid() {
     if (layoutConfig.col3) {
         layoutConfig.col3.forEach((slot, index) => {
             let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
-            if (!slotHTML) return;
             if (isEditorModeActive) {
+                if (!slotHTML.trim()) return;
                 slotHTML = wrapSlotInEditorControls(slot, index, 'col3', slotHTML, col3W);
             } else {
                 const sz = slot.size || 'normal';
                 const sw = slot.slotWidth || 1;
                 const sh = slot.slotHeight || 1;
+                if (!slotHTML.trim()) {
+                    if (slot.type === 'system') return;
+                    slotHTML = '<div></div>';
+                }
                 slotHTML = `<div class="slot-size-${sz} slot-height-${sh}" style="grid-column: span ${sw}; grid-row: span ${sh}; min-width: 0; display: flex; flex-direction: column;">
                     <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
                         ${slotHTML}
