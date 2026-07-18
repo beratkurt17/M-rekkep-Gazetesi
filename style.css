@@ -1059,6 +1059,13 @@ body {
     width: 1px;
     background-color: var(--border-color);
 }
+/* Slot wrappers in news-column have consistent min-height so all first-row cards bottom-align */
+.news-column > * {
+    min-height: 320px;
+    box-sizing: border-box;
+}
+
+
 
 .article-card {
     background: none;
@@ -1118,7 +1125,7 @@ body {
 
 /* Limit card image heights on non-headline cards to look uniform */
 .article-card:not(.headline-card):not(.poem-card):not(.article-card-horizontal) .card-image-box {
-    height: 180px;
+    height: 110px;
     overflow: hidden;
 }
 

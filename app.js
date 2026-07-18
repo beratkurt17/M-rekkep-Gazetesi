@@ -4960,7 +4960,7 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
                     <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
                     <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.25rem; font-weight: 900; margin: 6px 0 4px 0;">${art.title}</h3>
                     <span class="card-author" style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--text-secondary); display: block; margin-bottom: 10px; font-weight: 500;">${authorHtml}</span>
-                    <div class="card-image-box" style="width: 100%; height: ${isKitap ? '160px' : '110px'}; overflow: hidden; border: 1px solid var(--border-light); margin-bottom: 10px; border-radius: 4px;">
+                    <div class="card-image-box" style="width: 100%; height: 110px; overflow: hidden; border: 1px solid var(--border-light); margin-bottom: 10px; border-radius: 4px;">
                         <img src="${image}" alt="${art.title}" class="card-image" style="width: 100%; height: 100%; object-fit: ${isKitap ? 'contain' : 'cover'}; background-color: ${isKitap ? 'var(--bg-secondary)' : 'transparent'};" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
                     </div>
                     <p class="card-preview" style="font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; margin-bottom: 8px;">${displaySubtitle}</p>
