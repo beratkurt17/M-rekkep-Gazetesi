@@ -2248,6 +2248,13 @@ function populateShareSentences(article) {
     tempDiv.innerHTML = article.content;
     const paragraphs = tempDiv.querySelectorAll("p, blockquote");
 
+    const decodeHTMLEntities = (str) => {
+        const temp = document.createElement("div");
+        temp.innerHTML = str;
+        const decoded = temp.textContent || temp.innerText || "";
+        return decoded.replace(/\s+/g, ' ').trim();
+    };
+
     const sentences = [];
     if (article.category === 'siir') {
         // For poems, preserve line structure and treat each verse as a selectable item
@@ -2257,24 +2264,23 @@ function populateShareSentences(article) {
             .replace(/<\/div>/gi, "\n")
             .replace(/<[^>]*>/g, "")
             .split("\n")
-            .map(line => line.trim())
+            .map(line => decodeHTMLEntities(line))
             .filter(Boolean);
         lines.forEach(l => sentences.push(l));
     } else {
         // For prose, split into sentences by punctuation
         paragraphs.forEach(p => {
-            const text = p.textContent.trim();
+            const text = decodeHTMLEntities(p.textContent);
             if (!text) return;
             
-            const cleanText = text.replace(/\s+/g, ' ').trim();
-            const matches = cleanText.match(/[^.!?]+[.!?]+(?=\s|$)/g);
+            const matches = text.match(/[^.!?]+[.!?]+(?=\s|$)/g);
             if (matches) {
                 matches.forEach(s => {
                     const cleanS = s.trim();
                     if (cleanS) sentences.push(cleanS);
                 });
-            } else if (cleanText) {
-                sentences.push(cleanText);
+            } else if (text) {
+                sentences.push(text);
             }
         });
     }
