@@ -5092,31 +5092,49 @@ function renderNewspaperGrid() {
     }
     const slotHeadline = headlines[currentPage - 1];
 
-    const rawPageArticles = sorted.slice(pageStartIdx, pageStartIdx + pageCapacity);
-    // Filter out the headline article of this page so it is not duplicated in category slots
-    _pageArticles = rawPageArticles.filter(art => !slotHeadline || art.id !== slotHeadline.id);
-    if (_pageArticles.length > categorySlotCount) {
-        _pageArticles = _pageArticles.slice(0, categorySlotCount);
-    }
-    
-    // Map page articles stably to category slots based on alphabetical ID sorting
-    const allCategorySlots = [];
-    ['col1', 'col2', 'col3'].forEach(colKey => {
-        if (layoutConfig[colKey]) {
-            layoutConfig[colKey].forEach(s => {
-                if (s.type === 'category') {
-                    allCategorySlots.push(s);
-                }
-            });
-        }
-    });
-    const sortedSlots = allCategorySlots.slice().sort((a, b) => a.id.localeCompare(b.id));
     _slotArticleMap = {};
-    sortedSlots.forEach((slot, idx) => {
-        if (_pageArticles[idx]) {
-            _slotArticleMap[slot.id] = _pageArticles[idx];
+    const usedArticleIds = new Set();
+    
+    // We iterate through all pages up to currentPage to stably allocate articles to slots by category
+    for (let p = 1; p <= currentPage; p++) {
+        // 1. Headline for page p
+        const pageHeadline = headlines[p - 1];
+        if (pageHeadline) {
+            usedArticleIds.add(pageHeadline.id);
         }
-    });
+        
+        // 2. Category slots on page p
+        const pageCategorySlots = [];
+        ['col1', 'col2', 'col3'].forEach(colKey => {
+            if (layoutConfig[colKey]) {
+                layoutConfig[colKey].forEach(s => {
+                    if (s.type === 'category') {
+                        pageCategorySlots.push(s);
+                    }
+                });
+            }
+        });
+        
+        // Sort slots to ensure stable allocation order
+        const sortedSlots = pageCategorySlots.slice().sort((a, b) => a.id.localeCompare(b.id));
+        
+        sortedSlots.forEach(slot => {
+            // Find the highest clapped article of this category that is not yet used
+            const matchedArt = sorted.find(art => art.category === slot.value && !usedArticleIds.has(art.id));
+            if (matchedArt) {
+                if (p === currentPage) {
+                    _slotArticleMap[slot.id] = matchedArt;
+                }
+                usedArticleIds.add(matchedArt.id);
+            } else {
+                if (p === currentPage) {
+                    _slotArticleMap[slot.id] = null;
+                }
+            }
+        });
+    }
+
+    _pageArticles = Object.values(_slotArticleMap).filter(Boolean);
 
     _slotArticleIdx = 0; // reset slot index before rendering
 
