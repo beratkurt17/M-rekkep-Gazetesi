@@ -5856,7 +5856,11 @@ window.editArticleClick = function(id, event) {
     // Fill the Writer Studio forms
     document.getElementById("post-title").value = article.title;
     document.getElementById("post-subtitle").value = article.subtitle;
-    document.getElementById("post-author").value = article.author;
+    const authorInput = document.getElementById("post-author");
+    if (authorInput) {
+        authorInput.value = article.author;
+        authorInput.readOnly = true;
+    }
     document.getElementById("post-category").value = article.category;
     
     const cornerNameInput = document.getElementById("post-corner-name");
@@ -5976,10 +5980,11 @@ writeToggleBtn.addEventListener("click", () => {
     editorOverlay.classList.remove("hidden");
     lockBodyScroll();
     
-    // Prefill the author name to match user profile exactly
+    // Prefill the author name to match user profile exactly and lock input
     const authorInput = document.getElementById("post-author");
-    if (authorInput && currentUser.username) {
-        authorInput.value = currentUser.username;
+    if (authorInput) {
+        authorInput.value = currentUser.username || (currentUser.email ? currentUser.email.split("@")[0] : "Anonim Yazar");
+        authorInput.readOnly = true;
     }
 
     // Limit category select dynamically to prevent regular users from selecting admin categories
@@ -6297,7 +6302,8 @@ publishForm.addEventListener("submit", async (e) => {
 
     const title = titleInput.value.trim();
     const subtitle = subtitleInput.value.trim();
-    const author = authorInput.value.trim();
+    // Strictly bind author name to current logged-in user's profile
+    const author = currentUser ? (currentUser.username || (currentUser.email ? currentUser.email.split("@")[0] : "Anonim Yazar")) : (authorInput.value.trim() || "Anonim Yazar");
     const category = document.getElementById("post-category").value;
     const contentText = contentInput.value.trim();
     const cornerName = cornerNameInput ? cornerNameInput.value.trim() : "";
@@ -6364,6 +6370,8 @@ publishForm.addEventListener("submit", async (e) => {
         article.title = title;
         article.subtitle = subtitle;
         article.author = author;
+        if (currentUser && currentUser.email) article.author_email = currentUser.email;
+        if (currentUser && currentUser.id) article.user_id = currentUser.id;
         article.category = category;
         article.image = image;
         article.content = contentHTML;
@@ -6378,6 +6386,8 @@ publishForm.addEventListener("submit", async (e) => {
                         title: article.title,
                         subtitle: article.subtitle,
                         author: article.author,
+                        author_email: article.author_email || null,
+                        user_id: article.user_id || null,
                         category: article.category,
                         image: article.image,
                         content: article.content,
@@ -6424,6 +6434,8 @@ publishForm.addEventListener("submit", async (e) => {
         title: title,
         subtitle: subtitle,
         author: author,
+        author_email: currentUser ? currentUser.email : null,
+        user_id: currentUser ? currentUser.id : null,
         category: category,
         image: image,
         date: formatDate(new Date()),
@@ -6450,6 +6462,8 @@ publishForm.addEventListener("submit", async (e) => {
                     title: newArticle.title,
                     subtitle: newArticle.subtitle,
                     author: newArticle.author,
+                    author_email: newArticle.author_email,
+                    user_id: newArticle.user_id,
                     category: newArticle.category,
                     image: newArticle.image,
                     date: newArticle.date,
@@ -7601,6 +7615,156 @@ function buildPersonCard(name, subText, onClickFn, removeBtnHtml) {
     return card;
 }
 
+// Auto-reconcile articles that belong to logged in user email / user_id
+function reconcileUserArticles() {
+    if (!currentUser) return false;
+    const currentUsername = currentUser.username || (currentUser.email ? currentUser.email.split("@")[0] : "");
+    const currentUserEmail = currentUser.email ? currentUser.email.toLowerCase().trim() : "";
+    if (!currentUsername) return false;
+
+    let modified = false;
+    articles.forEach(art => {
+        const matchesEmail = art.author_email && art.author_email.toLowerCase().trim() === currentUserEmail;
+        const matchesUserId = art.user_id && currentUser.id && art.user_id === currentUser.id;
+        
+        if (matchesEmail || matchesUserId) {
+            if (art.author !== currentUsername) {
+                art.author = currentUsername;
+                modified = true;
+            }
+        }
+    });
+
+    if (modified) {
+        if (isSupabaseConnected && supabaseClient) {
+            clearSupabaseCache();
+        } else {
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+        }
+    }
+    return modified;
+}
+
+// Migrate all articles when a user renames their pen name
+async function performUsernameMigration(oldName, newName) {
+    if (!newName || newName.trim() === "") return;
+    const newNameClean = newName.trim();
+    
+    // Update currentUser object
+    if (currentUser) {
+        currentUser.username = newNameClean;
+        const storedUser = localStorage.getItem("murekkep_current_user");
+        if (storedUser) {
+            try {
+                const uObj = JSON.parse(storedUser);
+                uObj.username = newNameClean;
+                localStorage.setItem("murekkep_current_user", JSON.stringify(uObj));
+            } catch(e) {}
+        }
+    }
+
+    let articlesUpdated = 0;
+    const userEmail = currentUser ? (currentUser.email ? currentUser.email.toLowerCase().trim() : "") : "";
+    
+    articles.forEach(art => {
+        const matchesOldName = oldName && art.author && art.author.trim().toLowerCase() === oldName.trim().toLowerCase();
+        const matchesEmail = userEmail && art.author_email && art.author_email.toLowerCase().trim() === userEmail;
+        
+        if (matchesOldName || matchesEmail) {
+            art.author = newNameClean;
+            if (currentUser && currentUser.email) art.author_email = currentUser.email;
+            if (currentUser && currentUser.id) art.user_id = currentUser.id;
+            articlesUpdated++;
+        }
+    });
+
+    if (articlesUpdated > 0) {
+        if (isSupabaseConnected && supabaseClient) {
+            try {
+                if (oldName) {
+                    await supabaseClient
+                        .from('articles')
+                        .update({ author: newNameClean })
+                        .ilike('author', oldName);
+                }
+                if (userEmail) {
+                    await supabaseClient
+                        .from('articles')
+                        .update({ author: newNameClean })
+                        .eq('author_email', userEmail);
+                }
+            } catch(e) {
+                console.error("Supabase migration error:", e);
+            }
+            clearSupabaseCache();
+        } else {
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+        }
+    }
+
+    if (oldName && authorProfiles[oldName]) {
+        authorProfiles[newNameClean] = authorProfiles[oldName];
+        delete authorProfiles[oldName];
+        saveAuthorProfiles();
+    }
+}
+
+// User tool to claim/attach an article to their logged-in account
+window.claimArticleForCurrentUser = function() {
+    if (!currentUser) {
+        showToast("Lütfen önce giriş yapın.");
+        return;
+    }
+    const currentUsername = currentUser.username || (currentUser.email ? currentUser.email.split("@")[0] : "");
+    if (!currentUsername) return;
+
+    const otherArticles = articles.filter(a => a.author && a.author.trim().toLowerCase() !== currentUsername.trim().toLowerCase());
+    
+    if (otherArticles.length === 0) {
+        showToast("Hesabınıza bağlanabilecek başka yazı bulunamadı.");
+        return;
+    }
+
+    let optionsList = otherArticles.map((a, idx) => `${idx + 1}. "${a.title}" (Mevcut Yazar: ${a.author})`).join("\n");
+    const choice = prompt(`Hesabınıza ("${currentUsername}") bağlamak istediğiniz yazının numarasını girin:\n\n${optionsList}\n\nNumarayı girip Tamam'a basın:`);
+    
+    if (!choice) return;
+    const num = parseInt(choice.trim());
+    if (isNaN(num) || num < 1 || num > otherArticles.length) {
+        showToast("Geçersiz seçim yapıldı.");
+        return;
+    }
+
+    const selectedArticle = otherArticles[num - 1];
+    selectedArticle.author = currentUsername;
+    if (currentUser.email) selectedArticle.author_email = currentUser.email;
+    if (currentUser.id) selectedArticle.user_id = currentUser.id;
+
+    if (isSupabaseConnected && supabaseClient) {
+        try {
+            supabaseClient
+                .from('articles')
+                .update({ 
+                    author: currentUsername,
+                    author_email: currentUser.email || null,
+                    user_id: currentUser.id || null 
+                })
+                .eq('id', selectedArticle.id);
+        } catch(e) {}
+        clearSupabaseCache();
+    } else {
+        localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+    }
+
+    showToast(`✅ "${selectedArticle.title}" başlıklı eser hesabınıza ("${currentUsername}") bağlandı!`);
+    window.openAuthorProfile(currentUsername);
+    if (currentCategoryFilter === "all") {
+        renderNewspaperGrid();
+    } else {
+        renderCategoryFeed(currentCategoryFilter);
+    }
+};
+
 /** Open / refresh the profile modal for the given author name.
  *  If authorName equals the logged-in user, it renders in "own profile" mode. */
 window.openAuthorProfile = function(authorName, startTab) {
@@ -7610,6 +7774,10 @@ window.openAuthorProfile = function(authorName, startTab) {
 
     const isOwnProfile = currentUser && currentUser.username &&
         currentUser.username.trim().toLowerCase() === authorName.trim().toLowerCase();
+
+    if (isOwnProfile) {
+        reconcileUserArticles();
+    }
 
     const stats = getAuthorStats(authorName);
     const authorArticles = articles
@@ -7815,8 +7983,22 @@ window.openAuthorProfile = function(authorName, startTab) {
     const articlesContainer = document.getElementById('author-modal-articles-list');
     if (articlesContainer) {
         articlesContainer.innerHTML = '';
+        if (isOwnProfile) {
+            const claimBox = document.createElement('div');
+            claimBox.style.cssText = "margin-bottom: 12px; padding: 10px 14px; background: var(--bg-secondary); border: 1px dashed var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px;";
+            claimBox.innerHTML = `
+                <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;">Farklı bir isimle paylaştığınız yazınız mı var?</span>
+                <button type="button" onclick="window.claimArticleForCurrentUser()" style="background: var(--accent-color); color: #fff; border: none; padding: 5px 12px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer; white-space: nowrap;">
+                    🔗 Hesabıma Bağla
+                </button>
+            `;
+            articlesContainer.appendChild(claimBox);
+        }
         if (authorArticles.length === 0) {
-            articlesContainer.innerHTML = `<p style="font-size:0.82rem;color:var(--text-secondary);text-align:center;font-style:italic;padding:24px 0;">Henüz yayınlanmış eser bulunmuyor.</p>`;
+            const emptyP = document.createElement('p');
+            emptyP.style.cssText = 'font-size:0.82rem;color:var(--text-secondary);text-align:center;font-style:italic;padding:24px 0;';
+            emptyP.textContent = 'Henüz yayınlanmış eser bulunmuyor.';
+            articlesContainer.appendChild(emptyP);
         } else {
             authorArticles.forEach(art => {
                 const reports = getArticleReports(art.id);
