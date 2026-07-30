@@ -7657,9 +7657,47 @@ function restoreDefaultArticlesAuthors() {
     }
 }
 
+// Auto-merge pen name variations (e.g. "Berat" account with "Berat Kurt" articles)
+function autoMergeUserPenName() {
+    if (!currentUser) return;
+    const currentName = currentUser.username ? currentUser.username.trim() : "";
+    if (!currentName) return;
+
+    const defaultAuthorNames = [
+        "mürekkep yayın kurulu", "murekkep yayin kurulu", "selim çetin", "selim cetin",
+        "can özkan", "can ozkan", "mürekkep röportaj", "murekkep roportaj",
+        "melike nur özkan", "melike nur ozkan", "elif su yıldız", "elif su yildiz",
+        "mehmet ali demir", "mürekkep kültür haber", "murekkep kultur haber",
+        "mürekkep yarışma kurulu", "murekkep yarisma kurulu", "hakan yılmaz", "hakan yilmaz",
+        "esra demir", "murat can"
+    ];
+
+    const matchingArticle = articles.find(a => {
+        if (!a.author) return false;
+        const artAuthor = a.author.trim();
+        const artAuthorLower = artAuthor.toLowerCase();
+        const currentNameLower = currentName.toLowerCase();
+        
+        if (artAuthorLower === currentNameLower) return false;
+        if (defaultAuthorNames.includes(artAuthorLower)) return false;
+
+        const matchesEmail = a.author_email && currentUser.email && a.author_email.toLowerCase().trim() === currentUser.email.toLowerCase().trim();
+        const matchesUserId = a.user_id && currentUser.id && a.user_id === currentUser.id;
+        const startsWithUser = artAuthorLower.startsWith(currentNameLower + " ");
+
+        return matchesEmail || matchesUserId || startsWithUser;
+    });
+
+    if (matchingArticle) {
+        const fullPenName = matchingArticle.author.trim();
+        performUsernameMigration(currentName, fullPenName);
+    }
+}
+
 // Auto-reconcile articles that belong to logged in user account
 function reconcileUserArticles() {
     restoreDefaultArticlesAuthors();
+    autoMergeUserPenName();
 
     if (!currentUser) return false;
     const currentUsername = currentUser.username || (currentUser.email ? currentUser.email.split("@")[0] : "");
@@ -7668,13 +7706,18 @@ function reconcileUserArticles() {
 
     let modified = false;
     articles.forEach(art => {
+        const authorLower = (art.author || "").toLowerCase().trim();
+        const userLower = currentUsername.toLowerCase().trim();
+
         const matchesEmail = art.author_email && currentUserEmail && art.author_email.toLowerCase().trim() === currentUserEmail;
         const matchesUserId = art.user_id && currentUser.id && art.user_id === currentUser.id;
-        
-        // Strictly reconcile ONLY when explicit account metadata matches this user
-        if (matchesEmail || matchesUserId) {
+        const matchesPenNamePrefix = authorLower.startsWith(userLower + " ") || userLower.startsWith(authorLower + " ");
+
+        if (matchesEmail || matchesUserId || matchesPenNamePrefix) {
             if (art.author !== currentUsername) {
                 art.author = currentUsername;
+                if (currentUser.email) art.author_email = currentUser.email;
+                if (currentUser.id) art.user_id = currentUser.id;
                 modified = true;
             }
         }
