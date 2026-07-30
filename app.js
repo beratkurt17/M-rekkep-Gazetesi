@@ -5059,6 +5059,8 @@ function updateHeaderMeta() {
 function renderNewspaperGrid() {
     mainGrid.className = "newspaper-grid"; // ensure grid class is set
 
+    reconcileUserArticles();
+
     // Ensure all slots have unique IDs
     ensureLayoutSlotIds();
 
@@ -5321,6 +5323,8 @@ function renderNewspaperGrid() {
 // RENDER FEED LIST VIEW FOR CATEGORIES
 function renderCategoryFeed(category) {
     mainGrid.className = "newspaper-grid feed-view-active"; // change class for layout styling
+
+    reconcileUserArticles();
 
     // Filter articles belonging to selected category or bookmarks
     let filteredArticles = [];
@@ -7615,21 +7619,36 @@ function buildPersonCard(name, subText, onClickFn, removeBtnHtml) {
     return card;
 }
 
-// Auto-reconcile articles that belong to logged in user email / user_id
+// Auto-reconcile articles that belong to logged in user account
 function reconcileUserArticles() {
     if (!currentUser) return false;
     const currentUsername = currentUser.username || (currentUser.email ? currentUser.email.split("@")[0] : "");
     const currentUserEmail = currentUser.email ? currentUser.email.toLowerCase().trim() : "";
     if (!currentUsername) return false;
 
+    const defaultAuthorNames = [
+        "mürekkep yayın kurulu", "murekkep yayin kurulu", "selim çetin", "selim cetin",
+        "can özkan", "can ozkan", "mürekkep röportaj", "murekkep roportaj",
+        "melike nur özkan", "melike nur ozkan", "elif su yıldız", "elif su yildiz",
+        "mehmet ali demir", "mürekkep kültür haber", "murekkep kultur haber",
+        "mürekkep yarışma kurulu", "murekkep yarisma kurulu", "hakan yılmaz", "hakan yilmaz",
+        "esra demir", "murat can"
+    ];
+
     let modified = false;
     articles.forEach(art => {
-        const matchesEmail = art.author_email && art.author_email.toLowerCase().trim() === currentUserEmail;
+        const authorNorm = (art.author || "").toLowerCase().trim();
+        const isDefaultSeed = defaultAuthorNames.includes(authorNorm);
+        const isAlreadyUser = authorNorm === currentUsername.toLowerCase().trim();
+        const matchesEmail = art.author_email && currentUserEmail && art.author_email.toLowerCase().trim() === currentUserEmail;
         const matchesUserId = art.user_id && currentUser.id && art.user_id === currentUser.id;
         
-        if (matchesEmail || matchesUserId) {
-            if (art.author !== currentUsername) {
+        // Reconcile if explicit match OR if custom user article created without metadata
+        if (matchesEmail || matchesUserId || (!isDefaultSeed && !isAlreadyUser)) {
+            if (art.author !== currentUsername || !art.author_email) {
                 art.author = currentUsername;
+                if (currentUser.email) art.author_email = currentUser.email;
+                if (currentUser.id) art.user_id = currentUser.id;
                 modified = true;
             }
         }
@@ -7708,62 +7727,6 @@ async function performUsernameMigration(oldName, newName) {
         saveAuthorProfiles();
     }
 }
-
-// User tool to claim/attach an article to their logged-in account
-window.claimArticleForCurrentUser = function() {
-    if (!currentUser) {
-        showToast("Lütfen önce giriş yapın.");
-        return;
-    }
-    const currentUsername = currentUser.username || (currentUser.email ? currentUser.email.split("@")[0] : "");
-    if (!currentUsername) return;
-
-    const otherArticles = articles.filter(a => a.author && a.author.trim().toLowerCase() !== currentUsername.trim().toLowerCase());
-    
-    if (otherArticles.length === 0) {
-        showToast("Hesabınıza bağlanabilecek başka yazı bulunamadı.");
-        return;
-    }
-
-    let optionsList = otherArticles.map((a, idx) => `${idx + 1}. "${a.title}" (Mevcut Yazar: ${a.author})`).join("\n");
-    const choice = prompt(`Hesabınıza ("${currentUsername}") bağlamak istediğiniz yazının numarasını girin:\n\n${optionsList}\n\nNumarayı girip Tamam'a basın:`);
-    
-    if (!choice) return;
-    const num = parseInt(choice.trim());
-    if (isNaN(num) || num < 1 || num > otherArticles.length) {
-        showToast("Geçersiz seçim yapıldı.");
-        return;
-    }
-
-    const selectedArticle = otherArticles[num - 1];
-    selectedArticle.author = currentUsername;
-    if (currentUser.email) selectedArticle.author_email = currentUser.email;
-    if (currentUser.id) selectedArticle.user_id = currentUser.id;
-
-    if (isSupabaseConnected && supabaseClient) {
-        try {
-            supabaseClient
-                .from('articles')
-                .update({ 
-                    author: currentUsername,
-                    author_email: currentUser.email || null,
-                    user_id: currentUser.id || null 
-                })
-                .eq('id', selectedArticle.id);
-        } catch(e) {}
-        clearSupabaseCache();
-    } else {
-        localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
-    }
-
-    showToast(`✅ "${selectedArticle.title}" başlıklı eser hesabınıza ("${currentUsername}") bağlandı!`);
-    window.openAuthorProfile(currentUsername);
-    if (currentCategoryFilter === "all") {
-        renderNewspaperGrid();
-    } else {
-        renderCategoryFeed(currentCategoryFilter);
-    }
-};
 
 /** Open / refresh the profile modal for the given author name.
  *  If authorName equals the logged-in user, it renders in "own profile" mode. */
@@ -7983,22 +7946,8 @@ window.openAuthorProfile = function(authorName, startTab) {
     const articlesContainer = document.getElementById('author-modal-articles-list');
     if (articlesContainer) {
         articlesContainer.innerHTML = '';
-        if (isOwnProfile) {
-            const claimBox = document.createElement('div');
-            claimBox.style.cssText = "margin-bottom: 12px; padding: 10px 14px; background: var(--bg-secondary); border: 1px dashed var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px;";
-            claimBox.innerHTML = `
-                <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;">Farklı bir isimle paylaştığınız yazınız mı var?</span>
-                <button type="button" onclick="window.claimArticleForCurrentUser()" style="background: var(--accent-color); color: #fff; border: none; padding: 5px 12px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer; white-space: nowrap;">
-                    🔗 Hesabıma Bağla
-                </button>
-            `;
-            articlesContainer.appendChild(claimBox);
-        }
         if (authorArticles.length === 0) {
-            const emptyP = document.createElement('p');
-            emptyP.style.cssText = 'font-size:0.82rem;color:var(--text-secondary);text-align:center;font-style:italic;padding:24px 0;';
-            emptyP.textContent = 'Henüz yayınlanmış eser bulunmuyor.';
-            articlesContainer.appendChild(emptyP);
+            articlesContainer.innerHTML = `<p style="font-size:0.82rem;color:var(--text-secondary);text-align:center;font-style:italic;padding:24px 0;">Henüz yayınlanmış eser bulunmuyor.</p>`;
         } else {
             authorArticles.forEach(art => {
                 const reports = getArticleReports(art.id);
