@@ -7619,36 +7619,62 @@ function buildPersonCard(name, subText, onClickFn, removeBtnHtml) {
     return card;
 }
 
+// Restore default authors for built-in seed articles if modified
+function restoreDefaultArticlesAuthors() {
+    const defaultAuthorMap = {
+        "manset-1": "Mürekkep Yayın Kurulu",
+        "kitap-1": "Selim Çetin",
+        "deneme-1": "Can Özkan",
+        "roportaj-1": "Mürekkep Röportaj",
+        "siir-1": "Melike Nur Özkan",
+        "oyku-1": "Elif Su Yıldız",
+        "kose-yazilari-1": "Mehmet Ali Demir",
+        "haber-1": "Mürekkep Kültür Haber",
+        "yarismalar-1": "Mürekkep Yarışma Kurulu",
+        "deneme-2": "Hakan Yılmaz",
+        "siir-2": "Esra Demir",
+        "oyku-2": "Murat Can"
+    };
+
+    let modified = false;
+    articles.forEach(art => {
+        if (defaultAuthorMap[art.id]) {
+            if (art.author !== defaultAuthorMap[art.id]) {
+                art.author = defaultAuthorMap[art.id];
+                delete art.author_email;
+                delete art.user_id;
+                modified = true;
+            }
+        }
+    });
+
+    if (modified) {
+        if (isSupabaseConnected && supabaseClient) {
+            clearSupabaseCache();
+        } else {
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+        }
+    }
+}
+
 // Auto-reconcile articles that belong to logged in user account
 function reconcileUserArticles() {
+    restoreDefaultArticlesAuthors();
+
     if (!currentUser) return false;
     const currentUsername = currentUser.username || (currentUser.email ? currentUser.email.split("@")[0] : "");
     const currentUserEmail = currentUser.email ? currentUser.email.toLowerCase().trim() : "";
     if (!currentUsername) return false;
 
-    const defaultAuthorNames = [
-        "mürekkep yayın kurulu", "murekkep yayin kurulu", "selim çetin", "selim cetin",
-        "can özkan", "can ozkan", "mürekkep röportaj", "murekkep roportaj",
-        "melike nur özkan", "melike nur ozkan", "elif su yıldız", "elif su yildiz",
-        "mehmet ali demir", "mürekkep kültür haber", "murekkep kultur haber",
-        "mürekkep yarışma kurulu", "murekkep yarisma kurulu", "hakan yılmaz", "hakan yilmaz",
-        "esra demir", "murat can"
-    ];
-
     let modified = false;
     articles.forEach(art => {
-        const authorNorm = (art.author || "").toLowerCase().trim();
-        const isDefaultSeed = defaultAuthorNames.includes(authorNorm);
-        const isAlreadyUser = authorNorm === currentUsername.toLowerCase().trim();
         const matchesEmail = art.author_email && currentUserEmail && art.author_email.toLowerCase().trim() === currentUserEmail;
         const matchesUserId = art.user_id && currentUser.id && art.user_id === currentUser.id;
         
-        // Reconcile if explicit match OR if custom user article created without metadata
-        if (matchesEmail || matchesUserId || (!isDefaultSeed && !isAlreadyUser)) {
-            if (art.author !== currentUsername || !art.author_email) {
+        // Strictly reconcile ONLY when explicit account metadata matches this user
+        if (matchesEmail || matchesUserId) {
+            if (art.author !== currentUsername) {
                 art.author = currentUsername;
-                if (currentUser.email) art.author_email = currentUser.email;
-                if (currentUser.id) art.user_id = currentUser.id;
                 modified = true;
             }
         }
