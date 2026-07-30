@@ -5009,6 +5009,161 @@ button, a, input, textarea, select {
     }
 }
 
+/* =============================================
+   PROFILE EDITOR MODAL OVERLAY STYLING
+   ============================================= */
+.profile-custom-popover-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(5px);
+    z-index: 10004;
+    transition: opacity 0.2s ease;
+}
+
+.profile-custom-popover {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 92% !important;
+    max-width: 450px !important;
+    max-height: 88vh !important;
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5) !important;
+    z-index: 10005 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
+    animation: popoverScaleIn 0.2s ease-out;
+}
+
+.profile-custom-popover.hidden,
+.profile-custom-popover-backdrop.hidden {
+    display: none !important;
+}
+
+.profile-custom-popover .popover-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-light);
+    flex-shrink: 0;
+}
+
+.profile-custom-popover .popover-header h4 {
+    font-family: var(--font-header);
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.profile-custom-popover .popover-close {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    cursor: pointer;
+    color: var(--text-primary);
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.profile-custom-popover .popover-close:hover {
+    background: var(--accent-color);
+    color: #ffffff;
+}
+
+.profile-custom-popover .popover-close svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.profile-popover-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.profile-popover-tab-btn {
+    flex: 1;
+    padding: 7px 8px;
+    font-family: var(--font-ui);
+    font-size: 0.76rem;
+    font-weight: 700;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.profile-popover-tab-btn.active {
+    background: var(--accent-color);
+    color: #ffffff;
+    border-color: var(--accent-color);
+}
+
+.popover-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+    margin-bottom: 14px;
+}
+
+.popover-panel.hidden {
+    display: none;
+}
+
+#save-profile-customizations {
+    margin-top: auto !important;
+    flex-shrink: 0 !important;
+    width: 100% !important;
+    border-radius: 10px !important;
+    height: 42px !important;
+    font-size: 0.9rem !important;
+    font-weight: 700 !important;
+    background: var(--accent-color) !important;
+    color: #ffffff !important;
+    border: none !important;
+    cursor: pointer !important;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.15s ease, background 0.2s ease;
+}
+
+#save-profile-customizations:hover {
+    transform: translateY(-1px);
+}
+
+@keyframes popoverScaleIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -46%) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
 
 
 

@@ -8303,14 +8303,17 @@ let selectedCoverVal = "";
 // Initialize Profile Customize Popover Event Handlers
 function initProfileCustomizer() {
     const popover = document.getElementById('profile-editor-popover');
+    const popoverBackdrop = document.getElementById('profile-editor-popover-backdrop');
     const closeBtn = document.getElementById('close-profile-popover');
     
-    // Popover Close click
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            popover.classList.add('hidden');
-        });
+    function closeProfilePopover() {
+        if (popover) popover.classList.add('hidden');
+        if (popoverBackdrop) popoverBackdrop.classList.add('hidden');
     }
+
+    // Popover Close click & backdrop click
+    if (closeBtn) closeBtn.addEventListener('click', closeProfilePopover);
+    if (popoverBackdrop) popoverBackdrop.addEventListener('click', closeProfilePopover);
 
     // Tab buttons event listeners
     const popTabBtns = document.querySelectorAll('.profile-popover-tab-btn');
@@ -8438,8 +8441,10 @@ function initProfileCustomizer() {
                 socialWeb: document.getElementById('social-web-input').value.trim()
             });
 
-            // Close popover
+            // Close popover and backdrop
             popover.classList.add('hidden');
+            const popoverBackdrop = document.getElementById('profile-editor-popover-backdrop');
+            if (popoverBackdrop) popoverBackdrop.classList.add('hidden');
             showToast("✨ Profil görünümünüz başarıyla güncellendi!");
             
             // Reload views
@@ -8663,27 +8668,9 @@ function openPopoverNear(element, defaultTab = 'avatar') {
         document.getElementById('popover-panel-socials').classList.remove('hidden');
     }
 
-    // Position Popover dynamically
-    const rect = element.getBoundingClientRect();
-    const popoverWidth = 340;
-    const popoverHeight = 300;
-    
-    let top = rect.bottom + window.scrollY + 10;
-    let left = rect.left + window.scrollX - (popoverWidth / 2) + (rect.width / 2);
-
-    // Boundary constraints
-    if (left < 10) left = 10;
-    if (left + popoverWidth > window.innerWidth - 10) {
-        left = window.innerWidth - popoverWidth - 10;
-    }
-    if (top + popoverHeight > window.innerHeight + window.scrollY) {
-        top = rect.top + window.scrollY - popoverHeight - 10;
-    }
-
-    // Set inline coordinates
-    popover.style.top = `${top}px`;
-    popover.style.left = `${left}px`;
-    popover.style.position = 'absolute';
+    // Show fixed centered popover modal with backdrop
+    const popoverBackdrop = document.getElementById('profile-editor-popover-backdrop');
+    if (popoverBackdrop) popoverBackdrop.classList.remove('hidden');
     popover.classList.remove('hidden');
 }
 
