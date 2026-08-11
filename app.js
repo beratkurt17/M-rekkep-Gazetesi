@@ -903,10 +903,11 @@ window.deleteUserInAdmin = async function(email) {
             return !match;
         });
 
+        try {
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+        } catch (e) {}
         if (isSupabaseConnected) {
             clearSupabaseCache();
-        } else {
-            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
         }
         
         if (currentCategoryFilter === "all") {
@@ -4146,6 +4147,15 @@ async function seedSupabase() {
 
 let isSeeding = false;
 async function loadData() {
+    // Read local articles from LocalStorage first as baseline
+    let localArticles = [];
+    try {
+        const saved = localStorage.getItem("murekkep_articles_v2");
+        if (saved) localArticles = JSON.parse(saved);
+    } catch (e) {
+        console.warn("Failed to read local articles from LocalStorage:", e);
+    }
+
     if (isSupabaseConnected) {
         // Try to load from cache first
         try {
@@ -4180,10 +4190,10 @@ async function loadData() {
                 setTimeout(() => reject(new Error("Supabase request timeout")), 3000)
             );
 
-            // Fetch articles metadata with timeout (excluding full content to save bandwidth/costs)
+            // Fetch articles metadata with timeout
             const fetchArticlesPromise = supabaseClient
                 .from('articles')
-                .select('id, title, subtitle, author, category, image, date, read_time, claps')
+                .select('id, title, subtitle, author, category, image, date, read_time, claps, corner_name')
                 .order('created_at', { ascending: true });
 
             const { data: dbArticles, error: artError } = await Promise.race([
@@ -4193,70 +4203,83 @@ async function loadData() {
             
             if (artError) throw artError;
 
-            // If database is empty, only seed if explicitly requested via query parameter
-            if (!dbArticles || dbArticles.length === 0) {
-                if (window.location.search.includes("seed_db=true")) {
-                    if (!isSeeding) {
-                        isSeeding = true;
-                        console.log("Supabase articles table is empty, seeding database...");
-                        await seedSupabase();
-                        isSeeding = false;
-                        window.location.href = window.location.pathname;
-                        return;
-                    }
-                }
-                articles = [];
-                comments = [];
-            } else {
-                // Fetch comments with timeout
+            // Fetch comments with timeout
+            let dbComments = [];
+            try {
                 const fetchCommentsPromise = supabaseClient
                     .from('comments')
                     .select('*');
 
-                const { data: dbComments, error: commError } = await Promise.race([
+                const { data, error: commError } = await Promise.race([
                     fetchCommentsPromise, 
                     timeoutPromise
                 ]);
-
-                if (commError) throw commError;
-
-                // Map data to frontend variables
-                articles = dbArticles.map(art => ({
-                    id: art.id,
-                    title: art.title,
-                    subtitle: art.subtitle,
-                    author: art.author,
-                    category: art.category,
-                    image: art.image,
-                    date: art.date,
-                    readTime: art.read_time,
-                    claps: art.claps,
-                    content: null // Load content on demand!
-                }));
-
-                comments = dbComments.map(c => ({
-                    id: c.id,
-                    articleId: c.article_id,
-                    author: c.author,
-                    text: c.text,
-                    date: c.date
-                }));
-                
-                // Write to cache
-                try {
-                    const cachePayload = {
-                        timestamp: Date.now(),
-                        articles: articles,
-                        comments: comments
-                    };
-                    localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
-                    console.log("Saved database results to local cache.");
-                } catch (e) {
-                    console.warn("Failed to write Supabase cache to LocalStorage:", e);
-                }
-
-                console.log(`Loaded ${articles.length} articles and ${comments.length} comments from Supabase.`);
+                if (!commError && data) dbComments = data;
+            } catch (e) {
+                console.warn("Comments fetch error:", e);
             }
+
+            comments = dbComments.map(c => ({
+                id: c.id,
+                articleId: c.article_id,
+                author: c.author,
+                text: c.text,
+                date: c.date
+            }));
+
+            if (dbArticles && dbArticles.length > 0) {
+                const fetchedArticles = dbArticles.map(art => {
+                    const localMatch = localArticles.find(la => la.id === art.id);
+                    return {
+                        id: art.id,
+                        title: art.title,
+                        subtitle: art.subtitle,
+                        author: art.author,
+                        category: art.category,
+                        image: art.image,
+                        date: art.date,
+                        readTime: art.read_time,
+                        claps: art.claps,
+                        corner_name: art.corner_name || (localMatch ? localMatch.corner_name : null),
+                        content: localMatch && localMatch.content ? localMatch.content : null
+                    };
+                });
+
+                // Merge any locally added articles that haven't reached Supabase yet
+                localArticles.forEach(localArt => {
+                    if (!fetchedArticles.some(fa => fa.id === localArt.id)) {
+                        fetchedArticles.push(localArt);
+                    }
+                });
+
+                articles = fetchedArticles;
+            } else if (window.location.search.includes("seed_db=true")) {
+                if (!isSeeding) {
+                    isSeeding = true;
+                    console.log("Supabase articles table is empty, seeding database...");
+                    await seedSupabase();
+                    isSeeding = false;
+                    window.location.href = window.location.pathname;
+                    return;
+                }
+            } else if (localArticles.length > 0) {
+                articles = localArticles;
+            } else {
+                articles = JSON.parse(JSON.stringify(DEFAULT_ARTICLES));
+            }
+
+            // Always write merged articles to LocalStorage and Cache
+            try {
+                localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+                const cachePayload = {
+                    timestamp: Date.now(),
+                    articles: articles,
+                    comments: comments
+                };
+                localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
+            } catch (e) {}
+
+            console.log(`Loaded ${articles.length} articles and ${comments.length} comments.`);
         } catch (err) {
             console.error("Error loading data from Supabase. Falling back to local storage:", err);
             isSupabaseConnected = false;
@@ -4305,16 +4328,21 @@ function loadLocalStorageFallback() {
                 localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
             }
         } else {
-            articles = DEFAULT_ARTICLES;
+            articles = JSON.parse(JSON.stringify(DEFAULT_ARTICLES));
             localStorage.setItem("murekkep_articles_v2", JSON.stringify(DEFAULT_ARTICLES));
         }
     } catch (e) {
-        articles = DEFAULT_ARTICLES;
+        articles = JSON.parse(JSON.stringify(DEFAULT_ARTICLES));
     }
 
     try {
-        comments = [];
-        localStorage.setItem("murekkep_comments_v2", JSON.stringify([]));
+        const savedComments = localStorage.getItem("murekkep_comments_v2");
+        if (savedComments) {
+            comments = JSON.parse(savedComments);
+        } else {
+            comments = JSON.parse(JSON.stringify(DEFAULT_COMMENTS || []));
+            localStorage.setItem("murekkep_comments_v2", JSON.stringify(comments));
+        }
     } catch (e) {
         comments = [];
     }
@@ -5518,6 +5546,20 @@ async function openArticle(id) {
     // Render comments initially (even if article text is loading)
     renderArticleComments(id);
 
+    // Check LocalStorage for article content if not in memory
+    if (!article.content) {
+        try {
+            const saved = localStorage.getItem("murekkep_articles_v2");
+            if (saved) {
+                const localArts = JSON.parse(saved);
+                const localMatch = localArts.find(la => la.id === id);
+                if (localMatch && localMatch.content) {
+                    article.content = localMatch.content;
+                }
+            }
+        } catch (e) {}
+    }
+
     // Dynamic loading of article body content
     if (isSupabaseConnected && !article.content) {
         if (detailReadtime) detailReadtime.innerText = article.readTime || "...";
@@ -6382,9 +6424,14 @@ publishForm.addEventListener("submit", async (e) => {
         article.corner_name = cornerName || null;
         article.readTime = calculateReadTime(contentHTML);
         
+        // Always save to LocalStorage immediately
+        try {
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+        } catch (e) {}
+
         if (isSupabaseConnected) {
             try {
-                await supabaseClient
+                const { error } = await supabaseClient
                     .from('articles')
                     .update({
                         title: article.title,
@@ -6399,12 +6446,11 @@ publishForm.addEventListener("submit", async (e) => {
                         read_time: article.readTime
                     })
                     .eq('id', editingArticleId);
+                if (error) console.warn("Supabase article update warning:", error);
             } catch (err) {
                 console.error("Error updating article on Supabase:", err);
             }
             clearSupabaseCache();
-        } else {
-            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
         }
         
         showToast("Yazı başarıyla güncellendi.");
@@ -6457,9 +6503,14 @@ publishForm.addEventListener("submit", async (e) => {
 
     articles.push(newArticle);
 
+    // Always save to LocalStorage immediately
+    try {
+        localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+    } catch (e) {}
+
     if (isSupabaseConnected) {
         try {
-            await supabaseClient
+            const { error } = await supabaseClient
                 .from('articles')
                 .insert({
                     id: newArticle.id,
@@ -6476,12 +6527,11 @@ publishForm.addEventListener("submit", async (e) => {
                     content: newArticle.content,
                     corner_name: newArticle.corner_name
                 });
+            if (error) console.warn("Supabase article insert warning:", error);
         } catch (err) {
             console.error("Error inserting article on Supabase:", err);
         }
         clearSupabaseCache();
-    } else {
-        localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
     }
 
     // Reset and hide form
@@ -7241,13 +7291,16 @@ window.deleteArticleClick = function(id, event) {
     // Remove from local array
     articles = articles.filter(art => art.id !== id);
 
+    // Always save to LocalStorage immediately
+    try {
+        localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+    } catch(e) {}
+
     if (isSupabaseConnected) {
         supabaseClient.from('articles').delete().eq('id', id).then(({ error }) => {
             if (error) console.error("Error deleting article from Supabase:", error);
         });
         clearSupabaseCache();
-    } else {
-        localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
     }
 
     showToast("✕ Yazı silindi.");
@@ -7649,10 +7702,11 @@ function restoreDefaultArticlesAuthors() {
     });
 
     if (modified) {
+        try {
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+        } catch(e) {}
         if (isSupabaseConnected && supabaseClient) {
             clearSupabaseCache();
-        } else {
-            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
         }
     }
 }
@@ -7724,10 +7778,11 @@ function reconcileUserArticles() {
     });
 
     if (modified) {
+        try {
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+        } catch(e) {}
         if (isSupabaseConnected && supabaseClient) {
             clearSupabaseCache();
-        } else {
-            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
         }
     }
     return modified;
@@ -7767,6 +7822,9 @@ async function performUsernameMigration(oldName, newName) {
     });
 
     if (articlesUpdated > 0) {
+        try {
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+        } catch(e) {}
         if (isSupabaseConnected && supabaseClient) {
             try {
                 if (oldName) {
@@ -7785,8 +7843,6 @@ async function performUsernameMigration(oldName, newName) {
                 console.error("Supabase migration error:", e);
             }
             clearSupabaseCache();
-        } else {
-            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
         }
     }
 

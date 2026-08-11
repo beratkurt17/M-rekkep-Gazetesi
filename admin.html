@@ -1224,13 +1224,32 @@
 
         async function fetchAllData() {
             // Load Articles
+            let localArts = [];
+            try {
+                localArts = JSON.parse(localStorage.getItem("murekkep_articles_v2") || "[]");
+            } catch (e) {}
+
             if (isSupabaseConnected) {
                 try {
                     const { data, error } = await supabaseClient.from('articles').select('*');
-                    if (data) articles = data;
-                } catch(e) {}
+                    if (data && data.length > 0) {
+                        const fetched = data;
+                        localArts.forEach(la => {
+                            if (!fetched.some(f => String(f.id) === String(la.id))) {
+                                fetched.push(la);
+                            }
+                        });
+                        articles = fetched;
+                    } else if (localArts.length > 0) {
+                        articles = localArts;
+                    } else {
+                        articles = data || [];
+                    }
+                } catch(e) {
+                    articles = localArts;
+                }
             } else {
-                articles = JSON.parse(localStorage.getItem("murekkep_articles_v2") || "[]");
+                articles = localArts;
             }
 
             // Load Comments
@@ -1905,9 +1924,7 @@
 
             articles = articles.filter(art => String(art.id) !== String(id));
             localStorage.removeItem("murekkep_supabase_cache");
-            if (!isSupabaseConnected) {
-                localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
-            }
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
 
             showToast("✕ Yazı kalıcı olarak silindi.", "🔴");
             renderArticlesTable();
@@ -2060,9 +2077,7 @@
                     return !matchName;
                 });
 
-                if (!isSupabaseConnected) {
-                    localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
-                }
+                localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
             }
 
             showToast("Kullanıcı hesabı silindi.", "🔴");
