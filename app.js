@@ -40,245 +40,7 @@ function unlockBodyScroll() {
 }
 
 // Application State & Seed Data
-const DEFAULT_ARTICLES = [
-    {
-        id: "manset-1",
-        title: "Mürekkep Manifestosu: Yeni Nesil Bir Edebiyat Akımı",
-        subtitle: "Genç kalemlerin sesi, edebiyatın yeni nefesi olmak amacıyla yola çıkan Mürekkep, dijital dünyanın sunduğu özgürlük alanını klasik gazete estetiğiyle birleştiriyor.",
-        author: "Mürekkep Yayın Kurulu",
-        category: "manset",
-        image: "assets/typewriter_birds.webp",
-        date: "22 Mayıs 2026",
-        readTime: "5 dk okuma",
-        claps: 342,
-        comments: [],
-        content: `
-            <p>Edebiyat, insanlığın var oluşundan bu yana duygu ve düşünceleri aktarmanın en asil yolu olmuştur. Ancak zaman akıp giderken, bu aktarımın araçları da değişiyor. Bir zamanlar taş tabletlere kazınan, ardından parşömenlere yazılan ve matbaanın icadıyla kitlelere ulaşan edebi sözcükler, günümüzde dijital ekranların piksellerinde yeniden hayat buluyor.</p>
-            <p>Bugün tanıklık ettiğimiz şey, yalnızca fiziksel bir format değişikliği değildir. Edebiyatın kendisi biçim değiştiriyor. "Genç Kalemler" olarak adlandırdığımız yeni nesil yazarlar, internetin sunduğu özgürlük alanını kullanarak sınırları aşan, etkileşimli ve dinamik bir edebiyat akımının temellerini atıyorlar. Mürekkep, bu yeni neslin gür sesi olmak, onların heyecanını ve arayışını dijital bir gazetede bir araya getirmek amacıyla kuruldu.</p>
-            <blockquote>"Dijitalleşme edebiyatı öldürmüyor; aksine, onu kütüphanelerin tozlu raflarından çıkarıp hayatın tam merkezine, ekranlarımıza taşıyarak demokratikleştiriyor."</blockquote>
-            <p>Bu hareketin bir parçası olmak, yalnızca yazmak değil, aynı zamanda okurla doğrudan bir bağ kurmaktır. Medium ve T24 gibi çağdaş platformların getirdiği minimalist ve odaklı okuma kültürüyle birleşen klasik gazete estetiğimiz, edebiyatı hızlı tüketim nesnesi olmaktan kurtarıp hak ettiği saygınlığa geri döndürmeyi hedefliyor. Kalemimiz dijital de olsa, mürekkebimiz her zaman taze kalacaktır.</p>
-        `
-    },
-    {
-        id: "kitap-1",
-        title: "İnce Memed Neden Hâlâ Güncel?",
-        subtitle: "Yaşar Kemal'in ölümsüz eseri İnce Memed, aradan geçen yıllara rağmen toplumsal adalet arayışına ışık tutmaya devam ediyor.",
-        author: "Selim Çetin",
-        category: "kitap",
-        image: "assets/ince_memed_cover.webp",
-        date: "18 Mayıs 2026",
-        readTime: "7 dk okuma",
-        claps: 128,
-        comments: [],
-        content: `
-            <p>Yaşar Kemal’in dört ciltlik devasa eseri <em>İnce Memed</em>, Türk edebiyatının şüphesiz en parlak taçlarından biridir. Çukurova'nın sıcağını, dikenli yollarını ve sömürüye başkaldıran bir köylünün destansı öyküsünü anlatan bu eser, yazılışından yetmiş yılı aşkın bir süre geçmesine rağmen neden hâlâ taze ve güncel?</p>
-            <p>Bunun yanıtı, romanın evrensel temasında gizlidir: İnsanın adalet arayışı ve haksızlığa karşı direniş hakkı. Memed, Abdi Ağa’nın zulmüne karşı dağa çıktığında, sadece kendi intikamı için değil; toprağı ellerinden alınmış, insanlığı hiçe sayılmış tüm köylülerin hakları için dövüşür. Bu bağlamda, İnce Memed yerel bir eşkıya hikayesinin çok ötesinde, evrensel bir özgürlük manifestosudur.</p>
-            <p>Yaşar Kemal'in doğa tasvirleri ve insan ruhunun derinliklerine nüfuz eden dili, eseri zamansız kılar. Romanı bugün okuduğumuzda bile Çukurova’nın kokusunu içimize çekebilir, Memed’in yüreğindeki korkuyu ve cesareti aynı anda hissedebiliriz. Güçlünün zayıfı ezdiği her düzende, İnce Memed hep güncel kalacak ve ezilenlerin sesi olmaya devam edecektir.</p>
-        `
-    },
-    {
-        id: "deneme-1",
-        title: "Gürültü Çağında Sessiz Kalabilmek",
-        subtitle: "Her yer konuşuyor, herkes bir şeyler söylüyor. Peki ya susmanın değeri? İç sesimizi duyabilmek için gürültüden uzaklaşmak neden bu kadar zor?",
-        author: "Can Özkan",
-        category: "deneme",
-        image: "assets/quiet_lake.webp",
-        date: "15 Mayıs 2026",
-        readTime: "5 dk okuma",
-        claps: 245,
-        comments: [],
-        content: `
-            <p>21. yüzyıl, tarihin en gürültülü çağı olarak kayıtlara geçiyor. Bu gürültü sadece sokaklardaki araba sesleri, korna sesleri veya inşaat patırtıları değil; zihinlerimizi durmaksızın işgal eden dijital bir gürültüdür. Bildirimler, videolar, tweetler, podcastler ve bitmek bilmeyen haber akışları... Her an bir bilgiye, bir sese maruz kalıyoruz.</p>
-            <p>Peki, bu kargaşanın içinde kendi özgün düşüncelerimizi nasıl üretebiliriz? Sessizlik, sadece sesin yokluğu değil, zihnin kendi kendisiyle baş başa kalabilme yeteneğidir. Edebiyat, tam da bu sessizlik topraklarında yeşerir. Bir yazarın kelimeleri kağıda dökebilmesi için önce dış dünyanın gürültüsünü kısmayı öğrenmesi gerekir.</p>
-            <blockquote>"Sessizlik, zayıflık değil; zihnin kendi gücünü topladığı en derin eylemdir."</blockquote>
-            <p>Modern insan susmaktan korkuyor; çünkü sustuğunda yüzleşmek zorunda kalacağı kendi boşluğundan çekiniyor. Ancak derin okumalar yapmak, edebi bir esere nüfuz etmek ve yazmak sessizliği göze almayı gerektirir. Gürültü çağında sessiz kalabilmek, ruhu korumanın ve edebi direnişin ilk adımıdır.</p>
-        `
-    },
-    {
-        id: "roportaj-1",
-        title: "Zeynep Arslan: \"Yazmak, Kendime Açtığım En Uzun Mektup\"",
-        subtitle: "Genç yazar Zeynep Arslan ile yazarlık serüvenini, ilham kaynaklarını ve dijital dünyada edebiyatı konuştuk.",
-        author: "Mürekkep Röportaj",
-        category: "roportaj",
-        image: "assets/author_zeynep.webp",
-        date: "20 Mayıs 2026",
-        readTime: "8 dk okuma",
-        claps: 215,
-        comments: [],
-        content: `
-            <p><strong>Mürekkep:</strong> Zeynep Hanım merhaba. Yeni kitabınız büyük ilgi gördü. Yazmak sizin için ne ifade ediyor?</p>
-            <p><strong>Zeynep Arslan:</strong> Merhaba. Yazmak benim için kendime açtığım en uzun mektuptur. Kendimi keşfetme, dünyayla ve insanlarla bağ kurma biçimim. Kağıt üzerinde kendime yalan söyleyemiyorum, bu yüzden yazmak benim için en saf dürüstlük alanı.</p>
-            <p><strong>Mürekkep:</strong> Dijital edebiyat hareketine bakışınız nasıl? Mürekkep gibi dijital gazeteler edebi üretime katkı sağlıyor mu?</p>
-            <p><strong>Zeynep Arslan:</strong> Kesinlikle sağlıyor. Edebiyatın dar kalıplardan çıkıp gençlere, geniş kitlelere ulaşması gerekiyor. Dijital dünya bunu çok hızlı yapıyor. Eskiden dergilere yazı göndermek, yayınlatmak aylar sürerdi. Şimdi ise Mürekkep gibi platformlarda anında okura ulaşıyorsunuz. Üstelik okurdan anında yorum alabilmek yazarı çok besleyen bir şey.</p>
-            <p><strong>Mürekkep:</strong> Yazmaya yeni başlayan genç kalemlere tavsiyeleriniz nelerdir?</p>
-            <p><strong>Zeynep Arslan:</strong> Öncelikle bolca okumaları ve gürültüden uzaklaşıp kendi seslerini bulmaya çalışmaları gerek. Bir de yazmaktan korkmasınlar. İlk taslaklar her zaman kötüdür, önemli olan o ham metni sabırla işlemek ve yazmayı bir disiplin haline getirmektir.</p>
-        `
-    },
-    {
-        id: "siir-1",
-        title: "İsimsiz Bir Bahar Sabahı",
-        subtitle: "Doğanın uyanışında saklı olan küçük detaylara yazılmış derin bir şiir.",
-        author: "Melike Nur Özkan",
-        category: "siir",
-        image: "assets/poetry_flowers.webp",
-        date: "22 Mayıs 2026",
-        readTime: "3 dk okuma",
-        claps: 184,
-        comments: [],
-        content: `
-            <p class="poem-text">Bir sabah uyanırsın ansızın,<br>
-            Pencere aralıktır hâlâ.<br>
-            İçeri süzülen ışık değil,<br>
-            Belki de dünün yarım kalmışlığıdır.</p>
-            
-            <p class="poem-text">Kuşlar bile daha yorgun bugün,<br>
-            Şiirlerim sessiz, kelimeler saklı...<br>
-            Ama sen gülümse,<br>
-            Belki geç kalmış bir bahardır bu.</p>
-            
-            <p class="poem-text">Mürekkep akar, kağıt solar ama<br>
-            Yüreğe dokunan o fısıltı kalır.<br>
-            İsimsiz bir bahar sabahında,<br>
-            Gökyüzü yeniden maviye boyanır.</p>
-        `
-    },
-    {
-        id: "oyku-1",
-        title: "Yağmurdan Sonra",
-        subtitle: "Bazı günler vardır, şehir bile susar. Yağmur diner, ama ıslak kaldırımlar geçmişi hatırlatır insana...",
-        author: "Elif Su Yıldız",
-        category: "oyku",
-        image: "assets/rainy_window.webp",
-        date: "21 Mayıs 2026",
-        readTime: "10 dk okuma",
-        claps: 162,
-        comments: [],
-        content: `
-            <p>Yağmur, Ankara’nın gri caddelerine bereketiyle değil, hüznüyle inmişti o gün. Saatlerce kesintisiz yağan yağmur, ikindi vakti yerini ılık bir esintiye bıraktı. Gökyüzü hala kurşuni renkliydi ama bulutların arasından sızan cılız güneş ışınları, yoldaki su birikintilerinde altın sarısı yansımalar oluşturuyordu.</p>
-            <p>Ahmet, yakasını kaldırdığı trençkotunun ceplerine ellerini sokarak yürüyordu. Adımları düzensizdi. Islak kaldırımlarda yürürken çıkan sesler, ona çok eski bir şarkının ritmini hatırlatıyordu. Her yağmurdan sonra bu caddede yürür, havaya yayılan o toprak kokusunu içine çekerdi. O koku, geçmişin, çocukluğun ve kaybedilmiş zamanların kokusuydu.</p>
-            <p>Köşedeki sahafın önüne geldiğinde durdu. Islak brandadan süzülen damlalar, dışarıda duran ucuz kitapların üzerine gelmesin diye sahaf amca kitapları içeri taşımıştı. Vitrinde sadece eski bir İstanbul fotoğrafı duruyordu. Fotoğraftaki tramvay rayları da tıpkı şu an yürüdüğü cadde gibi ıslaktı. Şehir değişiyor, insanlar değişiyor ama yağmurdan sonraki o yalnızlık hissi hiç değişmiyordu.</p>
-        `
-    },
-    {
-        id: "kose-yazilari-1",
-        title: "Edebiyat ve Yalnızlık Üzerine",
-        subtitle: "Yazarlık, yazarın en eski dostudur belki de. Ama her dost gibi o da bazen insana ağır gelir.",
-        author: "Mehmet Ali Demir",
-        category: "kose-yazilari",
-        image: "assets/author_mehmet.webp",
-        date: "19 Mayıs 2026",
-        readTime: "6 dk okuma",
-        claps: 195,
-        comments: [],
-        content: `
-            <p>Yalnızlık, yaratıcı zihnin hem sığınağı hem de zindanıdır. Edebiyat tarihi incelendiğinde, büyük eserlerin çoğunun derin yalnızlık dönemlerinde doğduğu görülür. Kafka’nın odası, Proust’un mantar kaplı duvarları, Emily Dickinson’ın evinden dışarı adım atmaması... Hepsi bilinçli bir inzivanın ürünüdür.</p>
-            <p>Ancak bu yalnızlık, modern dünyanın anladığı cinsten bir 'yalnız kalma' durumu değildir. Bu, kalabalıklar içindeyken bile hissedilen, zihinsel bir gurbettir. Yazar, etrafındaki insanları gözlemlerken bile onlardan uzaktadır; çünkü o anı yaşamaz, o anı sonradan yazmak üzere kaydeder.</p>
-            <p>Yazmak, bu yalnızlığı paylaşma çabasıdır aslında. Kendi içine dönen insan, orada bulduğu incileri başkalarına sunarak yalnızlığını hafifletmek ister. Mürekkep, işte bu bireysel yalnızlıkların dijital bir ağda buluştuğu, edebi bir dayanışma alanı yaratıyor. Yazarken yalnızız, evet; ama okurken hiçbirimiz yalnız değiliz.</p>
-        `
-    },
-    {
-        id: "haber-1",
-        title: "Edebiyat Dünyasından Son Haberler",
-        subtitle: "Fuar kapıları, edebiyat ödülleri ve genç yazarlar için fon destekleri.",
-        author: "Mürekkep Kültür Haber",
-        category: "haber",
-        image: "assets/typewriter_birds.webp",
-        date: "22 Mayıs 2026",
-        readTime: "3 dk okuma",
-        claps: 92,
-        comments: [],
-        content: `
-            <h3>İstanbul Kitap Fuarı Kapılarını Açtı</h3>
-            <p>Bu yıl 41. kez düzenlenen İstanbul Kitap Fuarı, yüzlerce yayınevi ve binlerce yazarın katılımıyla kapılarını kitapseverlere açtı. Fuar süresince imza günleri, paneller ve edebi söyleşiler gerçekleştirilecek. Ana temanın 'Çocuk Edebiyatı ve Gelecek' olduğu fuarda genç yazarlara ayrılan özel stantlar yoğun ilgi görüyor.</p>
-            
-            <h3>2024 Cevdet Kudret Edebiyat Ödülleri Sahiplerini Buldu</h3>
-            <p>Her yıl farklı bir dalda verilen prestijli Cevdet Kudret Edebiyat Ödülü, bu yıl şiir dalında sahibini buldu. Seçici kurul, ödülü genç şairlerin yenilikçi dilini teşvik etmek amacıyla bu yıl iki eser arasında paylaştırdı. Kazanan şairler, ödülü edebiyatın birleştirici gücüne adadıklarını belirttiler.</p>
-
-            <h3>Genç Yazarlar İçin Yeni Fon Desteği</h3>
-            <p>Kültür Bakanlığı ve çeşitli sivil toplum kuruluşlarının iş birliğiyle hazırlanan yeni 'İlk Eser' destek fonu açıklandı. İlk roman, öykü veya şiir kitabını çıkaracak olan 30 yaş altı genç yazarlara editöryal ve maddi destek sağlanacak. Başvuruların haziran sonuna kadar devam edeceği bildirildi.</p>
-        `
-    },
-    {
-        id: "yarismalar-1",
-        title: "Aylık Öykü Yarışması Başlıyor!",
-        subtitle: "Mürekkep, genç yazarları teşvik etmek amacıyla aylık öykü yarışmaları serisini başlatıyor.",
-        author: "Mürekkep Yarışma Kurulu",
-        category: "yarismalar",
-        image: "assets/typewriter_birds.webp",
-        date: "22 Mayıs 2026",
-        readTime: "4 dk okuma",
-        claps: 130,
-        comments: [],
-        content: `
-            <p>Mürekkep Dijital Gazetesi olarak, edebiyata yeni soluklar kazandırmak ve genç kalemleri cesaretlendirmek amacıyla her ay düzenleyeceğimiz öykü yarışmalarının ilkini başlatıyoruz!</p>
-            <h3>Yarışma Detayları</h3>
-            <ul>
-                <li><strong>Birinci Ayın Teması:</strong> "Umut"</li>
-                <li><strong>Katılım Koşulları:</strong> Öykülerin daha önce hiçbir yerde yayınlanmamış olması ve en fazla 2000 kelimeden oluşması gerekmektedir.</li>
-                <li><strong>Son Başvuru Tarihi:</strong> 31 Temmuz 2026</li>
-                <li><strong>Ödüller:</strong> Dereceye giren ilk 3 öykü Mürekkep Gazetesi'nin basılı özel sayısında yayınlanacak ve yazarlara edebi kitap seti hediye edilecektir.</li>
-            </ul>
-            <p>Yazılarınızı yarisma@murekkepgzt.com adresine veya 'Yazı Yaz' stüdyomuzu kullanarak doğrudan sitemize gönderebilirsiniz. Kalemlerinize kuvvet!</p>
-        `
-    },
-    {
-        id: "deneme-2",
-        title: "Yapay Zeka Çağında Edebiyat",
-        subtitle: "Algoritmalar şiir yazabilir mi, yoksa edebiyat insanın son sığınağı olarak kalmaya devam mı edecek?",
-        author: "Hakan Yılmaz",
-        category: "deneme",
-        image: "assets/typewriter_birds.webp",
-        date: "23 Mayıs 2026",
-        readTime: "5 dk okuma",
-        claps: 95,
-        comments: [],
-        content: `
-            <p>Makinelerin düşünmeye, resim yapmaya ve hatta kod yazmaya başladığı bir çağda, insan yaratıcılığının en özel alanlarından biri olan edebiyatın geleceği de büyük bir tartışma konusu haline geldi. Büyük dil modelleri artık saniyeler içinde kafiyeli şiirler yazabiliyor, klasik yazarların üslubunu taklit edebiliyor.</p>
-            <p>Peki bu durum, edebi üretimin sonu anlamına mı geliyor? Hayır. Edebiyat, sadece kelimelerin mantıklı bir dizilimi değildir. Edebiyat; acının, sevincin, hayal kırıklığının ve felsefi arayışların estetik bir yansımasıdır. Yapay zeka yazabilir, ancak hissedemez. Edebi eserin gücü, yazarın kendi deneyimini, canı yanarak veya coşkuyla kelimelere aktarmasından gelir.</p>
-            <p>Bu yeni çağda dijital platformlar, insan kelamının değerini yitirmesine değil, tam aksine hakiki insan hissiyatını barındıran edebi eserlerin öne çıkmasına vesile olacaktır. Mürekkep, işte bu dijitalleşen dünyada insanın özgün sesini korumak için en önemli sığınaklardan biridir.</p>
-        `
-    },
-    {
-        id: "siir-2",
-        title: "Sessiz Liman",
-        subtitle: "Zamanın akışında kaybolan anlara ve sükunete dair lirik bir şiir.",
-        author: "Esra Demir",
-        category: "siir",
-        image: "assets/poetry_flowers.webp",
-        date: "23 Mayıs 2026",
-        readTime: "2 dk okuma",
-        claps: 85,
-        comments: [],
-        content: `
-            <p class="poem-text">Rüzgar dindi, sular duruldu nihayet,<br>
-            Sessiz bir limana sığındı gölgeler.<br>
-            Ne bir ses var ufukta, ne bir işaret,<br>
-            Zamanın içinde eriyip gitti dünler.</p>
-            
-            <p class="poem-text">Mürekkep dağılır, kelimeler uçuşur havada,<br>
-            Kalan sadece kalbin o ince fısıltısı.<br>
-            Bir edebi yolculuk başlar bu tenhada,<br>
-            Geriye kalan, ruhun o kadim yansıması.</p>
-        `
-    },
-    {
-        id: "oyku-2",
-        title: "Kayıp Zamanın İzinde",
-        subtitle: "Eski bir köşkün tozlu kütüphanesinde unutulmuş bir mektubun peşinde sürüklenen gizemli bir anı.",
-        author: "Murat Can",
-        category: "oyku",
-        image: "assets/rainy_window.webp",
-        date: "23 Mayıs 2026",
-        readTime: "8 dk okuma",
-        claps: 75,
-        comments: [],
-        content: `
-            <p>Büyükbabamdan kalan o eski köşkün çatı katındaki kütüphane, benim için çocukluğumun en büyük gizem kutusuydu. Tozlu raflar, sararmış sayfalar ve deri ciltli eski romanlar arasında saatler geçirirdim. Bir gün, kalın bir ansiklopedinin sayfaları arasından kayıp düşen sarı bir zarf buldum.</p>
-            <p>Zarfın üzerinde hiçbir isim yazmıyordu, sadece 1945 yılına ait eski bir pul yapıştırılmıştı. İçindeki mektubu açtığımda, el yazısıyla yazılmış şu satırlarla karşılaştım: 'Zaman her şeyi unutturur derler ama kelimeler kalıcıdır. Mürekkep kurur, kağıt solar ama hissedilen o an, mektupta asılı kalır...'</p>
-            <p>Meketubun kime yazıldığını asla öğrenemedim. Ancak o an anladım ki yazmak, zamana karşı kazanılmış en büyük zaferdir. Yıllar önce yazılmış o mektup, bugün benim zihnimde yeni bir hikaye başlatmıştı. Edebiyat da tam olarak buydu: Yıllar sonra bile bir başkasının ruhuna dokunabilmek.</p>
-        `
-    }
-];
+const DEFAULT_ARTICLES = [];
 
 const DEFAULT_COMMENTS = [];
 
@@ -4104,40 +3866,44 @@ function initSupabase() {
 
 async function seedSupabase() {
     try {
-        // Insert all default articles
-        const articlesToInsert = DEFAULT_ARTICLES.map(art => ({
-            id: art.id,
-            title: art.title,
-            subtitle: art.subtitle,
-            author: art.author,
-            category: art.category,
-            image: art.image,
-            date: art.date,
-            read_time: art.readTime,
-            claps: art.claps,
-            content: art.content
-        }));
+        if (DEFAULT_ARTICLES.length > 0) {
+            // Insert all default articles
+            const articlesToInsert = DEFAULT_ARTICLES.map(art => ({
+                id: art.id,
+                title: art.title,
+                subtitle: art.subtitle,
+                author: art.author,
+                category: art.category,
+                image: art.image,
+                date: art.date,
+                read_time: art.readTime,
+                claps: art.claps,
+                content: art.content
+            }));
 
-        const { error: artError } = await supabaseClient
-            .from('articles')
-            .insert(articlesToInsert);
+            const { error: artError } = await supabaseClient
+                .from('articles')
+                .insert(articlesToInsert);
 
-        if (artError) throw artError;
+            if (artError) throw artError;
+        }
 
-        // Insert all default comments
-        const commentsToInsert = DEFAULT_COMMENTS.map(c => ({
-            id: c.id,
-            article_id: c.articleId,
-            author: c.author,
-            text: c.text,
-            date: c.date
-        }));
+        if (DEFAULT_COMMENTS.length > 0) {
+            // Insert all default comments
+            const commentsToInsert = DEFAULT_COMMENTS.map(c => ({
+                id: c.id,
+                article_id: c.articleId,
+                author: c.author,
+                text: c.text,
+                date: c.date
+            }));
 
-        const { error: commError } = await supabaseClient
-            .from('comments')
-            .insert(commentsToInsert);
+            const { error: commError } = await supabaseClient
+                .from('comments')
+                .insert(commentsToInsert);
 
-        if (commError) throw commError;
+            if (commError) throw commError;
+        }
 
         console.log("Supabase seeding completed successfully.");
     } catch (err) {
@@ -4147,6 +3913,34 @@ async function seedSupabase() {
 
 let isSeeding = false;
 async function loadData() {
+    // Clean up old default articles from LocalStorage if they exist
+    const testArticleIds = ["manset-1", "kitap-1", "deneme-1", "roportaj-1", "siir-1", "oyku-1", "kose-yazilari-1", "haber-1", "yarismalar-1", "deneme-2", "siir-2", "oyku-2"];
+    try {
+        const saved = localStorage.getItem("murekkep_articles_v2");
+        if (saved) {
+            let parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+                const filtered = parsed.filter(art => !testArticleIds.includes(art.id));
+                if (filtered.length !== parsed.length) {
+                    localStorage.setItem("murekkep_articles_v2", JSON.stringify(filtered));
+                }
+            }
+        }
+        const cached = localStorage.getItem("murekkep_supabase_cache");
+        if (cached) {
+            let parsed = JSON.parse(cached);
+            if (parsed && parsed.articles && Array.isArray(parsed.articles)) {
+                const filtered = parsed.articles.filter(art => !testArticleIds.includes(art.id));
+                if (filtered.length !== parsed.articles.length) {
+                    parsed.articles = filtered;
+                    localStorage.setItem("murekkep_supabase_cache", JSON.stringify(parsed));
+                }
+            }
+        }
+    } catch (e) {
+        console.warn("Failed to clean up test articles from LocalStorage:", e);
+    }
+
     // Read local articles from LocalStorage first as baseline
     let localArticles = [];
     try {
