@@ -4,6 +4,105 @@ if (window.location.hostname !== "localhost" && window.location.hostname !== "12
 }
 
 // =============================================
+// GÜVENLİK KATMANLARI (Security Utilities)
+// =============================================
+
+/**
+ * XSS Koruması: Kullanıcı girdilerini HTML özel karakterlerden
+ * arındırır. Kullanıcı kaynaklı metin innerHTML ile
+ * gösterilmeden önce mutlaka bu fonksiyondan geçirilmeli.
+ */
+function sanitizeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;')
+        .replace(/\//g, '&#x2F;');
+}
+
+/**
+ * Şifre Hash'leme: Web Crypto API ile SHA-256 hash üretir.
+ * Offline modda şifreler localStorage'a düz metin yerine
+ * hash olarak kaydedilir.
+ */
+async function hashPassword(password) {
+    try {
+        const encoder = new TextEncoder();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(String(password)));
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) {
+        console.warn('Hash error:', e);
+        return String(password); // Fallback (olmaması gerekir)
+    }
+}
+
+/**
+ * Brute-Force Koruması: Aynı e-posta ile yapılan giriş
+ * denemelerini sessionStorage'da sayar. 5 başarısız denemeden
+ * sonra 15 dakika boyunca erişimi kilitler.
+ */
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_LOCKOUT_MS   = 15 * 60 * 1000; // 15 dakika
+
+function checkLoginRateLimit(email) {
+    try {
+        const key    = 'murekkep_login_rl_' + btoa(encodeURIComponent(email.toLowerCase().trim()));
+        let   record = JSON.parse(sessionStorage.getItem(key) || '{"count":0,"since":0}');
+        const now    = Date.now();
+
+        // Kilit süresi dolmuşsa sayacı sıfırla
+        if (now - record.since > LOGIN_LOCKOUT_MS) {
+            record = { count: 0, since: now };
+        }
+
+        record.count++;
+        sessionStorage.setItem(key, JSON.stringify(record));
+
+        if (record.count > LOGIN_MAX_ATTEMPTS) {
+            const minutesLeft = Math.ceil((LOGIN_LOCKOUT_MS - (now - record.since)) / 60000);
+            return { allowed: false, minutesLeft };
+        }
+        return { allowed: true };
+    } catch (e) {
+        return { allowed: true }; // sessionStorage yoksa engelleme
+    }
+}
+
+function resetLoginRateLimit(email) {
+    try {
+        const key = 'murekkep_login_rl_' + btoa(encodeURIComponent(email.toLowerCase().trim()));
+        sessionStorage.removeItem(key);
+    } catch (e) {}
+}
+
+/**
+ * Yorum Flood Koruması: Bir kullanıcı aynı makaleye 30 saniye
+ * içinde ikinci yorum yapamaz. sessionStorage tabanlıdır.
+ */
+const COMMENT_COOLDOWN_MS = 30 * 1000; // 30 saniye
+
+function checkCommentCooldown(articleId) {
+    try {
+        const key    = 'murekkep_comment_cd_' + articleId;
+        const lastMs = parseInt(sessionStorage.getItem(key) || '0', 10);
+        const now    = Date.now();
+        if (now - lastMs < COMMENT_COOLDOWN_MS) {
+            const secsLeft = Math.ceil((COMMENT_COOLDOWN_MS - (now - lastMs)) / 1000);
+            return { allowed: false, secsLeft };
+        }
+        sessionStorage.setItem(key, String(now));
+        return { allowed: true };
+    } catch (e) {
+        return { allowed: true };
+    }
+}
+
+
+// =============================================
 // SCROLL LOCK UTILITY (Medium-style)
 // Prevents the page from jumping to top when
 // overlays open by using position:fixed + top offset.
@@ -726,10 +825,11 @@ window.createUserInAdmin = async function() {
         try {
             const mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
             if (!mockUsers.some(u => u.email.toLowerCase().trim() === emailNorm)) {
+                const hashedPw = await hashPassword(password); // Şifreyi hash'le, düz metin kaydetme
                 mockUsers.push({
                     id: "u_" + Date.now(),
                     email: emailNorm,
-                    password: password,
+                    password: hashedPw,
                     username: username
                 });
                 localStorage.setItem("murekkep_mock_users", JSON.stringify(mockUsers));
@@ -3575,14 +3675,15 @@ async function signUpUser(email, password, username) {
             showToast("❌ " + msg);
         }
     } else {
-        // Offline Mock Sign Up
+        // Offline Mock Sign Up — şifreyi hash'le, düz metin kaydetme
         try {
             const users = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
             if (users.some(u => u.email === email)) {
                 showToast("Bu e-posta adresi zaten kayıtlı!");
                 return;
             }
-            const newUser = { id: "u_" + Date.now(), email, password, username };
+            const hashedPw = await hashPassword(password);
+            const newUser = { id: "u_" + Date.now(), email, password: hashedPw, username };
             users.push(newUser);
             localStorage.setItem("murekkep_mock_users", JSON.stringify(users));
             showToast("Kayıt başarılı! Giriş yapabilirsiniz.");
@@ -3597,6 +3698,13 @@ async function signUpUser(email, password, username) {
 async function signInUser(email, password) {
     const emailNorm = (email || "").toLowerCase().trim();
 
+    // ── Brute-force koruması: çok fazla başarısız denemeyi engelle ───────────
+    const rlCheck = checkLoginRateLimit(emailNorm);
+    if (!rlCheck.allowed) {
+        showToast(`❌ Çok fazla hatalı giriş denemesi. Lütfen ${rlCheck.minutesLeft} dakika bekleyin.`);
+        return;
+    }
+
     // ── Secure Admin login: compare SHA-256 hash, never store plaintext ───────
     if (emailNorm === "murekkep@admin.com") {
         try {
@@ -3608,6 +3716,7 @@ async function signInUser(email, password) {
             // Stored hash — never reveals the actual password
             const ADMIN_HASH = "9dd011ad8a68de979cbe26a535ce0f19f7cd26e0f5e3c8b057fe3bd56ba4081e";
             if (hashHex === ADMIN_HASH) {
+                resetLoginRateLimit(emailNorm); // Başarılı girişte sayacı sıfırla
                 currentUser = {
                     id: "admin_murekkep",
                     email: "murekkep@admin.com",
@@ -3638,6 +3747,7 @@ async function signInUser(email, password) {
             if (error) throw error;
             
             if (data.user) {
+                resetLoginRateLimit(emailNorm); // Başarılı girişte sayacı sıfırla
                 const emailLower = (data.user.email || "").toLowerCase().trim();
                 currentUser = {
                     id: data.user.id,
@@ -3670,11 +3780,25 @@ async function signInUser(email, password) {
             showToast("❌ " + msg);
         }
     } else {
-        // Offline Mock Sign In
+        // Offline Mock Sign In — şifreler hash ile karşılaştırılır
         try {
             const users = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
-            const user = users.find(u => u.email === email && u.password === password);
+            const inputHash = await hashPassword(password);
+            const user = users.find(u => {
+                if (u.email !== email) return false;
+                // Hash'lenmiş şifre ile karşılaştır; geriye dönük uyumluluk için
+                // eski düz-metin kayıtları da kabul et (ilk girişte hash'e dönüştürülür)
+                return u.password === inputHash || u.password === password;
+            });
             if (user) {
+                // Eski düz-metin şifre varsa hash'e yükselt
+                if (user.password === password && user.password !== inputHash) {
+                    user.password = inputHash;
+                    try {
+                        localStorage.setItem("murekkep_mock_users", JSON.stringify(users));
+                    } catch(e) {}
+                }
+                resetLoginRateLimit(emailNorm); // Başarılı girişte sayacı sıfırla
                 currentUser = {
                     id: user.id,
                     email: user.email,
@@ -3698,6 +3822,7 @@ async function signInUser(email, password) {
         }
     }
 }
+
 
 async function signOutUser() {
     if (isSupabaseConnected && supabaseClient) {
@@ -6080,6 +6205,14 @@ commentForm.addEventListener("submit", async (e) => {
         showToast("❌ Yorumunuz veya kalem isminiz uygunsuz ifadeler (küfür/argo) içermektedir.");
         return;
     }
+
+    // Yorum flood koruması: aynı makaleye 30 saniye içinde ikinci yorum yapılamaz
+    const cdCheck = checkCommentCooldown(activeArticleId);
+    if (!cdCheck.allowed) {
+        showToast(`⏳ Yorum göndermek için ${cdCheck.secsLeft} saniye daha bekleyin.`);
+        return;
+    }
+
 
     const newComment = {
         id: "c_" + Date.now(),
