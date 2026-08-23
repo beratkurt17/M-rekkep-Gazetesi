@@ -54,7 +54,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400..700;1,400..700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400..700;1,400..700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Caveat:wght@400;600;700&family=Dancing+Script:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
     <!-- CSS stylesheet -->
     <link rel="stylesheet" href="style.css?v=2.5.3">
 
@@ -215,8 +215,25 @@
                 <li><button class="nav-filter" data-category="haber">HABER</button></li>
                 <li><button class="nav-filter" data-category="yarismalar">YARIŞMALAR</button></li>
                 <li><button class="nav-filter hidden" data-category="bookmarks" id="bookmarks-tab" style="border-color: var(--accent-color); color: var(--accent-color); font-weight: 700;">KAYDEDİLENLER</button></li>
+                <li><button class="nav-filter" id="penpal-nav-btn" style="border-color: #8B4513; color: #8B4513; font-weight: 700; background: transparent;">✉️ MÜREKKEP POSTASI</button></li>
             </ul>
         </nav>
+
+        <!-- Mürekkep Postası Vitrin Widget'ı -->
+        <div class="murekkep-postasi-banner" id="murekkep-postasi-banner">
+            <div class="mp-banner-seal-img">
+                <img src="assets/seals/seal_murekkep_gold.jpg" alt="Mürekkep Altın Mühür">
+            </div>
+            <div class="mp-banner-body">
+                <div class="mp-banner-tag">✉️ MÜREKKEP POSTASI — DİJİTAL GELENEKSEL MEKTUP ARKADAŞLIĞI</div>
+                <h2 class="mp-banner-heading">Bir Zamanların O Efsane Mektup Arkadaşlığı Şimdi Burada...</h2>
+                <p class="mp-banner-desc">Satırların kağıda döküldüğü, posta kutusunun heyecanla açıldığı o köklü mektup kültürünü günümüze taşıyoruz. Kağıdınızı seçin, balmumunu mühürleyin ve bir mektup bırakın. 5 mektup boyunca anonim yazışın, kelimelerle bağ kurun.</p>
+            </div>
+            <div class="mp-banner-actions">
+                <button class="mp-btn-main" id="mp-banner-write-btn">✍️ Mektup Yaz</button>
+                <button class="mp-btn-sub" id="mp-banner-inbox-btn">📬 Gelen Kutum</button>
+            </div>
+        </div>
 
         <!-- Main Grid Layout -->
         <main class="newspaper-grid" id="newspaper-main-grid">
@@ -1436,9 +1453,273 @@
         </div>
     </div>
 
+    <!-- ================================================
+         MÜREKKEPLİ MEKTUP - Dijital Mektup Arkadaşlığı
+         ================================================ -->
+    <div id="penpal-overlay" class="overlay penpal-overlay hidden">
+        <button id="close-penpal" class="btn-close-overlay" aria-label="Mürekkep Postasını Kapat">
+            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            <span>Geri Dön</span>
+        </button>
+
+        <div class="penpal-container">
+            <!-- Header -->
+            <header class="penpal-header">
+                <div class="penpal-header-title-group">
+                    <h2 class="penpal-title">Mürekkep Postası</h2>
+                    <p class="penpal-subtitle">Mektup Arkadaşlığı</p>
+                </div>
+            </header>
+
+            <!-- Tab Navigation -->
+            <nav class="penpal-tabs-nav">
+                <button class="penpal-tab-btn active" data-penpal-tab="studio" id="penpal-tab-studio">✍️ Mektup Yaz</button>
+                <button class="penpal-tab-btn" data-penpal-tab="inbox" id="penpal-tab-inbox">
+                    📬 Gelen Kutusu
+                    <span id="penpal-inbox-badge" class="penpal-badge hidden">0</span>
+                </button>
+                <button class="penpal-tab-btn" data-penpal-tab="outbox" id="penpal-tab-outbox">📮 Gönderilmiş</button>
+                <button class="penpal-tab-btn" data-penpal-tab="penpal" id="penpal-tab-penpal">💌 Arkadaşlar</button>
+            </nav>
+
+            <!-- ==================== TAB: LETTER STUDIO ==================== -->
+            <div id="penpal-panel-studio" class="penpal-panel">
+                <div class="studio-grid">
+                    <!-- Left: Controls -->
+                    <div class="studio-controls">
+                        <div class="studio-section">
+                            <label class="studio-label">📄 Kağıt Teması</label>
+                            <div class="paper-theme-grid" id="paper-theme-grid">
+                                <button class="paper-btn active" data-paper="parchment" title="Parşömen"><span>📜</span>Parşömen</button>
+                                <button class="paper-btn" data-paper="cream" title="Krem"><span>🗒️</span>Krem</button>
+                                <button class="paper-btn" data-paper="night" title="Gece"><span>🌙</span>Gece</button>
+                                <button class="paper-btn" data-paper="straw" title="Saman"><span>🌾</span>Saman</button>
+                            </div>
+                        </div>
+
+                        <div class="studio-section">
+                            <label class="studio-label">🖋️ Yazı Fontu</label>
+                            <div class="font-choice-grid" id="font-choice-grid">
+                                <button class="font-btn active" data-font="'Caveat', cursive" title="Caveat" style="font-family: 'Caveat', cursive;">Caveat</button>
+                                <button class="font-btn" data-font="'Dancing Script', cursive" title="Dancing Script" style="font-family: 'Dancing Script', cursive;">Dancing Script</button>
+                                <button class="font-btn" data-font="'Cormorant Garamond', serif" title="Cormorant" style="font-family: 'Cormorant Garamond', serif;">Cormorant</button>
+                                <button class="font-btn" data-font="'Lora', Georgia, serif" title="Lora" style="font-family: 'Lora', Georgia, serif;">Lora</button>
+                            </div>
+                        </div>
+
+                        <div class="studio-section">
+                            <label class="studio-label">🎨 Mürekkep Rengi</label>
+                            <div class="ink-color-grid" id="ink-color-grid">
+                                <button class="ink-btn active" data-ink="#1a1008" title="Gece Siyahı" style="background: #1a1008;"></button>
+                                <button class="ink-btn" data-ink="#1c3a5e" title="Mürekkep Mavisi" style="background: #1c3a5e;"></button>
+                                <button class="ink-btn" data-ink="#5c3a1e" title="Sepya Kahve" style="background: #5c3a1e;"></button>
+                                <button class="ink-btn" data-ink="#6b1a2a" title="Bordo" style="background: #6b1a2a;"></button>
+                                <button class="ink-btn" data-ink="#2e4a30" title="Orman Yeşili" style="background: #2e4a30;"></button>
+                            </div>
+                        </div>
+
+                        <div class="studio-section">
+                            <label class="studio-label">🏷️ Pul Seçimi</label>
+                            <div class="stamp-grid" id="stamp-grid">
+                                <button class="stamp-btn active" data-stamp="quill" title="Tüy Kalem">🪶</button>
+                                <button class="stamp-btn" data-stamp="dove" title="Posta Güvercini">🕊️</button>
+                                <button class="stamp-btn" data-stamp="mailbox" title="Posta Kutusu">📮</button>
+                                <button class="stamp-btn" data-stamp="book" title="Kitap">📖</button>
+                                <button class="stamp-btn" data-stamp="rose" title="Gül">🌹</button>
+                                <button class="stamp-btn" data-stamp="moon" title="Ay">🌙</button>
+                                <button class="stamp-btn" data-stamp="coffee" title="Kahve">☕</button>
+                                <button class="stamp-btn" data-stamp="star" title="Yıldız">⭐</button>
+                                <button class="stamp-btn" data-stamp="scroll" title="Parşömen">📜</button>
+                                <button class="stamp-btn" data-stamp="candle" title="Mum">🕯️</button>
+                                <button class="stamp-btn" data-stamp="fountain-pen" title="Dolma Kalem">🖋️</button>
+                                <button class="stamp-btn" data-stamp="ship" title="Yelkenli">⛵</button>
+                                <button class="stamp-btn" data-stamp="palette" title="Sanat Paleti">🎨</button>
+                                <button class="stamp-btn" data-stamp="violin" title="Keman">🎻</button>
+                                <button class="stamp-btn" data-stamp="leaf" title="Sonbahar">🍂</button>
+                                <button class="stamp-btn" data-stamp="letter" title="Sevgi Mektubu">💌</button>
+                                <button class="stamp-btn" data-stamp="key" title="Antik Anahtar">🗝️</button>
+                                <button class="stamp-btn" data-stamp="owl" title="Bilge Baykuş">🦉</button>
+                            </div>
+                        </div>
+
+                        <div class="studio-section">
+                            <label class="studio-label">🕯️ Balmumu Mühür</label>
+                            <div class="seal-grid" id="seal-grid">
+                                <!-- Mürekkep Postası Marka Mühürleri -->
+                                <button class="seal-btn seal-img-btn active" data-seal-type="image" data-seal-img="assets/seals/seal_murekkep_red.jpg" data-seal="radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)" title="Mürekkep Marka Mühürü (Kırmızı)">
+                                    <img src="assets/seals/seal_murekkep_red.jpg" alt="Mürekkep Kırmızı Mühür">
+                                </button>
+                                <button class="seal-btn seal-img-btn" data-seal-type="image" data-seal-img="assets/seals/seal_murekkep_gold.jpg" data-seal="radial-gradient(circle at 35% 35%, #f5c518, #a67c00)" title="Mürekkep Marka Mühürü (Altın)">
+                                    <img src="assets/seals/seal_murekkep_gold.jpg" alt="Mürekkep Altın Mühür">
+                                </button>
+                                <button class="seal-btn seal-img-btn" data-seal-type="image" data-seal-img="assets/seals/seal_murekkep_pigeon.jpg" data-seal="radial-gradient(circle at 35% 35%, #1565c0, #0a2a5e)" title="Mürekkep Posta Güvercini Mühürü">
+                                    <img src="assets/seals/seal_murekkep_pigeon.jpg" alt="Posta Güvercini Mühür">
+                                </button>
+                                <button class="seal-btn seal-img-btn" data-seal-type="image" data-seal-img="assets/seals/seal_murekkep_divit.jpg" data-seal="radial-gradient(circle at 35% 35%, #2e7d32, #1a3d1c)" title="Mürekkep Divit & Hokka Mühürü">
+                                    <img src="assets/seals/seal_murekkep_divit.jpg" alt="Divit Hokka Mühür">
+                                </button>
+                                <button class="seal-btn seal-img-btn" data-seal-type="image" data-seal-img="assets/seals/seal_murekkep_envelope.jpg" data-seal="radial-gradient(circle at 35% 35%, #6b1a2a, #3d0c17)" title="Mürekkep Zarf & Sevgi Mühürü">
+                                    <img src="assets/seals/seal_murekkep_envelope.jpg" alt="Zarf Kalem Mühür">
+                                </button>
+
+                                <!-- Geleneksel Türk Edebiyatı Mühürleri -->
+                                <button class="seal-btn seal-img-btn" data-seal-type="image" data-seal-img="assets/seals/seal_traditional_sepia.jpg" data-seal="radial-gradient(circle at 35% 35%, #5c3a1e, #2e1a0c)" title="Geleneksel Osmanlı Tuğra Mühürü">
+                                    <img src="assets/seals/seal_traditional_sepia.jpg" alt="Geleneksel Tuğra Mühür">
+                                </button>
+                                <button class="seal-btn seal-img-btn" data-seal-type="image" data-seal-img="assets/seals/seal_traditional_emerald.jpg" data-seal="radial-gradient(circle at 35% 35%, #2e7d32, #1a3d1c)" title="Geleneksel Selçuklu Yıldız Mühürü">
+                                    <img src="assets/seals/seal_traditional_emerald.jpg" alt="Geleneksel Selçuklu Mühür">
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="studio-section">
+                            <label class="studio-label">📮 Teslimat Süresi</label>
+                            <div class="delivery-grid" id="delivery-grid">
+                                <button class="delivery-btn" data-delay="3600000" title="Hızlı — 1 Saat"><span class="delivery-icon">🚀</span><span class="delivery-name">Hızlı</span><span class="delivery-time">1 saat</span></button>
+                                <button class="delivery-btn active" data-delay="43200000" title="Standart — 12 Saat"><span class="delivery-icon">✉️</span><span class="delivery-name">Standart</span><span class="delivery-time">12 saat</span></button>
+                                <button class="delivery-btn" data-delay="259200000" title="Geleneksel Posta — 3 Gün"><span class="delivery-icon">🕊️</span><span class="delivery-name">Geleneksel</span><span class="delivery-time">3 gün</span></button>
+                            </div>
+                        </div>
+
+                        <div class="studio-section">
+                            <div class="anon-dispatch-badge">
+                                <div class="anon-dispatch-icon">🎭</div>
+                                <div class="anon-dispatch-text">
+                                    <strong>Anonim Mektup Havuzu</strong>
+                                    <span>Mektubunuz rastgele bir edebiyatsevere gider. Siz de havuzdan birinin mektubunu alırsınız. Kimse kimseyi bilmez — sadece kelimeler konuşur.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Live Letter Preview -->
+                    <div class="studio-preview-area">
+                        <div id="penpal-letter-preview" class="letter-preview paper-parchment">
+                            <div class="letter-stamp" id="preview-stamp">🪶</div>
+                            <div class="letter-salutation" id="preview-salutation" contenteditable="true" data-placeholder="Sevgili Mektup Arkadaşım,">Sevgili Mektup Arkadaşım,</div>
+                            <div class="letter-body" id="preview-body" contenteditable="true" data-placeholder="Mektubunuzu buraya yazın...">Mektubunuzu buraya yazın...</div>
+                            <div class="letter-closing" id="preview-closing" contenteditable="true" data-placeholder="Sevgiyle,">Sevgiyle,</div>
+                            <div class="letter-signature" id="preview-signature" contenteditable="true" data-placeholder="İmzanız">İmzanız</div>
+                            <div class="letter-seal" id="preview-seal" style="background: radial-gradient(circle at 35% 35%, #e53935, #7b1a1a);">M</div>
+                        </div>
+                        <div class="studio-actions">
+                            <button id="penpal-send-btn" class="penpal-send-btn">
+                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;margin-right:8px;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                                Mektubu Gönder
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB: INBOX ==================== -->
+            <div id="penpal-panel-inbox" class="penpal-panel hidden">
+                <div class="inbox-section">
+                    <h3 class="inbox-section-title">📬 Gelen Mektuplar</h3>
+                    <div id="penpal-inbox-list" class="letter-list">
+                        <div class="letter-list-empty">
+                            <span class="empty-icon">📭</span>
+                            <p>Henüz mektup almadınız.<br>Bir mektup arkadaşı edinin ve mektuplara başlayın!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB: OUTBOX ==================== -->
+            <div id="penpal-panel-outbox" class="penpal-panel hidden">
+                <div class="inbox-section">
+                    <h3 class="inbox-section-title">📮 Gönderilen Mektuplar</h3>
+                    <div id="penpal-outbox-list" class="letter-list">
+                        <div class="letter-list-empty">
+                            <span class="empty-icon">📪</span>
+                            <p>Henüz mektup göndermediniz.<br>İlk mektubunuzu "Mektup Yaz" sekmesinden yazın!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB: NASIL ÇALIŞIR ==================== -->
+            <div id="penpal-panel-penpal" class="penpal-panel hidden">
+                <div class="how-it-works-container">
+                    <h3 class="how-title">🎭 Anonim Mektup Havuzu Nasıl Çalışır?</h3>
+                    <p class="how-subtitle">Kimseyi tanımak zorunda değilsiniz. Sadece yazın — sistem gerisini halleder.</p>
+
+                    <div class="how-steps">
+                        <div class="how-step">
+                            <div class="how-step-num">1</div>
+                            <div class="how-step-body">
+                                <strong>Mektubunuzu Yazın</strong>
+                                <span>Kağıt, font, mürekkep ve mühürünüzü seçin. Kaleminizi serbest bırakın — alıcıyı düşünmeyin.</span>
+                            </div>
+                        </div>
+                        <div class="how-step-arrow">↓</div>
+
+                        <div class="how-step">
+                            <div class="how-step-num">2</div>
+                            <div class="how-step-body">
+                                <strong>Havuza Girer</strong>
+                                <span>Gönderdiğiniz mektup anonim havuza eklenir. Adınız, bilgileriniz görünmez — sadece imzanız kalır.</span>
+                            </div>
+                        </div>
+                        <div class="how-step-arrow">↓</div>
+
+                        <div class="how-step">
+                            <div class="how-step-num">3</div>
+                            <div class="how-step-body">
+                                <strong>Havuzdan Bir Mektup Size Gelir</strong>
+                                <span>Sistem, havuzdaki başka birinin mektubunu seçtiğiniz teslimat süresi kadar "yolda" tutar. Sayaç sıfırlanınca gelen kutunuza düşer.</span>
+                            </div>
+                        </div>
+                        <div class="how-step-arrow">↓</div>
+
+                        <div class="how-step">
+                            <div class="how-step-num">4</div>
+                            <div class="how-step-body">
+                                <strong>Mühürü Kırın, Okuyun</strong>
+                                <span>Balmumu mühürü kırarak mektubu açın. Tanımadığınız birinin içtenlikle yazdığı satırları okuyun.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="how-note">
+                        <span>💡</span>
+                        <p>Gerçek dünyada bu sistem şöyle işler: herkes mektup yazar → editörümüz toplar → rastgele dağıtır. Şu an demo modunda — gönderdiğiniz mektup otomatik gelen kutunuza düşer.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Letter Reading Modal (for opening received letters) -->
+    <div id="penpal-reading-modal" class="overlay hidden" style="z-index: 1500;">
+        <div class="letter-reading-container">
+            <button id="close-penpal-reading" class="btn-close-overlay" aria-label="Kapat">
+                <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                <span>Kapat</span>
+            </button>
+            <!-- Envelope animation wrapper -->
+            <div id="penpal-envelope-wrapper" class="envelope-wrapper">
+                <div class="envelope" id="penpal-envelope">
+                    <div class="envelope-flap" id="envelope-flap"></div>
+                    <div class="envelope-body">
+                        <div class="envelope-seal-display" id="envelope-seal-display">M</div>
+                        <div class="envelope-address">
+                            <span>Size özel bir mektup</span>
+                        </div>
+                    </div>
+                </div>
+                <button id="break-seal-btn" class="break-seal-btn">Mühürü Kır & Mektubu Aç</button>
+            </div>
+            <!-- Letter after opening -->
+            <div id="penpal-letter-opened" class="letter-opened hidden">
+                <!-- Content injected by JS -->
+            </div>
+        </div>
+    </div>
+
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Core Logic script -->
-    <script src="app.js?v=2.5.3"></script>
+    <script src="app.js?v=2.6.0"></script>
 </body>
 </html>

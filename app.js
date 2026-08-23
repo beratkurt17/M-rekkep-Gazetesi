@@ -9123,3 +9123,880 @@ function initWysiwygEditor() {
     editor.addEventListener("focus", updateToolbarButtonStates);
 }
 
+
+// ===========================================================
+// MÜREKKEPLİ MEKTUP MODULE
+// Tamamen izole, kendi kendine yeten IIFE.
+// Mevcut app.js koduna DOKUNMAZ — yalnızca kendi
+// ID/class'larını kullanır ve window.MürekkepliMektup
+// namespace'ine bağlanır.
+// ===========================================================
+(function MürekkepliMektupModule() {
+    'use strict';
+
+    // ── Constants ──────────────────────────────────────────
+    const STORAGE_KEY  = 'mml_letters_v2';
+    const POOL_KEY     = 'mml_pool_v2';
+    const BONDS_KEY    = 'mml_bonds_v2';
+
+    // Wipe old test keys if present
+    try {
+        localStorage.removeItem('mml_letters_v1');
+        localStorage.removeItem('mml_pool_v1');
+        localStorage.removeItem('mml_bonds_v1');
+    } catch(e){}
+
+    // Anonim havuz: gerçek kullanıcı olmadığında inbox'a düşecek demo mektuplar
+    const DEMO_POOL_LETTERS = [
+        {
+            senderHint: 'İmza: G.',
+            paperTheme: 'parchment', font: "'Caveat', cursive", inkColor: '#1a1008',
+            stamp: '🌙', sealType: 'image', sealImg: 'assets/seals/seal_murekkep_red.jpg', sealGradient: 'radial-gradient(circle at 35% 35%, #1565c0, #0a2a5e)',
+            salutation: 'Sizi tanımayan birine,',
+            body: 'Bu satırları yazarken pencereden yarım ay görüyorum.\n\nBilmiyorum size ulaşıp ulaşmayacağını. Belki postanın dibinde kalır, belki yıllar sonra bir kutu karıştırırken bulunurum. Ama şimdi bu anı, bu mürekkebi, bu kala yağışın sesini size bırakmak istedim.\n\nYazarın olduğu her gün güzel bir gündür.',
+            closing: 'Karanliktaki bir kalemden,', signature: 'G.'
+        },
+        {
+            senderHint: 'İmza: N. Ç.',
+            paperTheme: 'cream', font: "'Cormorant Garamond', serif", inkColor: '#1c3a5e',
+            stamp: '☕', sealType: 'image', sealImg: 'assets/seals/seal_murekkep_gold.jpg', sealGradient: 'radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)',
+            salutation: 'Sevgili Yabancı,',
+            body: 'Sabah kahvemi içerken düşündüm: kaç kişi bu şehirde tam bu anda aynı şeyi hissediyordur?\n\nO yaşlı adam, kaldırımda bükülmüş oturuyor. Elinde gazete. Gözleri okumakta değil, bir yerde. Belki sizi düşünüyor. Belki beni. Belki hiç birini.\n\nŞehirler büyeyceç kadar yalnızlaştırır insanı.',
+            closing: 'Bu kalabalığtan,', signature: 'N. Ç.'
+        },
+        {
+            senderHint: 'İmza: H.',
+            paperTheme: 'straw', font: "'Dancing Script', cursive", inkColor: '#5c3a1e',
+            stamp: '🌿', sealType: 'image', sealImg: 'assets/seals/seal_traditional_emerald.jpg', sealGradient: 'radial-gradient(circle at 35% 35%, #2e7d32, #1a3d1c)',
+            salutation: 'Merhaba,',
+            body: 'Burada her şey yavaş işler. Bakücı dükkanı sabah 8\'de açılır, akşam 6\'da kapanır. Herkes birbirini bilir.\n\nBazen sormak istiyorum: büyük şehirde hiç görmediğin komşularla nasıl yaşanır? Tanıdıklık mı daha güzel, anonimlik mi?\n\nBen cevabı bilmiyorum. Ama her ikisinin de güzel bir tarafı olduğunu sanıyorum.',
+            closing: 'Yemyeşil bir yerden,', signature: 'H.'
+        },
+        {
+            senderHint: 'İmza: A. K.',
+            paperTheme: 'night', font: "'Lora', Georgia, serif", inkColor: '#a0c4e8',
+            stamp: '📖', sealType: 'image', sealImg: 'assets/seals/seal_traditional_sepia.jpg', sealGradient: 'radial-gradient(circle at 35% 35%, #f5c518, #a67c00)',
+            salutation: 'Kitap okuyan birine,',
+            body: 'Son okuduğunuz kitapta altını çizdiğiniz bir cümle var mı?\n\nBende var. Bir romanın tam ortasında. "Ve birdenbire anladı ki, beklediği şey geldiğinde onu tanıyamayacak." Bu kadar. Bundan sonrasını okuyamadım.Üç gün bekliyor kitap. Ben hazır değilim.\n\nUmarım sizin altı çizili cümleniz daha yumuşaktır.',
+            closing: 'Sayfalarda kaybolmuş biri,', signature: 'A. K.'
+        },
+    ];
+
+    // ── State ───────────────────────────────────────────────
+    let state = {
+        paperTheme:     'parchment',
+        font:           "'Caveat', cursive",
+        inkColor:       '#1a1008',
+        stamp:          '🪶',
+        sealType:       'image',
+        sealImg:        'assets/seals/seal_murekkep_red.jpg',
+        sealGradient:   'radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)',
+        deliveryDelay:  43200000, // 12h ms (Standart)
+        letters:        [],
+        bonds:          {},    // { [threadId]: BondObj }
+        replyMode:      null,  // { threadId, senderHint } | null
+        activeTab:      'studio',
+        countdownTimers: [],
+    };
+
+    // ── Storage helpers ─────────────────────────────────────
+    function saveLetters() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.letters)); } catch(e){}
+    }
+    function loadLetters() {
+        try { state.letters = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e){ state.letters = []; }
+        // Promote pending letters whose delivery time has passed
+        const now = Date.now();
+        let changed = false;
+        state.letters.forEach(l => {
+            if (l.status === 'transit' && l.deliverAt <= now) {
+                l.status = 'delivered';
+                changed = true;
+            }
+        });
+        if (changed) saveLetters();
+    }
+
+    // ── Bond storage ─────────────────────────────────────────
+    function saveBonds() {
+        try { localStorage.setItem(BONDS_KEY, JSON.stringify(state.bonds)); } catch(e){}
+    }
+    function loadBonds() {
+        try { state.bonds = JSON.parse(localStorage.getItem(BONDS_KEY)) || {}; } catch(e){ state.bonds = {}; }
+    }
+
+    // ── Universal Seal Renderer Helper ─────────────────────
+    function getSealHTML(obj, extraClass = '') {
+        if (!obj) obj = {};
+        const isImg = (obj.sealType === 'image' || obj.sealImg) && obj.sealImg;
+        if (isImg) {
+            return `<div class="seal-avatar-wrapper ${extraClass} has-img">
+                <img src="${sanitizeHTML(obj.sealImg)}" alt="Mühür" onerror="this.style.display='none'; this.parentNode.classList.remove('has-img'); this.parentNode.style.background='radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)'; this.parentNode.innerHTML='M';">
+            </div>`;
+        }
+        const bg = obj.sealGradient || 'radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)';
+        return `<div class="seal-avatar-wrapper ${extraClass}" style="background:${bg}">M</div>`;
+    }
+
+    // ── DOM helpers ─────────────────────────────────────────
+    function qs(id)     { return document.getElementById(id); }
+    function qsa(sel)   { return document.querySelectorAll(sel); }
+    function show(el)   { if(el) el.classList.remove('hidden'); }
+    function hide(el)   { if(el) el.classList.add('hidden'); }
+
+    // ── Toast ───────────────────────────────────────────────
+    function showToast(msg) {
+        let t = document.querySelector('.penpal-toast');
+        if (!t) {
+            t = document.createElement('div');
+            t.className = 'penpal-toast';
+            document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3200);
+    }
+
+    // ── Open / Close overlay ────────────────────────────────
+    function openPenpal() {
+        const overlay = qs('penpal-overlay');
+        if (!overlay) return;
+        overlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        loadLetters();
+        loadBonds();
+        renderAll();
+    }
+    function closePenpal() {
+        const overlay = qs('penpal-overlay');
+        if (!overlay) return;
+        overlay.classList.add('hidden');
+        document.body.style.overflow = '';
+        clearCountdowns();
+    }
+
+    // ── Render Bonds (Arkadaşlar Tabı) ─────────────────────
+    function renderBonds() {
+        const panel = qs('penpal-panel-penpal');
+        if (!panel) return;
+        loadBonds();
+
+        const bondsList = Object.values(state.bonds);
+
+        if (!bondsList.length) {
+            panel.innerHTML = `
+            <div class="bonds-container">
+                <h3 class="bonds-title">💌 Mektup Arkadaşlarım & Bağlarım</h3>
+                <p class="bonds-subtitle">Mektuplaştıkça anonim bağlarınız güçlenir. 5 mektup sonrası tanışabilirsiniz!</p>
+                <div class="bonds-empty">
+                    <span class="empty-icon">📜</span>
+                    <h4>Henüz bir mektup bağınız yok</h4>
+                    <p>Anonim havuza bir mektup yazın veya gelen mektuplara yanıt verin. Birileriyle sürekli mektuplaştıkça bağı burada göreceksiniz!</p>
+                </div>
+            </div>`;
+            return;
+        }
+
+        panel.innerHTML = `
+        <div class="bonds-container">
+            <h3 class="bonds-title">💌 Mektup Arkadaşlarım & Bağlarım</h3>
+            <p class="bonds-subtitle">Birbirinize yazıştıkça anonim bağınız büyür. 5 mektupta kimlikleri ortaya çıkarabilirsiniz.</p>
+            <div class="bonds-list">
+                ${bondsList.map(bond => {
+                    const count = Math.min(bond.letterCount || 1, 5);
+                    const canReveal = count >= 5 && bond.status !== 'revealed';
+                    const isRevealed = bond.status === 'revealed';
+
+                    const dotsHtml = Array.from({length: 5}, (_, i) => 
+                        `<div class="bond-dot ${i < count ? 'filled' : ''}"></div>`
+                    ).join('');
+
+                    return `
+                    <div class="bond-card ${canReveal ? 'bond-can-reveal' : ''}">
+                        <div class="bond-card-avatar">${isRevealed ? (bond.realName?.[0] || '💌') : '🎭'}</div>
+                        <div class="bond-card-info">
+                            <div class="bond-card-name">
+                                ${isRevealed ? `✨ ${sanitizeHTML(bond.realName)} (${sanitizeHTML(bond.senderHint)})` : sanitizeHTML(bond.senderHint)}
+                            </div>
+                            <div class="bond-card-progress">
+                                <div class="bond-dots">${dotsHtml}</div>
+                                <span class="bond-progress-label">${count}/5 Mektup</span>
+                            </div>
+                            ${canReveal ? `<div class="bond-reveal-notice">🎉 5 mektuba ulaştınız! Tanışma teklif edebilirsiniz.</div>` : ''}
+                            ${isRevealed ? `<div class="bond-revealed-notice">🤝 Kimlikler açık! Birbirinizi tanıyorsunuz.</div>` : ''}
+                        </div>
+                        <div class="bond-card-actions">
+                            <button class="bond-reply-btn" data-thread="${bond.threadId}" data-hint="${sanitizeHTML(bond.senderHint)}">✍️ Yaz</button>
+                            ${canReveal ? `<button class="bond-reveal-btn" data-thread="${bond.threadId}">✨ Tanışma Teklifi Et</button>` : ''}
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+
+        // Action bindings
+        panel.querySelectorAll('.bond-reply-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                startReply(btn.dataset.thread, btn.dataset.hint);
+            });
+        });
+
+        panel.querySelectorAll('.bond-reveal-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const threadId = btn.dataset.thread;
+                if (state.bonds[threadId]) {
+                    state.bonds[threadId].status = 'revealed';
+                    state.bonds[threadId].realName = 'Edebiyatsever Dost';
+                    saveBonds();
+                    showToast('🎉 Tanışma teklifiniz kabul edildi! Mektup arkadaşınızın ismi açıklandı.');
+                    renderBonds();
+                }
+            });
+        });
+    }
+
+    function renderPenpalMatches() {
+        renderBonds();
+    }
+
+    // ── Tab switching ───────────────────────────────────────
+    function switchTab(tabName) {
+        state.activeTab = tabName;
+        qsa('.penpal-tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.penpalTab === tabName);
+        });
+        qsa('.penpal-panel').forEach(panel => {
+            panel.classList.add('hidden');
+        });
+        const panel = qs(`penpal-panel-${tabName}`);
+        if (panel) panel.classList.remove('hidden');
+
+        if (tabName === 'inbox')  renderInbox();
+        if (tabName === 'outbox') renderOutbox();
+        if (tabName === 'penpal') renderBonds();
+    }
+
+    // ── Letter preview update ───────────────────────────────
+    function updatePreview() {
+        const preview   = qs('penpal-letter-preview');
+        const sealEl    = qs('preview-seal');
+        const stampEl   = qs('preview-stamp');
+
+        // Paper class
+        ['paper-parchment','paper-cream','paper-night','paper-straw'].forEach(c => preview.classList.remove(c));
+        preview.classList.add(`paper-${state.paperTheme}`);
+
+        // Font & color on all editable zones
+        const editables = preview.querySelectorAll('[contenteditable]');
+        editables.forEach(el => {
+            el.style.fontFamily = state.font;
+            el.style.color      = state.inkColor;
+        });
+
+        // Night mode: white ink default
+        if (state.paperTheme === 'night') {
+            editables.forEach(el => {
+                if (el.style.color === state.inkColor || el.style.color === '') {
+                    el.style.color = state.inkColor === '#1a1008' ? '#e8e0d0' : state.inkColor;
+                }
+            });
+        }
+
+        // Seal & stamp
+        if (sealEl) {
+            const isImg = (state.sealType === 'image' || state.sealImg) && state.sealImg;
+            if (isImg) {
+                sealEl.className = 'letter-seal preview-seal has-img';
+                sealEl.style.background = 'transparent';
+                sealEl.innerHTML = `<img src="${sanitizeHTML(state.sealImg)}" alt="Mühür" onerror="this.style.display='none'; this.parentNode.classList.remove('has-img'); this.parentNode.style.background='${state.sealGradient}'; this.parentNode.innerHTML='M';">`;
+            } else {
+                sealEl.className = 'letter-seal preview-seal';
+                sealEl.style.background = state.sealGradient || 'radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)';
+                sealEl.innerHTML = 'M';
+            }
+        }
+        if (stampEl) stampEl.textContent = state.stamp;
+    }
+
+    // ── Studio control binding ──────────────────────────────
+    function bindStudioControls() {
+        // Paper themes
+        qsa('#paper-theme-grid .paper-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                qsa('#paper-theme-grid .paper-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.paperTheme = btn.dataset.paper;
+                updatePreview();
+            });
+        });
+
+        // Fonts
+        qsa('#font-choice-grid .font-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                qsa('#font-choice-grid .font-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.font = btn.dataset.font;
+                updatePreview();
+            });
+        });
+
+        // Ink colors
+        qsa('#ink-color-grid .ink-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                qsa('#ink-color-grid .ink-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.inkColor = btn.dataset.ink;
+                updatePreview();
+            });
+        });
+
+        // Stamps
+        qsa('#stamp-grid .stamp-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                qsa('#stamp-grid .stamp-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.stamp = btn.textContent.trim();
+                updatePreview();
+            });
+        });
+
+        // Wax seals
+        qsa('#seal-grid .seal-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                qsa('#seal-grid .seal-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.sealType = btn.dataset.sealType || 'color';
+                if (state.sealType === 'image') {
+                    state.sealImg = btn.dataset.sealImg || 'assets/seals/seal_murekkep_red.jpg';
+                }
+                state.sealGradient = btn.dataset.seal || btn.style.background;
+                updatePreview();
+            });
+        });
+
+        // Delivery
+        qsa('#delivery-grid .delivery-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                qsa('#delivery-grid .delivery-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.deliveryDelay = parseInt(btn.dataset.delay);
+            });
+        });
+
+        // Pick recipient button (artık yok ama güvenlik için kontrol)
+        const pickBtn = qs('penpal-pick-recipient-btn');
+        if (pickBtn) pickBtn.addEventListener('click', () => switchTab('penpal'));
+
+        // Bottle mode (artık yok ama güvenlik için)
+        const bottleBtn = qs('penpal-bottle-btn');
+        if (bottleBtn) bottleBtn.addEventListener('click', () => showToast('Mektup anonim havuza gönderilecek.'));
+
+        // Send button
+        const sendBtn = qs('penpal-send-btn');
+        if (sendBtn) sendBtn.addEventListener('click', sendLetter);
+    }
+
+    // ── Reply Banner Utilities ──────────────────────────────
+    function updateStudioReplyBanner() {
+        const badgeText = qs('penpal-overlay')?.querySelector('.anon-dispatch-text');
+        if (!badgeText) return;
+
+        if (state.replyMode) {
+            badgeText.innerHTML = `
+                <strong style="color:#1565c0;">↩️ Yanıt Yazılıyor: ${sanitizeHTML(state.replyMode.senderHint)}</strong>
+                <span>Bu mektup doğrudan aynı anonim kaleme ulaşacaktır. 
+                <button id="cancel-reply-btn" style="background:none;border:none;color:#e53935;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;margin-left:6px;">İptal Et</button></span>
+            `;
+            const cancelBtn = qs('cancel-reply-btn');
+            if (cancelBtn) cancelBtn.addEventListener('click', cancelReply);
+        } else {
+            badgeText.innerHTML = `
+                <strong>Anonim Mektup Havuzu</strong>
+                <span>Mektubunuz rastgele bir edebiyatsevere gider. Siz de havuzdan birinin mektubunu alırsınız. Kimse kimseyi bilmez — sadece kelimeler konuşur.</span>
+            `;
+        }
+    }
+
+    function startReply(threadId, senderHint) {
+        state.replyMode = { threadId, senderHint };
+        updateStudioReplyBanner();
+        switchTab('studio');
+        showToast(`✍️ ${senderHint} kaleme yanıt yazıyorsunuz.`);
+    }
+
+    function cancelReply() {
+        state.replyMode = null;
+        updateStudioReplyBanner();
+        showToast('Yanıt modu iptal edildi.');
+    }
+
+    // ── Send letter (Thread & Bond Destekli) ────────────────
+    function sendLetter() {
+        const salutation = qs('preview-salutation')?.innerText?.trim() || '';
+        const body       = qs('preview-body')?.innerText?.trim()       || '';
+        const closing    = qs('preview-closing')?.innerText?.trim()    || '';
+        const signature  = qs('preview-signature')?.innerText?.trim()  || '';
+
+        if (!body || body === 'Mektubunuzu buraya yazın...') {
+            showToast('⚠️ Mektup içeriği boş olamaz!');
+            return;
+        }
+
+        const now = Date.now();
+        const deliverAt = now + state.deliveryDelay;
+        let threadId, recipientName;
+
+        if (state.replyMode) {
+            // Var olan bir ipliğe yanıt
+            threadId = state.replyMode.threadId;
+            recipientName = state.replyMode.senderHint;
+
+            if (!state.bonds[threadId]) {
+                state.bonds[threadId] = {
+                    threadId,
+                    senderHint: recipientName,
+                    letterCount: 1,
+                    status: 'active'
+                };
+            }
+            state.bonds[threadId].letterCount += 1;
+            saveBonds();
+        } else {
+            // Rastgele yeni bir thread
+            threadId = 'th_' + now + '_' + Math.random().toString(36).slice(2, 7);
+            recipientName = 'Mektup Arkadaşı';
+        }
+
+        // 1. Outbox mektubu
+        const outLetter = {
+            id:         'ltr_out_' + now + '_' + Math.random().toString(36).slice(2),
+            threadId,
+            sentAt:     now,
+            deliverAt,
+            status:     'transit',
+            direction:  'outbox',
+            recipient:  { name: recipientName, isPool: !state.replyMode },
+            paperTheme: state.paperTheme,
+            font:       state.font,
+            inkColor:   state.inkColor,
+            stamp:      state.stamp,
+            sealType:   state.sealType,
+            sealImg:    state.sealImg,
+            sealGradient: state.sealGradient,
+            salutation, body, closing, signature,
+        };
+
+        // 2. Yanıt veya yeni rastgele havuz mektubu (inbox)
+        const poolSource = DEMO_POOL_LETTERS[Math.floor(Math.random() * DEMO_POOL_LETTERS.length)];
+        const senderHint = state.replyMode ? state.replyMode.senderHint : (poolSource.senderHint || ('İmza: ' + (poolSource.signature || 'Anonim')));
+
+        const inboxLetter = {
+            id:         'ltr_in_' + now + '_' + Math.random().toString(36).slice(2),
+            threadId,
+            sentAt:     now,
+            deliverAt,
+            status:     'transit',
+            direction:  'inbox',
+            sender:     { name: senderHint },
+            paperTheme: poolSource.paperTheme,
+            font:       poolSource.font,
+            inkColor:   poolSource.inkColor,
+            stamp:      poolSource.stamp,
+            sealType:   poolSource.sealType || 'image',
+            sealImg:    poolSource.sealImg || 'assets/seals/seal_murekkep_red.jpg',
+            sealGradient: poolSource.sealGradient,
+            salutation: state.replyMode ? 'Yazarıma yanıt olarak,' : poolSource.salutation,
+            body:       state.replyMode ? 'Mektubunuzu aldım ve derinden hissettim.\n\n' + poolSource.body : poolSource.body,
+            closing:    poolSource.closing,
+            signature:  poolSource.signature,
+        };
+
+        // Eğer yeni thread ise ve yanıt değilse bond kaydını ilk mektupla başlat
+        if (!state.bonds[threadId]) {
+            state.bonds[threadId] = {
+                threadId,
+                senderHint,
+                letterCount: 1,
+                status: 'active'
+            };
+            saveBonds();
+        }
+
+        state.letters.push(outLetter);
+        state.letters.push(inboxLetter);
+        saveLetters();
+
+        // Yanıt modunu sıfırla
+        state.replyMode = null;
+        updateStudioReplyBanner();
+        resetCompose();
+
+        const delay = state.deliveryDelay;
+        const timeStr = delay <= 1000 ? '1 saniye' : delay < 3600001 ? '1 saat' : delay < 86400001 ? '12 saat' : '3 gün';
+        showToast(`✉️ Mektubunuz yola çıktı! ${timeStr} içinde cevap ulaşacak.`);
+
+        setTimeout(() => switchTab('outbox'), 800);
+    }
+
+    function resetCompose() {
+        const salutation = qs('preview-salutation');
+        const body       = qs('preview-body');
+        const closing    = qs('preview-closing');
+        const signature  = qs('preview-signature');
+        if (salutation) salutation.innerText = 'Sevgili Mektup Arkadaşım,';
+        if (body)       body.innerText       = 'Mektubunuzu buraya yazın...';
+        if (closing)    closing.innerText    = 'Sevgiyle,';
+        if (signature)  signature.innerText  = 'İmzanız';
+    }
+
+    // ── Render outbox ───────────────────────────────────────
+    function renderOutbox() {
+        const list = qs('penpal-outbox-list');
+        if (!list) return;
+        const outLetters = state.letters.filter(l => l.direction === 'outbox').sort((a,b)=>b.sentAt-a.sentAt);
+
+        if (!outLetters.length) {
+            list.innerHTML = `<div class="letter-list-empty"><span class="empty-icon">📪</span><p>Henüz mektup göndermediniz.<br>İlk mektubunuzu "Mektup Yaz" sekmesinden yazın!</p></div>`;
+            return;
+        }
+
+        list.innerHTML = outLetters.map(l => {
+            const isTransit  = l.status === 'transit';
+            const statusHtml = isTransit
+                ? `<span class="letter-card-status-badge status-transit">🕊️ Yolda</span>`
+                : `<span class="letter-card-status-badge status-delivered">✅ Ulaştı</span>`;
+            const countdownHtml = isTransit
+                ? `<span class="letter-card-time penpal-countdown" data-deliver="${l.deliverAt}">${formatCountdown(l.deliverAt)}</span>`
+                : '';
+
+            return `
+            <div class="penpal-letter-card" data-letter-id="${l.id}">
+                ${getSealHTML(l, 'letter-card-seal')}
+                <div class="letter-card-info">
+                    <div class="letter-card-sender">✉️ ${sanitizeHTML(l.recipient?.name || 'Bilinmiyor')}</div>
+                    <div class="letter-card-preview">${sanitizeHTML(l.body?.slice(0,80) || '')}…</div>
+                    <div class="letter-card-time">
+                        ${new Date(l.sentAt).toLocaleDateString('tr-TR')}
+                        ${statusHtml}
+                        ${countdownHtml}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        startCountdowns(list);
+    }
+
+    // ── Render inbox ────────────────────────────────────────
+    function renderInbox() {
+        const list = qs('penpal-inbox-list');
+        if (!list) return;
+        loadLetters();
+        const inLetters = state.letters.filter(l => l.direction === 'inbox').sort((a,b)=>b.sentAt-a.sentAt);
+
+        // Update badge
+        const unread = inLetters.filter(l => l.status === 'delivered').length;
+        const badge  = qs('penpal-inbox-badge');
+        if (badge) {
+            badge.textContent = unread;
+            unread > 0 ? badge.classList.remove('hidden') : badge.classList.add('hidden');
+        }
+
+        if (!inLetters.length) {
+            list.innerHTML = `<div class="letter-list-empty"><span class="empty-icon">📭</span><p>Henüz mektup almadınız.<br>Bir mektup arkadaşı edinin ve mektuplara başlayın!</p></div>`;
+            return;
+        }
+
+        list.innerHTML = inLetters.map(l => {
+            const isTransit  = l.status === 'transit';
+            const isUnread   = l.status === 'delivered';
+            const statusHtml = isTransit
+                ? `<span class="letter-card-status-badge status-transit">🚀 Yolda</span>`
+                : (isUnread
+                    ? `<span class="letter-card-status-badge status-delivered">📬 Yeni Mektup!</span>`
+                    : `<span class="letter-card-status-badge" style="color:var(--text-secondary)">👁️ Okundu</span>`);
+            const countdownHtml = isTransit
+                ? `<span class="penpal-countdown" data-deliver="${l.deliverAt}">${formatCountdown(l.deliverAt)}</span>`
+                : '';
+
+            const bond = l.threadId ? state.bonds[l.threadId] : null;
+            const threadBadge = bond ? `<span class="thread-badge">💬 ${bond.letterCount}/5 Mektup</span>` : '';
+
+            return `
+            <div class="penpal-letter-card ${isUnread ? 'unread' : ''}" data-letter-id="${l.id}" data-direction="inbox">
+                ${getSealHTML(l, 'letter-card-seal')}
+                <div class="letter-card-info">
+                    <div class="letter-card-sender">📜 ${sanitizeHTML(l.sender?.name || 'Anonim Kalem')} ${threadBadge}</div>
+                    <div class="letter-card-preview">${isTransit ? '🔒 Mektup henüz yolda...' : sanitizeHTML(l.body?.slice(0,80) || '') + '…'}</div>
+                    <div class="letter-card-time">
+                        ${new Date(l.sentAt).toLocaleDateString('tr-TR')}
+                        ${statusHtml}
+                        ${countdownHtml}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        startCountdowns(list);
+
+        // Click handler for delivered letters
+        list.querySelectorAll('.penpal-letter-card[data-direction="inbox"]').forEach(card => {
+            card.addEventListener('click', () => {
+                const letterId = card.dataset.letterId;
+                const letter   = state.letters.find(l => l.id === letterId);
+                if (!letter || letter.status === 'transit') {
+                    showToast('📮 Mektup henüz yolda, sabirlı olun!');
+                    return;
+                }
+                openLetterReader(letter);
+            });
+        });
+    }
+
+    // ── Letter reader modal ──────────────────────────────
+    function openLetterReader(letter) {
+        const modal = qs('penpal-reading-modal');
+        if (!modal) return;
+
+        const sealDisplay = qs('envelope-seal-display');
+        if (sealDisplay) {
+            sealDisplay.outerHTML = getSealHTML(letter, 'envelope-seal-display');
+        }
+
+        const envelope = qs('penpal-envelope');
+        if (envelope) envelope.classList.remove('opening');
+        const opened = qs('penpal-letter-opened');
+        if (opened) opened.classList.add('hidden');
+        const wrapper = qs('penpal-envelope-wrapper');
+        if (wrapper) wrapper.classList.remove('hidden');
+
+        show(modal);
+        document.body.style.overflow = 'hidden';
+
+        // Break seal button
+        const breakBtn = qs('break-seal-btn');
+        if (breakBtn) {
+            // Remove old listener by cloning
+            const newBreakBtn = breakBtn.cloneNode(true);
+            breakBtn.parentNode.replaceChild(newBreakBtn, breakBtn);
+            newBreakBtn.addEventListener('click', () => {
+                // Animate envelope open
+                if (envelope) envelope.classList.add('opening');
+
+                setTimeout(() => {
+                    if (wrapper) wrapper.classList.add('hidden');
+                    if (opened) {
+                        opened.classList.remove('hidden');
+                        
+                        // Inject letter content
+                        opened.innerHTML = `
+                        <div class="letter-preview paper-${sanitizeHTML(letter.paperTheme)}" style="max-width:520px; margin: 0 auto;">
+                            <div class="letter-stamp">${sanitizeHTML(letter.stamp)}</div>
+                            <div style="font-family:${sanitizeHTML(letter.font)}; color:${sanitizeHTML(letter.inkColor)};">
+                                <div class="letter-salutation" style="font-family:${sanitizeHTML(letter.font)};color:${sanitizeHTML(letter.inkColor)}">${sanitizeHTML(letter.salutation)}</div>
+                                <div class="letter-body" style="font-family:${sanitizeHTML(letter.font)};color:${sanitizeHTML(letter.inkColor)}">${sanitizeHTML(letter.body).replace(/\n/g,'<br>')}</div>
+                                <div class="letter-closing" style="font-family:${sanitizeHTML(letter.font)};color:${sanitizeHTML(letter.inkColor)}">${sanitizeHTML(letter.closing)}</div>
+                                <div class="letter-signature" style="font-family:${sanitizeHTML(letter.font)};color:${sanitizeHTML(letter.inkColor)}">${sanitizeHTML(letter.signature)}</div>
+                            </div>
+                            ${getSealHTML(letter, 'letter-seal')}
+                        </div>`;
+                    }
+
+                    // Mark as read
+                    const l = state.letters.find(x => x.id === letter.id);
+                    if (l) { l.status = 'read'; saveLetters(); }
+                }, 650);
+            });
+        }
+    }
+
+    function closeLetterReader() {
+        const modal = qs('penpal-reading-modal');
+        if (modal) modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    // ── Render Bonds (Arkadaşlar Tabı) ─────────────────────
+    function renderBonds() {
+        const panel = qs('penpal-panel-penpal');
+        if (!panel) return;
+        loadBonds();
+
+        const bondsList = Object.values(state.bonds);
+
+        if (!bondsList.length) {
+            panel.innerHTML = `
+            <div class="bonds-container">
+                <h3 class="bonds-title">💌 Mektup Arkadaşlarım & Bağlarım</h3>
+                <p class="bonds-subtitle">Mektuplaştıkça anonim bağlarınız güçlenir. 5 mektup sonrası tanışabilirsiniz!</p>
+                <div class="bonds-empty">
+                    <span class="empty-icon">📜</span>
+                    <h4>Henüz bir mektup bağınız yok</h4>
+                    <p>Anonim havuza bir mektup yazın veya gelen mektuplara yanıt verin. Birileriyle sürekli mektuplaştıkça bağı burada göreceksiniz!</p>
+                </div>
+            </div>`;
+            return;
+        }
+
+        panel.innerHTML = `
+        <div class="bonds-container">
+            <h3 class="bonds-title">💌 Mektup Arkadaşlarım & Bağlarım</h3>
+            <p class="bonds-subtitle">Birbirinize yazıştıkça anonim bağınız büyür. 5 mektupta kimlikleri ortaya çıkarabilirsiniz.</p>
+            <div class="bonds-list">
+                ${bondsList.map(bond => {
+                    const count = Math.min(bond.letterCount || 1, 5);
+                    const canReveal = count >= 5 && bond.status !== 'revealed';
+                    const isRevealed = bond.status === 'revealed';
+
+                    const dotsHtml = Array.from({length: 5}, (_, i) => 
+                        `<div class="bond-dot ${i < count ? 'filled' : ''}"></div>`
+                    ).join('');
+
+                    return `
+                    <div class="bond-card ${canReveal ? 'bond-can-reveal' : ''}">
+                        <div class="bond-card-avatar">${isRevealed ? (bond.realName?.[0] || '💌') : '🎭'}</div>
+                        <div class="bond-card-info">
+                            <div class="bond-card-name">
+                                ${isRevealed ? `✨ ${sanitizeHTML(bond.realName)} (${sanitizeHTML(bond.senderHint)})` : sanitizeHTML(bond.senderHint)}
+                            </div>
+                            <div class="bond-card-progress">
+                                <div class="bond-dots">${dotsHtml}</div>
+                                <span class="bond-progress-label">${count}/5 Mektup</span>
+                            </div>
+                            ${canReveal ? `<div class="bond-reveal-notice">🎉 5 mektuba ulaştınız! Tanışma teklif edebilirsiniz.</div>` : ''}
+                            ${isRevealed ? `<div class="bond-revealed-notice">🤝 Kimlikler açık! Birbirinizi tanıyorsunuz.</div>` : ''}
+                        </div>
+                        <div class="bond-card-actions">
+                            <button class="bond-reply-btn" data-thread="${bond.threadId}" data-hint="${sanitizeHTML(bond.senderHint)}">✍️ Yaz</button>
+                            ${canReveal ? `<button class="bond-reveal-btn" data-thread="${bond.threadId}">✨ Tanışma Teklifi Et</button>` : ''}
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+
+        // Action bindings
+        panel.querySelectorAll('.bond-reply-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                startReply(btn.dataset.thread, btn.dataset.hint);
+            });
+        });
+
+        panel.querySelectorAll('.bond-reveal-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const threadId = btn.dataset.thread;
+                if (state.bonds[threadId]) {
+                    state.bonds[threadId].status = 'revealed';
+                    state.bonds[threadId].realName = 'Edebiyatsever Dost';
+                    saveBonds();
+                    showToast('🎉 Tanışma teklifiniz kabul edildi! Mektup arkadaşınızın ismi açıklandı.');
+                    renderBonds();
+                }
+            });
+        });
+    }
+
+    function renderPenpalMatches() {
+        renderBonds();
+    }
+
+    // ── Countdown helpers ───────────────────────────────────
+    function formatCountdown(deliverAt) {
+        const ms  = deliverAt - Date.now();
+        if (ms <= 0) return '✅ Teslim edildi';
+        const h   = Math.floor(ms / 3600000);
+        const m   = Math.floor((ms % 3600000) / 60000);
+        const s   = Math.floor((ms % 60000) / 1000);
+        if (h > 0)  return `⏳ ${h} saat ${m} dk kaldı`;
+        if (m > 0)  return `⏳ ${m} dk ${s} sn kaldı`;
+        return `⏳ ${s} sn kaldı`;
+    }
+
+    let _countdownInterval = null;
+    function clearCountdowns() {
+        if (_countdownInterval) { clearInterval(_countdownInterval); _countdownInterval = null; }
+    }
+    function startCountdowns(container) {
+        clearCountdowns();
+        _countdownInterval = setInterval(() => {
+            container.querySelectorAll('.penpal-countdown[data-deliver]').forEach(el => {
+                el.textContent = formatCountdown(parseInt(el.dataset.deliver));
+            });
+        }, 1000);
+    }
+
+    // ── Render all ──────────────────────────────────────────
+    function renderAll() {
+        switchTab(state.activeTab || 'studio');
+        updatePreview();
+    }
+
+    // ── Interest chips ──────────────────────────────────────
+    function bindInterestChips() {
+        qsa('#penpal-interest-grid .interest-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                chip.classList.toggle('selected');
+                renderPenpalMatches();
+            });
+        });
+    }
+
+
+
+    // ── Init ────────────────────────────────────────────────
+    function init() {
+        loadLetters();
+
+        // Nav button
+        const navBtn = qs('penpal-nav-btn');
+        if (navBtn) navBtn.addEventListener('click', openPenpal);
+
+        // Showcase Banner buttons
+        const bannerWrite = qs('mp-banner-write-btn');
+        if (bannerWrite) {
+            bannerWrite.addEventListener('click', () => {
+                openPenpal();
+                switchTab('studio');
+            });
+        }
+        const bannerInbox = qs('mp-banner-inbox-btn');
+        if (bannerInbox) {
+            bannerInbox.addEventListener('click', () => {
+                openPenpal();
+                switchTab('inbox');
+            });
+        }
+
+        // Close button
+        const closeBtn = qs('close-penpal');
+        if (closeBtn) closeBtn.addEventListener('click', closePenpal);
+
+        // Tab navigation
+        qsa('.penpal-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.penpalTab));
+        });
+
+        // Close letter reader
+        const closeReader = qs('close-penpal-reading');
+        if (closeReader) closeReader.addEventListener('click', closeLetterReader);
+
+        // Studio controls
+        bindStudioControls();
+
+        // Initial preview render
+        updatePreview();
+
+        console.log('[MürekkepliMektup] Modül başarıyla yüklendi.');
+    }
+
+    // Run after DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    // Expose minimal public API
+    window.MürekkepliMektup = { open: openPenpal, close: closePenpal };
+
+})();
