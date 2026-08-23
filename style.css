@@ -4231,6 +4231,30 @@ button, a, input, textarea, select {
         gap: 24px !important;
     }
     
+    /* Each column wrapper becomes full width single column */
+    .newspaper-grid > .news-column {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 20px !important;
+        width: 100% !important;
+        grid-template-columns: unset !important;
+    }
+    
+    /* Force ALL slot wrappers inside columns to take full width */
+    .newspaper-grid .news-column > div[style*="grid-column"],
+    .newspaper-grid .news-column > div[class*="slot-"] {
+        grid-column: span 1 !important;
+        grid-row: span 1 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Headline (manset) card full width on mobile */
+    .newspaper-grid .headline-card,
+    .newspaper-grid .article-card.headline {
+        min-height: 220px !important;
+    }
+    
     .newspaper-grid > *:not(:last-child)::after {
         display: none !important;
     }
