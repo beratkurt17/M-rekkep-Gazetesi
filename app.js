@@ -3,246 +3,143 @@ if (window.location.hostname !== "localhost" && window.location.hostname !== "12
     console.log = () => {};
 }
 
-// Application State & Seed Data
-const DEFAULT_ARTICLES = [
-    {
-        id: "manset-1",
-        title: "Mürekkep Manifestosu: Yeni Nesil Bir Edebiyat Akımı",
-        subtitle: "Genç kalemlerin sesi, edebiyatın yeni nefesi olmak amacıyla yola çıkan Mürekkep, dijital dünyanın sunduğu özgürlük alanını klasik gazete estetiğiyle birleştiriyor.",
-        author: "Mürekkep Yayın Kurulu",
-        category: "manset",
-        image: "assets/typewriter_birds.webp",
-        date: "22 Mayıs 2026",
-        readTime: "5 dk okuma",
-        claps: 342,
-        comments: [],
-        content: `
-            <p>Edebiyat, insanlığın var oluşundan bu yana duygu ve düşünceleri aktarmanın en asil yolu olmuştur. Ancak zaman akıp giderken, bu aktarımın araçları da değişiyor. Bir zamanlar taş tabletlere kazınan, ardından parşömenlere yazılan ve matbaanın icadıyla kitlelere ulaşan edebi sözcükler, günümüzde dijital ekranların piksellerinde yeniden hayat buluyor.</p>
-            <p>Bugün tanıklık ettiğimiz şey, yalnızca fiziksel bir format değişikliği değildir. Edebiyatın kendisi biçim değiştiriyor. "Genç Kalemler" olarak adlandırdığımız yeni nesil yazarlar, internetin sunduğu özgürlük alanını kullanarak sınırları aşan, etkileşimli ve dinamik bir edebiyat akımının temellerini atıyorlar. Mürekkep, bu yeni neslin gür sesi olmak, onların heyecanını ve arayışını dijital bir gazetede bir araya getirmek amacıyla kuruldu.</p>
-            <blockquote>"Dijitalleşme edebiyatı öldürmüyor; aksine, onu kütüphanelerin tozlu raflarından çıkarıp hayatın tam merkezine, ekranlarımıza taşıyarak demokratikleştiriyor."</blockquote>
-            <p>Bu hareketin bir parçası olmak, yalnızca yazmak değil, aynı zamanda okurla doğrudan bir bağ kurmaktır. Medium ve T24 gibi çağdaş platformların getirdiği minimalist ve odaklı okuma kültürüyle birleşen klasik gazete estetiğimiz, edebiyatı hızlı tüketim nesnesi olmaktan kurtarıp hak ettiği saygınlığa geri döndürmeyi hedefliyor. Kalemimiz dijital de olsa, mürekkebimiz her zaman taze kalacaktır.</p>
-        `
-    },
-    {
-        id: "kitap-1",
-        title: "İnce Memed Neden Hâlâ Güncel?",
-        subtitle: "Yaşar Kemal'in ölümsüz eseri İnce Memed, aradan geçen yıllara rağmen toplumsal adalet arayışına ışık tutmaya devam ediyor.",
-        author: "Selim Çetin",
-        category: "kitap",
-        image: "assets/ince_memed_cover.webp",
-        date: "18 Mayıs 2026",
-        readTime: "7 dk okuma",
-        claps: 128,
-        comments: [],
-        content: `
-            <p>Yaşar Kemal’in dört ciltlik devasa eseri <em>İnce Memed</em>, Türk edebiyatının şüphesiz en parlak taçlarından biridir. Çukurova'nın sıcağını, dikenli yollarını ve sömürüye başkaldıran bir köylünün destansı öyküsünü anlatan bu eser, yazılışından yetmiş yılı aşkın bir süre geçmesine rağmen neden hâlâ taze ve güncel?</p>
-            <p>Bunun yanıtı, romanın evrensel temasında gizlidir: İnsanın adalet arayışı ve haksızlığa karşı direniş hakkı. Memed, Abdi Ağa’nın zulmüne karşı dağa çıktığında, sadece kendi intikamı için değil; toprağı ellerinden alınmış, insanlığı hiçe sayılmış tüm köylülerin hakları için dövüşür. Bu bağlamda, İnce Memed yerel bir eşkıya hikayesinin çok ötesinde, evrensel bir özgürlük manifestosudur.</p>
-            <p>Yaşar Kemal'in doğa tasvirleri ve insan ruhunun derinliklerine nüfuz eden dili, eseri zamansız kılar. Romanı bugün okuduğumuzda bile Çukurova’nın kokusunu içimize çekebilir, Memed’in yüreğindeki korkuyu ve cesareti aynı anda hissedebiliriz. Güçlünün zayıfı ezdiği her düzende, İnce Memed hep güncel kalacak ve ezilenlerin sesi olmaya devam edecektir.</p>
-        `
-    },
-    {
-        id: "deneme-1",
-        title: "Gürültü Çağında Sessiz Kalabilmek",
-        subtitle: "Her yer konuşuyor, herkes bir şeyler söylüyor. Peki ya susmanın değeri? İç sesimizi duyabilmek için gürültüden uzaklaşmak neden bu kadar zor?",
-        author: "Can Özkan",
-        category: "deneme",
-        image: "assets/quiet_lake.webp",
-        date: "15 Mayıs 2026",
-        readTime: "5 dk okuma",
-        claps: 245,
-        comments: [],
-        content: `
-            <p>21. yüzyıl, tarihin en gürültülü çağı olarak kayıtlara geçiyor. Bu gürültü sadece sokaklardaki araba sesleri, korna sesleri veya inşaat patırtıları değil; zihinlerimizi durmaksızın işgal eden dijital bir gürültüdür. Bildirimler, videolar, tweetler, podcastler ve bitmek bilmeyen haber akışları... Her an bir bilgiye, bir sese maruz kalıyoruz.</p>
-            <p>Peki, bu kargaşanın içinde kendi özgün düşüncelerimizi nasıl üretebiliriz? Sessizlik, sadece sesin yokluğu değil, zihnin kendi kendisiyle baş başa kalabilme yeteneğidir. Edebiyat, tam da bu sessizlik topraklarında yeşerir. Bir yazarın kelimeleri kağıda dökebilmesi için önce dış dünyanın gürültüsünü kısmayı öğrenmesi gerekir.</p>
-            <blockquote>"Sessizlik, zayıflık değil; zihnin kendi gücünü topladığı en derin eylemdir."</blockquote>
-            <p>Modern insan susmaktan korkuyor; çünkü sustuğunda yüzleşmek zorunda kalacağı kendi boşluğundan çekiniyor. Ancak derin okumalar yapmak, edebi bir esere nüfuz etmek ve yazmak sessizliği göze almayı gerektirir. Gürültü çağında sessiz kalabilmek, ruhu korumanın ve edebi direnişin ilk adımıdır.</p>
-        `
-    },
-    {
-        id: "roportaj-1",
-        title: "Zeynep Arslan: \"Yazmak, Kendime Açtığım En Uzun Mektup\"",
-        subtitle: "Genç yazar Zeynep Arslan ile yazarlık serüvenini, ilham kaynaklarını ve dijital dünyada edebiyatı konuştuk.",
-        author: "Mürekkep Röportaj",
-        category: "roportaj",
-        image: "assets/author_zeynep.webp",
-        date: "20 Mayıs 2026",
-        readTime: "8 dk okuma",
-        claps: 215,
-        comments: [],
-        content: `
-            <p><strong>Mürekkep:</strong> Zeynep Hanım merhaba. Yeni kitabınız büyük ilgi gördü. Yazmak sizin için ne ifade ediyor?</p>
-            <p><strong>Zeynep Arslan:</strong> Merhaba. Yazmak benim için kendime açtığım en uzun mektuptur. Kendimi keşfetme, dünyayla ve insanlarla bağ kurma biçimim. Kağıt üzerinde kendime yalan söyleyemiyorum, bu yüzden yazmak benim için en saf dürüstlük alanı.</p>
-            <p><strong>Mürekkep:</strong> Dijital edebiyat hareketine bakışınız nasıl? Mürekkep gibi dijital gazeteler edebi üretime katkı sağlıyor mu?</p>
-            <p><strong>Zeynep Arslan:</strong> Kesinlikle sağlıyor. Edebiyatın dar kalıplardan çıkıp gençlere, geniş kitlelere ulaşması gerekiyor. Dijital dünya bunu çok hızlı yapıyor. Eskiden dergilere yazı göndermek, yayınlatmak aylar sürerdi. Şimdi ise Mürekkep gibi platformlarda anında okura ulaşıyorsunuz. Üstelik okurdan anında yorum alabilmek yazarı çok besleyen bir şey.</p>
-            <p><strong>Mürekkep:</strong> Yazmaya yeni başlayan genç kalemlere tavsiyeleriniz nelerdir?</p>
-            <p><strong>Zeynep Arslan:</strong> Öncelikle bolca okumaları ve gürültüden uzaklaşıp kendi seslerini bulmaya çalışmaları gerek. Bir de yazmaktan korkmasınlar. İlk taslaklar her zaman kötüdür, önemli olan o ham metni sabırla işlemek ve yazmayı bir disiplin haline getirmektir.</p>
-        `
-    },
-    {
-        id: "siir-1",
-        title: "İsimsiz Bir Bahar Sabahı",
-        subtitle: "Doğanın uyanışında saklı olan küçük detaylara yazılmış derin bir şiir.",
-        author: "Melike Nur Özkan",
-        category: "siir",
-        image: "assets/poetry_flowers.webp",
-        date: "22 Mayıs 2026",
-        readTime: "3 dk okuma",
-        claps: 184,
-        comments: [],
-        content: `
-            <p class="poem-text">Bir sabah uyanırsın ansızın,<br>
-            Pencere aralıktır hâlâ.<br>
-            İçeri süzülen ışık değil,<br>
-            Belki de dünün yarım kalmışlığıdır.</p>
-            
-            <p class="poem-text">Kuşlar bile daha yorgun bugün,<br>
-            Şiirlerim sessiz, kelimeler saklı...<br>
-            Ama sen gülümse,<br>
-            Belki geç kalmış bir bahardır bu.</p>
-            
-            <p class="poem-text">Mürekkep akar, kağıt solar ama<br>
-            Yüreğe dokunan o fısıltı kalır.<br>
-            İsimsiz bir bahar sabahında,<br>
-            Gökyüzü yeniden maviye boyanır.</p>
-        `
-    },
-    {
-        id: "oyku-1",
-        title: "Yağmurdan Sonra",
-        subtitle: "Bazı günler vardır, şehir bile susar. Yağmur diner, ama ıslak kaldırımlar geçmişi hatırlatır insana...",
-        author: "Elif Su Yıldız",
-        category: "oyku",
-        image: "assets/rainy_window.webp",
-        date: "21 Mayıs 2026",
-        readTime: "10 dk okuma",
-        claps: 162,
-        comments: [],
-        content: `
-            <p>Yağmur, Ankara’nın gri caddelerine bereketiyle değil, hüznüyle inmişti o gün. Saatlerce kesintisiz yağan yağmur, ikindi vakti yerini ılık bir esintiye bıraktı. Gökyüzü hala kurşuni renkliydi ama bulutların arasından sızan cılız güneş ışınları, yoldaki su birikintilerinde altın sarısı yansımalar oluşturuyordu.</p>
-            <p>Ahmet, yakasını kaldırdığı trençkotunun ceplerine ellerini sokarak yürüyordu. Adımları düzensizdi. Islak kaldırımlarda yürürken çıkan sesler, ona çok eski bir şarkının ritmini hatırlatıyordu. Her yağmurdan sonra bu caddede yürür, havaya yayılan o toprak kokusunu içine çekerdi. O koku, geçmişin, çocukluğun ve kaybedilmiş zamanların kokusuydu.</p>
-            <p>Köşedeki sahafın önüne geldiğinde durdu. Islak brandadan süzülen damlalar, dışarıda duran ucuz kitapların üzerine gelmesin diye sahaf amca kitapları içeri taşımıştı. Vitrinde sadece eski bir İstanbul fotoğrafı duruyordu. Fotoğraftaki tramvay rayları da tıpkı şu an yürüdüğü cadde gibi ıslaktı. Şehir değişiyor, insanlar değişiyor ama yağmurdan sonraki o yalnızlık hissi hiç değişmiyordu.</p>
-        `
-    },
-    {
-        id: "kose-yazilari-1",
-        title: "Edebiyat ve Yalnızlık Üzerine",
-        subtitle: "Yazarlık, yazarın en eski dostudur belki de. Ama her dost gibi o da bazen insana ağır gelir.",
-        author: "Mehmet Ali Demir",
-        category: "kose-yazilari",
-        image: "assets/author_mehmet.webp",
-        date: "19 Mayıs 2026",
-        readTime: "6 dk okuma",
-        claps: 195,
-        comments: [],
-        content: `
-            <p>Yalnızlık, yaratıcı zihnin hem sığınağı hem de zindanıdır. Edebiyat tarihi incelendiğinde, büyük eserlerin çoğunun derin yalnızlık dönemlerinde doğduğu görülür. Kafka’nın odası, Proust’un mantar kaplı duvarları, Emily Dickinson’ın evinden dışarı adım atmaması... Hepsi bilinçli bir inzivanın ürünüdür.</p>
-            <p>Ancak bu yalnızlık, modern dünyanın anladığı cinsten bir 'yalnız kalma' durumu değildir. Bu, kalabalıklar içindeyken bile hissedilen, zihinsel bir gurbettir. Yazar, etrafındaki insanları gözlemlerken bile onlardan uzaktadır; çünkü o anı yaşamaz, o anı sonradan yazmak üzere kaydeder.</p>
-            <p>Yazmak, bu yalnızlığı paylaşma çabasıdır aslında. Kendi içine dönen insan, orada bulduğu incileri başkalarına sunarak yalnızlığını hafifletmek ister. Mürekkep, işte bu bireysel yalnızlıkların dijital bir ağda buluştuğu, edebi bir dayanışma alanı yaratıyor. Yazarken yalnızız, evet; ama okurken hiçbirimiz yalnız değiliz.</p>
-        `
-    },
-    {
-        id: "haber-1",
-        title: "Edebiyat Dünyasından Son Haberler",
-        subtitle: "Fuar kapıları, edebiyat ödülleri ve genç yazarlar için fon destekleri.",
-        author: "Mürekkep Kültür Haber",
-        category: "haber",
-        image: "assets/typewriter_birds.webp",
-        date: "22 Mayıs 2026",
-        readTime: "3 dk okuma",
-        claps: 92,
-        comments: [],
-        content: `
-            <h3>İstanbul Kitap Fuarı Kapılarını Açtı</h3>
-            <p>Bu yıl 41. kez düzenlenen İstanbul Kitap Fuarı, yüzlerce yayınevi ve binlerce yazarın katılımıyla kapılarını kitapseverlere açtı. Fuar süresince imza günleri, paneller ve edebi söyleşiler gerçekleştirilecek. Ana temanın 'Çocuk Edebiyatı ve Gelecek' olduğu fuarda genç yazarlara ayrılan özel stantlar yoğun ilgi görüyor.</p>
-            
-            <h3>2024 Cevdet Kudret Edebiyat Ödülleri Sahiplerini Buldu</h3>
-            <p>Her yıl farklı bir dalda verilen prestijli Cevdet Kudret Edebiyat Ödülü, bu yıl şiir dalında sahibini buldu. Seçici kurul, ödülü genç şairlerin yenilikçi dilini teşvik etmek amacıyla bu yıl iki eser arasında paylaştırdı. Kazanan şairler, ödülü edebiyatın birleştirici gücüne adadıklarını belirttiler.</p>
+// =============================================
+// GÜVENLİK KATMANLARI (Security Utilities)
+// =============================================
 
-            <h3>Genç Yazarlar İçin Yeni Fon Desteği</h3>
-            <p>Kültür Bakanlığı ve çeşitli sivil toplum kuruluşlarının iş birliğiyle hazırlanan yeni 'İlk Eser' destek fonu açıklandı. İlk roman, öykü veya şiir kitabını çıkaracak olan 30 yaş altı genç yazarlara editöryal ve maddi destek sağlanacak. Başvuruların haziran sonuna kadar devam edeceği bildirildi.</p>
-        `
-    },
-    {
-        id: "yarismalar-1",
-        title: "Aylık Öykü Yarışması Başlıyor!",
-        subtitle: "Mürekkep, genç yazarları teşvik etmek amacıyla aylık öykü yarışmaları serisini başlatıyor.",
-        author: "Mürekkep Yarışma Kurulu",
-        category: "yarismalar",
-        image: "assets/typewriter_birds.webp",
-        date: "22 Mayıs 2026",
-        readTime: "4 dk okuma",
-        claps: 130,
-        comments: [],
-        content: `
-            <p>Mürekkep Dijital Gazetesi olarak, edebiyata yeni soluklar kazandırmak ve genç kalemleri cesaretlendirmek amacıyla her ay düzenleyeceğimiz öykü yarışmalarının ilkini başlatıyoruz!</p>
-            <h3>Yarışma Detayları</h3>
-            <ul>
-                <li><strong>Birinci Ayın Teması:</strong> "Umut"</li>
-                <li><strong>Katılım Koşulları:</strong> Öykülerin daha önce hiçbir yerde yayınlanmamış olması ve en fazla 2000 kelimeden oluşması gerekmektedir.</li>
-                <li><strong>Son Başvuru Tarihi:</strong> 31 Temmuz 2026</li>
-                <li><strong>Ödüller:</strong> Dereceye giren ilk 3 öykü Mürekkep Gazetesi'nin basılı özel sayısında yayınlanacak ve yazarlara edebi kitap seti hediye edilecektir.</li>
-            </ul>
-            <p>Yazılarınızı yarisma@murekkep.com adresine veya 'Yazı Yaz' stüdyomuzu kullanarak doğrudan sitemize gönderebilirsiniz. Kalemlerinize kuvvet!</p>
-        `
-    },
-    {
-        id: "deneme-2",
-        title: "Yapay Zeka Çağında Edebiyat",
-        subtitle: "Algoritmalar şiir yazabilir mi, yoksa edebiyat insanın son sığınağı olarak kalmaya devam mı edecek?",
-        author: "Hakan Yılmaz",
-        category: "deneme",
-        image: "assets/typewriter_birds.webp",
-        date: "23 Mayıs 2026",
-        readTime: "5 dk okuma",
-        claps: 95,
-        comments: [],
-        content: `
-            <p>Makinelerin düşünmeye, resim yapmaya ve hatta kod yazmaya başladığı bir çağda, insan yaratıcılığının en özel alanlarından biri olan edebiyatın geleceği de büyük bir tartışma konusu haline geldi. Büyük dil modelleri artık saniyeler içinde kafiyeli şiirler yazabiliyor, klasik yazarların üslubunu taklit edebiliyor.</p>
-            <p>Peki bu durum, edebi üretimin sonu anlamına mı geliyor? Hayır. Edebiyat, sadece kelimelerin mantıklı bir dizilimi değildir. Edebiyat; acının, sevincin, hayal kırıklığının ve felsefi arayışların estetik bir yansımasıdır. Yapay zeka yazabilir, ancak hissedemez. Edebi eserin gücü, yazarın kendi deneyimini, canı yanarak veya coşkuyla kelimelere aktarmasından gelir.</p>
-            <p>Bu yeni çağda dijital platformlar, insan kelamının değerini yitirmesine değil, tam aksine hakiki insan hissiyatını barındıran edebi eserlerin öne çıkmasına vesile olacaktır. Mürekkep, işte bu dijitalleşen dünyada insanın özgün sesini korumak için en önemli sığınaklardan biridir.</p>
-        `
-    },
-    {
-        id: "siir-2",
-        title: "Sessiz Liman",
-        subtitle: "Zamanın akışında kaybolan anlara ve sükunete dair lirik bir şiir.",
-        author: "Esra Demir",
-        category: "siir",
-        image: "assets/poetry_flowers.webp",
-        date: "23 Mayıs 2026",
-        readTime: "2 dk okuma",
-        claps: 85,
-        comments: [],
-        content: `
-            <p class="poem-text">Rüzgar dindi, sular duruldu nihayet,<br>
-            Sessiz bir limana sığındı gölgeler.<br>
-            Ne bir ses var ufukta, ne bir işaret,<br>
-            Zamanın içinde eriyip gitti dünler.</p>
-            
-            <p class="poem-text">Mürekkep dağılır, kelimeler uçuşur havada,<br>
-            Kalan sadece kalbin o ince fısıltısı.<br>
-            Bir edebi yolculuk başlar bu tenhada,<br>
-            Geriye kalan, ruhun o kadim yansıması.</p>
-        `
-    },
-    {
-        id: "oyku-2",
-        title: "Kayıp Zamanın İzinde",
-        subtitle: "Eski bir köşkün tozlu kütüphanesinde unutulmuş bir mektubun peşinde sürüklenen gizemli bir anı.",
-        author: "Murat Can",
-        category: "oyku",
-        image: "assets/rainy_window.webp",
-        date: "23 Mayıs 2026",
-        readTime: "8 dk okuma",
-        claps: 75,
-        comments: [],
-        content: `
-            <p>Büyükbabamdan kalan o eski köşkün çatı katındaki kütüphane, benim için çocukluğumun en büyük gizem kutusuydu. Tozlu raflar, sararmış sayfalar ve deri ciltli eski romanlar arasında saatler geçirirdim. Bir gün, kalın bir ansiklopedinin sayfaları arasından kayıp düşen sarı bir zarf buldum.</p>
-            <p>Zarfın üzerinde hiçbir isim yazmıyordu, sadece 1945 yılına ait eski bir pul yapıştırılmıştı. İçindeki mektubu açtığımda, el yazısıyla yazılmış şu satırlarla karşılaştım: 'Zaman her şeyi unutturur derler ama kelimeler kalıcıdır. Mürekkep kurur, kağıt solar ama hissedilen o an, mektupta asılı kalır...'</p>
-            <p>Meketubun kime yazıldığını asla öğrenemedim. Ancak o an anladım ki yazmak, zamana karşı kazanılmış en büyük zaferdir. Yıllar önce yazılmış o mektup, bugün benim zihnimde yeni bir hikaye başlatmıştı. Edebiyat da tam olarak buydu: Yıllar sonra bile bir başkasının ruhuna dokunabilmek.</p>
-        `
+/**
+ * XSS Koruması: Kullanıcı girdilerini HTML özel karakterlerden
+ * arındırır. Kullanıcı kaynaklı metin innerHTML ile
+ * gösterilmeden önce mutlaka bu fonksiyondan geçirilmeli.
+ */
+function sanitizeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;')
+        .replace(/\//g, '&#x2F;');
+}
+
+/**
+ * Şifre Hash'leme: Web Crypto API ile SHA-256 hash üretir.
+ * Offline modda şifreler localStorage'a düz metin yerine
+ * hash olarak kaydedilir.
+ */
+async function hashPassword(password) {
+    try {
+        const encoder = new TextEncoder();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(String(password)));
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) {
+        console.warn('Hash error:', e);
+        return String(password); // Fallback (olmaması gerekir)
     }
-];
+}
+
+/**
+ * Brute-Force Koruması: Aynı e-posta ile yapılan giriş
+ * denemelerini sessionStorage'da sayar. 5 başarısız denemeden
+ * sonra 15 dakika boyunca erişimi kilitler.
+ */
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_LOCKOUT_MS   = 15 * 60 * 1000; // 15 dakika
+
+function checkLoginRateLimit(email) {
+    try {
+        const key    = 'murekkep_login_rl_' + btoa(encodeURIComponent(email.toLowerCase().trim()));
+        let   record = JSON.parse(sessionStorage.getItem(key) || '{"count":0,"since":0}');
+        const now    = Date.now();
+
+        // Kilit süresi dolmuşsa sayacı sıfırla
+        if (now - record.since > LOGIN_LOCKOUT_MS) {
+            record = { count: 0, since: now };
+        }
+
+        record.count++;
+        sessionStorage.setItem(key, JSON.stringify(record));
+
+        if (record.count > LOGIN_MAX_ATTEMPTS) {
+            const minutesLeft = Math.ceil((LOGIN_LOCKOUT_MS - (now - record.since)) / 60000);
+            return { allowed: false, minutesLeft };
+        }
+        return { allowed: true };
+    } catch (e) {
+        return { allowed: true }; // sessionStorage yoksa engelleme
+    }
+}
+
+function resetLoginRateLimit(email) {
+    try {
+        const key = 'murekkep_login_rl_' + btoa(encodeURIComponent(email.toLowerCase().trim()));
+        sessionStorage.removeItem(key);
+    } catch (e) {}
+}
+
+/**
+ * Yorum Flood Koruması: Bir kullanıcı aynı makaleye 30 saniye
+ * içinde ikinci yorum yapamaz. sessionStorage tabanlıdır.
+ */
+const COMMENT_COOLDOWN_MS = 30 * 1000; // 30 saniye
+
+function checkCommentCooldown(articleId) {
+    try {
+        const key    = 'murekkep_comment_cd_' + articleId;
+        const lastMs = parseInt(sessionStorage.getItem(key) || '0', 10);
+        const now    = Date.now();
+        if (now - lastMs < COMMENT_COOLDOWN_MS) {
+            const secsLeft = Math.ceil((COMMENT_COOLDOWN_MS - (now - lastMs)) / 1000);
+            return { allowed: false, secsLeft };
+        }
+        sessionStorage.setItem(key, String(now));
+        return { allowed: true };
+    } catch (e) {
+        return { allowed: true };
+    }
+}
+
+
+// =============================================
+// SCROLL LOCK UTILITY (Medium-style)
+// Prevents the page from jumping to top when
+// overlays open by using position:fixed + top offset.
+// =============================================
+let _scrollLockDepth = 0;
+let _savedScrollY = 0;
+
+function lockBodyScroll() {
+    if (_scrollLockDepth === 0) {
+        _savedScrollY = window.scrollY || window.pageYOffset;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${_savedScrollY}px`;
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.style.overflow = 'hidden';
+    }
+    _scrollLockDepth++;
+}
+
+function unlockBodyScroll() {
+    if (_scrollLockDepth > 0) {
+        _scrollLockDepth--;
+    }
+    if (_scrollLockDepth === 0) {
+        const savedY = _savedScrollY;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, savedY);
+        _savedScrollY = 0;
+    }
+}
+
+// Application State & Seed Data
+const DEFAULT_ARTICLES = [];
 
 const DEFAULT_COMMENTS = [];
 
@@ -257,21 +154,21 @@ let comments = [];
 const DEFAULT_LAYOUT = {
     colWidths: { col1: 1, col2: 2, col3: 1 },
     col1: [
-        { type: "category", value: "kitap", label: "Kitap İncelemesi", size: "normal", slotWidth: 1, style: "standard" },
-        { type: "category", value: "roportaj", label: "Yazar Röportajı", size: "normal", slotWidth: 1, style: "standard" },
-        { type: "category", value: "haber", label: "Edebiyat Haberleri", size: "normal", slotWidth: 1, style: "standard" }
+        { id: "slot_kitap_default", type: "category", value: "kitap", label: "Kitap İncelemesi", size: "normal", slotWidth: 1, style: "standard" },
+        { id: "slot_roportaj_default", type: "category", value: "roportaj", label: "Yazar Röportajı", size: "normal", slotWidth: 1, style: "standard" },
+        { id: "slot_haber_default", type: "category", value: "haber", label: "Edebiyat Haberleri", size: "normal", slotWidth: 1, style: "standard" }
     ],
     col2: [
-        { type: "system", value: "headline", label: "Manşet", size: "large", slotWidth: 2, style: "headline" },
-        { type: "system", value: "editor_note", label: "Editörün Notu", size: "normal", slotWidth: 2, style: "standard" },
-        { type: "category", value: "siir", label: "Haftanın Şiiri", size: "normal", slotWidth: 2, style: "poem" },
-        { type: "category", value: "yarismalar", label: "Aylık Yarışma", size: "normal", slotWidth: 1, style: "standard" },
-        { type: "category", value: "kose-yazilari", label: "Köşe Yazısı", size: "normal", slotWidth: 1, style: "columnist" }
+        { id: "slot_headline_default", type: "system", value: "headline", label: "Manşet", size: "large", slotWidth: 2, style: "headline" },
+        { id: "slot_editor_note_default", type: "system", value: "editor_note", label: "Editörün Notu", size: "normal", slotWidth: 2, style: "standard" },
+        { id: "slot_siir_default", type: "category", value: "siir", label: "Haftanın Şiiri", size: "normal", slotWidth: 2, style: "poem" },
+        { id: "slot_yarismalar_default", type: "category", value: "yarismalar", label: "Aylık Yarışma", size: "normal", slotWidth: 1, style: "standard" },
+        { id: "slot_kose_yazilari_default", type: "category", value: "kose-yazilari", label: "Köşe Yazısı", size: "normal", slotWidth: 1, style: "columnist" }
     ],
     col3: [
-        { type: "category", value: "deneme", label: "Deneme", size: "normal", slotWidth: 1, style: "standard" },
-        { type: "category", value: "oyku", label: "Hikaye Köşesi", size: "normal", slotWidth: 1, style: "standard" },
-        { type: "system", value: "recent_comments", label: "Okur Yorumları", size: "normal", slotWidth: 1, style: "standard" }
+        { id: "slot_deneme_default", type: "category", value: "deneme", label: "Deneme", size: "normal", slotWidth: 1, style: "standard" },
+        { id: "slot_oyku_default", type: "category", value: "oyku", label: "Hikaye Köşesi", size: "normal", slotWidth: 1, style: "standard" },
+        { id: "slot_recent_comments_default", type: "system", value: "recent_comments", label: "Okur Yorumları", size: "normal", slotWidth: 1, style: "standard" }
     ]
 };
 
@@ -312,7 +209,7 @@ async function loadNotifications() {
                 .from('site_settings')
                 .select('value')
                 .eq('key', key)
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 userNotifications = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                 localStorage.setItem(`murekkep_notifications_${currentUser.id}`, JSON.stringify(userNotifications));
@@ -362,7 +259,7 @@ async function createNotification(targetAuthorName, type, fromUser, text, target
                 .from('site_settings')
                 .select('value')
                 .eq('key', key)
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 targetNotifications = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
             }
@@ -531,7 +428,7 @@ async function loadAuthorProfiles() {
                 .from('site_settings')
                 .select('value')
                 .eq('key', 'author_profiles')
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 authorProfiles = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                 localStorage.setItem("murekkep_author_profiles", JSON.stringify(authorProfiles));
@@ -571,8 +468,7 @@ async function saveAuthorProfiles() {
 
 // IO Functions for User Roles and Access Control
 const DEFAULT_USER_ROLES = [
-    { email: "admin@murekkep.com", username: "Mürekkep Yöneticisi", role: "admin" },
-    { email: "editor@murekkep.com", username: "Mürekkep Editörü", role: "editor" }
+    { email: "murekkep@admin.com", username: "Mürekkep", role: "admin" }
 ];
 let userRoles = [];
 
@@ -583,7 +479,7 @@ async function loadUserRoles() {
                 .from('site_settings')
                 .select('value')
                 .eq('key', 'user_roles')
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 userRoles = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                 localStorage.setItem("murekkep_user_roles", JSON.stringify(userRoles));
@@ -614,6 +510,8 @@ async function saveUserRoles() {
     try {
         localStorage.setItem("murekkep_user_roles", JSON.stringify(userRoles));
     } catch (e) {}
+    // Clear frontend grid cache so updates reflect instantly
+    localStorage.removeItem("murekkep_supabase_cache");
     if (isSupabaseConnected && supabaseClient) {
         try {
             await supabaseClient
@@ -629,8 +527,56 @@ async function saveUserRoles() {
 function getUserRole(email) {
     if (!email) return "user";
     const emailNorm = email.toLowerCase().trim();
+    if (emailNorm === "murekkep@admin.com") return "admin";
     const match = userRoles.find(u => u.email.toLowerCase().trim() === emailNorm);
     return match ? match.role : "user";
+}
+
+async function registerUserInList(email, username) {
+    if (!email) return;
+    const emailNorm = email.toLowerCase().trim();
+    const displayName = username || emailNorm.split("@")[0];
+    
+    let list = [];
+    if (isSupabaseConnected && supabaseClient) {
+        try {
+            const { data, error } = await supabaseClient
+                .from('site_settings')
+                .select('value')
+                .eq('key', 'registered_users')
+                .maybeSingle();
+            if (data && data.value) {
+                list = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+            }
+        } catch(e) {}
+    } else {
+        try {
+            list = JSON.parse(localStorage.getItem("murekkep_registered_users") || "[]");
+        } catch(e) {}
+    }
+    
+    // Check if already in list
+    if (!list.some(u => u.email.toLowerCase().trim() === emailNorm)) {
+        list.push({
+            email: emailNorm,
+            username: displayName,
+            date: new Date().toLocaleDateString('tr-TR'),
+            role: getUserRole(emailNorm) || 'user'
+        });
+        
+        if (isSupabaseConnected && supabaseClient) {
+            try {
+                await supabaseClient
+                    .from('site_settings')
+                    .upsert({ key: 'registered_users', value: list });
+                console.log("Registered user appended on Supabase.");
+            } catch(e) {
+                console.error("Error saving registered users list:", e);
+            }
+        } else {
+            localStorage.setItem("murekkep_registered_users", JSON.stringify(list));
+        }
+    }
 }
 
 // User Management UI & Control Handlers
@@ -676,7 +622,7 @@ function renderUsersManagementUI() {
 
     displayUsers.forEach(u => {
         const emailLower = u.email.toLowerCase().trim();
-        const isPredefinedAdmin = (emailLower === "admin@murekkep.com");
+        const isPredefinedAdmin = (emailLower === "murekkep@admin.com");
         
         const row = document.createElement("div");
         row.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid var(--border-light); border-radius: 8px; background: rgba(255,255,255,0.01);";
@@ -715,7 +661,7 @@ window.updateUserRoleInAdmin = async function(email, newRole) {
     }
     
     const emailNorm = email.toLowerCase().trim();
-    if (emailNorm === "admin@murekkep.com") {
+    if (emailNorm === "murekkep@admin.com") {
         showToast("✕ Ana yöneticinin yetkisi değiştirilemez.");
         return;
     }
@@ -753,8 +699,8 @@ window.deleteUserInAdmin = async function(email) {
     }
 
     const emailNorm = email.toLowerCase().trim();
-    if (emailNorm === "admin@murekkep.com") {
-        showToast("✕ Ana yönetici silinemez.");
+    if (emailNorm === "murekkep@admin.com") {
+        showToast("✕ Ana yöneticiler silinemez.");
         return;
     }
 
@@ -762,13 +708,11 @@ window.deleteUserInAdmin = async function(email) {
     const roleObj = userRoles.find(r => r.email.toLowerCase().trim() === emailNorm);
     if (roleObj) targetUsername = roleObj.username;
 
-    if (!isSupabaseConnected) {
-        try {
-            const mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
-            const mUser = mockUsers.find(u => u.email.toLowerCase().trim() === emailNorm);
-            if (mUser && !targetUsername) targetUsername = mUser.username;
-        } catch(e) {}
-    }
+    try {
+        const mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
+        const mUser = mockUsers.find(u => u.email.toLowerCase().trim() === emailNorm);
+        if (mUser && !targetUsername) targetUsername = mUser.username;
+    } catch(e) {}
 
     const deleteArticles = confirm(`"${emailNorm}" hesabını silmek istediğinizden emin misiniz?\n\nTamam'a basarsanız yetkisi kaldırılacaktır. Eğer bu yazarın yazdığı tüm yazıları da silmek istiyorsanız, bir sonraki adımda onaylayın.`);
     const deleteAllPosts = deleteArticles ? confirm(`Silinen yazara ait tüm makaleler ve köşe yazıları da kalıcı olarak silinsin mi?`) : false;
@@ -777,17 +721,24 @@ window.deleteUserInAdmin = async function(email) {
     userRoles = userRoles.filter(r => r.email.toLowerCase().trim() !== emailNorm);
     await saveUserRoles();
 
-    // Remove from mock users if offline
-    if (!isSupabaseConnected) {
-        try {
-            let mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
-            mockUsers = mockUsers.filter(u => u.email.toLowerCase().trim() !== emailNorm);
-            localStorage.setItem("murekkep_mock_users", JSON.stringify(mockUsers));
-        } catch(e) {}
-        
-        if (currentUser && currentUser.email.toLowerCase().trim() === emailNorm) {
-            signOutUser();
-        }
+    // Remove from mock users and registered list in all cases
+    try {
+        let mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
+        mockUsers = mockUsers.filter(u => u.email.toLowerCase().trim() !== emailNorm);
+        localStorage.setItem("murekkep_mock_users", JSON.stringify(mockUsers));
+    } catch(e) {}
+
+    try {
+        let regUsers = JSON.parse(localStorage.getItem("murekkep_registered_users") || "[]");
+        regUsers = regUsers.filter(u => u.email.toLowerCase().trim() !== emailNorm);
+        localStorage.setItem("murekkep_registered_users", JSON.stringify(regUsers));
+    } catch(e) {}
+
+    // Clear supabase grid cache to reflect updates instantly
+    localStorage.removeItem("murekkep_supabase_cache");
+    
+    if (currentUser && currentUser.email.toLowerCase().trim() === emailNorm) {
+        signOutUser();
     }
 
     // Delete author profile
@@ -813,10 +764,11 @@ window.deleteUserInAdmin = async function(email) {
             return !match;
         });
 
+        try {
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+        } catch (e) {}
         if (isSupabaseConnected) {
             clearSupabaseCache();
-        } else {
-            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
         }
         
         if (currentCategoryFilter === "all") {
@@ -873,10 +825,11 @@ window.createUserInAdmin = async function() {
         try {
             const mockUsers = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
             if (!mockUsers.some(u => u.email.toLowerCase().trim() === emailNorm)) {
+                const hashedPw = await hashPassword(password); // Şifreyi hash'le, düz metin kaydetme
                 mockUsers.push({
                     id: "u_" + Date.now(),
                     email: emailNorm,
-                    password: password,
+                    password: hashedPw,
                     username: username
                 });
                 localStorage.setItem("murekkep_mock_users", JSON.stringify(mockUsers));
@@ -913,7 +866,7 @@ async function loadAuthorFollowers() {
                 .from('site_settings')
                 .select('value')
                 .eq('key', 'author_followers')
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 const followersData = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                 localStorage.setItem("murekkep_author_followers", JSON.stringify(followersData));
@@ -939,7 +892,43 @@ async function saveAuthorFollowers(followersData) {
     }
 }
 
-// Helper for Username Migration across all components
+/** Remove a specific follower from the given author's follower list.
+ *  Only the profile owner (isOwnProfile) can do this; the UI only shows
+ *  the button when applicable, but we double-check here too. */
+window.removeFollower = async function(authorName, followerUsername) {
+    if (!currentUser) { showToast("❌ Giriş yapmalısınız."); return; }
+    if (!currentUser.username || currentUser.username.trim().toLowerCase() !== authorName.trim().toLowerCase()) {
+        showToast("❌ Yalnızca kendi profilinizden takipçi çıkarabilirsiniz.");
+        return;
+    }
+
+    let followersData = {};
+    try { followersData = JSON.parse(localStorage.getItem("murekkep_author_followers") || "{}"); } catch(e){}
+
+    if (!followersData[authorName]) { showToast("ℹ️ Takipçi bulunamadı."); return; }
+
+    const before = followersData[authorName].length;
+    followersData[authorName] = followersData[authorName].filter(f => {
+        if (typeof f === 'string') return f !== followerUsername && f !== currentUser.id;
+        if (f && typeof f === 'object') return (f.username || "").trim().toLowerCase() !== followerUsername.trim().toLowerCase();
+        return true;
+    });
+
+    if (followersData[authorName].length === before) {
+        showToast("ℹ️ Takipçi zaten listede yok.");
+        return;
+    }
+
+    localStorage.setItem("murekkep_author_followers", JSON.stringify(followersData));
+    await saveAuthorFollowers(followersData);
+
+    showToast(`✅ "${followerUsername}" takipçi listenizden çıkarıldı.`);
+
+    // Refresh the profile modal to reflect the change
+    window.openAuthorProfile(authorName, 'followers');
+};
+
+
 async function performUsernameMigration(oldName, newName) {
     if (!oldName || !newName || oldName === newName) return;
 
@@ -1007,6 +996,18 @@ async function performUsernameMigration(oldName, newName) {
                 art.author = newName;
             }
         });
+
+        if (isSupabaseConnected && supabaseClient) {
+            try {
+                await supabaseClient
+                    .from('articles')
+                    .update({ author: newName })
+                    .eq('author', oldName);
+                console.log(`Successfully migrated Supabase articles author from ${oldName} to ${newName}`);
+            } catch(e) {
+                console.warn("Could not update article authors on Supabase:", e);
+            }
+        }
     } catch (e) {}
 }
 
@@ -1019,7 +1020,7 @@ async function loadCategories() {
                 .from('site_settings')
                 .select('value')
                 .eq('key', 'custom_categories')
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 customCategories = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                 console.log("Loaded custom categories from Supabase.");
@@ -1061,7 +1062,7 @@ async function loadLayoutConfig() {
                 .from('site_settings')
                 .select('value')
                 .eq('key', 'layout_config_v4')
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 layoutConfig = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                 console.log("Loaded layout config from Supabase.");
@@ -1113,7 +1114,7 @@ async function loadEditorNoteData() {
                 .from('site_settings')
                 .select('value')
                 .eq('key', 'editor_note')
-                .single();
+                .maybeSingle();
             if (data && data.value) {
                 editorNoteData = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                 console.log("Loaded editor note from Supabase.");
@@ -1289,6 +1290,15 @@ window.renderLayoutConfigurator = function() {
                 heightBtnsHtml += `<button type="button" onclick="window.updateSlotHeight('${colKey}', ${index}, ${h})" title="${h}x Yükseklik" style="background:${isActive ? '#1565c0' : 'var(--bg-primary)'}; color:${isActive ? '#fff' : 'var(--text-secondary)'}; border:1px solid ${isActive ? '#1565c0' : 'var(--border-light)'}; font-family:var(--font-ui); font-size:0.65rem; font-weight:700; padding:2px 7px; border-radius:4px; cursor:pointer;">${h}↕</button>`;
             }
 
+            const slotsInCol = layoutConfig[colKey] || [];
+            let upDownBtnsHtml = '';
+            if (index > 0) {
+                upDownBtnsHtml += `<button type="button" onclick="window.quickMoveSlotUpDown('${colKey}', ${index}, 'up')" title="Yukarı Taşı" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: currentColor;"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg></button>`;
+            }
+            if (index < slotsInCol.length - 1) {
+                upDownBtnsHtml += `<button type="button" onclick="window.quickMoveSlotUpDown('${colKey}', ${index}, 'down')" title="Aşağı Taşı" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: currentColor;"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg></button>`;
+            }
+
             const row = document.createElement("div");
             row.className = "layout-slot-row";
             row.style.cssText = "display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-light); padding: 10px; border-radius: 8px; margin-bottom: 8px; font-family: var(--font-ui);";
@@ -1299,9 +1309,12 @@ window.renderLayoutConfigurator = function() {
                         ${valueOptions}
                     </select>
                     ${styleSelect}
-                    <button type="button" onclick="window.removeSlotFromColumn('${colKey}', ${index})" style="background: none; border: none; color: var(--accent-color); cursor: pointer; padding: 4px; margin-left: auto;" title="Slotu Kaldır">
-                        <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                    </button>
+                    <div style="display: flex; gap: 2px; align-items: center; margin-left: auto;">
+                        ${upDownBtnsHtml}
+                        <button type="button" onclick="window.removeSlotFromColumn('${colKey}', ${index})" style="background: none; border: none; color: var(--accent-color); cursor: pointer; padding: 4px;" title="Slotu Kaldır">
+                            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Editable Slot Label -->
@@ -1345,20 +1358,50 @@ window.renderLayoutConfigurator = function() {
 function wrapSlotInEditorControls(slot, index, colKey, cardHTML, colWeight) {
     if (!cardHTML.trim()) return "";
     
+    // Prepare values list for inline content and design selections
+    const cats = getCategoriesList();
+    const valueOptionsList = [
+        { value: "headline", label: "Manşet", type: "system" },
+        { value: "recent_comments", label: "Okur Yorumları", type: "system" },
+        { value: "popular_posts", label: "Çok Okunanlar", type: "system" },
+        { value: "popular_authors", label: "Haftanın Yazarları", type: "system" },
+        { value: "editor_note", label: "Editörün Notu", type: "system" }
+    ];
+    cats.forEach(c => {
+        valueOptionsList.push({ value: c.id, label: c.name, type: "category" });
+    });
+    
+    const styleOptions = [
+        { value: "standard", label: "Standart Kart" },
+        { value: "headline", label: "Manşet Tasarımı" },
+        { value: "editorial", label: "Başyazı Tasarımı" },
+        { value: "columnist", label: "Yazar Tasarımı" },
+        { value: "poem", label: "Şiir Tasarımı" },
+        { value: "list", label: "Liste Tasarımı" }
+    ];
+ 
     const slotLabel = slot.type === 'system' ? 'Sistem' : 'Köşe';
-    const configDetail = slot.type === 'system' ? slot.label : `${slot.label}`;
     const currentSize = slot.size || 'normal';
     const currentSlotWidth = slot.slotWidth || 1;
     const currentSlotHeight = slot.slotHeight || 1;
-
+ 
     const colLabels = { col1: '◀ Sol', col2: '■ Orta', col3: 'Sağ ▶' };
     let moveButtons = '';
     ['col1', 'col2', 'col3'].forEach(col => {
         if (col !== colKey) {
-            moveButtons += `<button type="button" onclick="event.stopPropagation(); window.quickMoveSlot('${colKey}', ${index}, '${col}')" title="${colLabels[col]} Sütuna Taşı" style="background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-secondary); font-family: var(--font-ui); font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-weight: 700;">${colLabels[col].split(' ')[0]}</button>`;
+            moveButtons += `<button type="button" onclick="event.stopPropagation(); window.quickMoveSlot('${colKey}', ${index}, '${col}')" title="${colLabels[col]} Sütuna Taşı" style="background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-secondary); font-family: var(--font-ui); font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-weight: 700;">${colLabels[col]}</button>`;
         }
     });
-
+ 
+    let upDownButtons = '';
+    const slotsInCol = layoutConfig[colKey] || [];
+    if (index > 0) {
+        upDownButtons += `<button type="button" onclick="event.stopPropagation(); window.quickMoveSlotUpDown('${colKey}', ${index}, 'up')" title="Yukarı Taşı" style="background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-secondary); font-family: var(--font-ui); font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-weight: 700;">▲</button>`;
+    }
+    if (index < slotsInCol.length - 1) {
+        upDownButtons += `<button type="button" onclick="event.stopPropagation(); window.quickMoveSlotUpDown('${colKey}', ${index}, 'down')" title="Aşağı Taşı" style="background: var(--bg-secondary); border: 1px solid var(--border-light); color: var(--text-secondary); font-family: var(--font-ui); font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-weight: 700;">▼</button>`;
+    }
+ 
     const sizeKeys = ['compact', 'normal', 'large'];
     const sizeLabels = { compact: 'S – Kompakt', normal: 'M – Normal', large: 'L – Büyük' };
     let sizeButtons = '';
@@ -1366,29 +1409,44 @@ function wrapSlotInEditorControls(slot, index, colKey, cardHTML, colWeight) {
         const isActive = currentSize === sk;
         sizeButtons += `<button type="button" onclick="event.stopPropagation(); window.quickResizeSlot('${colKey}', ${index}, '${sk}')" title="${sizeLabels[sk]}" style="background:${isActive ? 'var(--accent-color)' : 'var(--bg-secondary)'}; color:${isActive ? '#fff' : 'var(--text-secondary)'}; border:1px solid ${isActive ? 'var(--accent-color)' : 'var(--border-light)'}; font-family: var(--font-ui); font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-weight: 700;">${sk === 'compact' ? 'S' : sk === 'normal' ? 'M' : 'L'}</button>`;
     });
-
+ 
     let widthButtons = '';
     for (let w = 1; w <= 3; w++) {
         const isActive = currentSlotWidth === w;
         widthButtons += `<button type="button" onclick="event.stopPropagation(); window.quickSetSlotWidth('${colKey}', ${index}, ${w})" title="${w}x Genişlik" style="background:${isActive ? '#2e7d32' : 'var(--bg-secondary)'}; color:${isActive ? '#fff' : 'var(--text-secondary)'}; border:1px solid ${isActive ? '#2e7d32' : 'var(--border-light)'}; font-family: var(--font-ui); font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-weight: 700;">${w}x</button>`;
     }
-
+ 
     let heightButtons = '';
     for (let h = 1; h <= 3; h++) {
         const isActive = currentSlotHeight === h;
         heightButtons += `<button type="button" onclick="event.stopPropagation(); window.quickSetSlotHeight('${colKey}', ${index}, ${h})" title="${h}x Yükseklik" style="background:${isActive ? '#1565c0' : 'var(--bg-secondary)'}; color:${isActive ? '#fff' : 'var(--text-secondary)'}; border:1px solid ${isActive ? '#1565c0' : 'var(--border-light)'}; font-family: var(--font-ui); font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; font-weight: 700;">${h}↕</button>`;
     }
-
+ 
     return `
         <div class="editor-slot-wrapper slot-size-${currentSize} slot-height-${currentSlotHeight}" style="grid-column: span ${currentSlotWidth}; grid-row: span ${currentSlotHeight}; min-width: 0; position: relative; border: 2px solid var(--accent-color); margin-bottom: 16px; border-radius: 8px; background: rgba(201, 64, 64, 0.01); display: flex; flex-direction: column; overflow: hidden;">
             <!-- Editor Toolbar -->
             <div class="slot-editor-toolbar" style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-light); padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; font-family: var(--font-ui); z-index: 10;">
-                <!-- Toolbar Row 1: Label and Actions -->
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <span style="background: var(--accent-color); color: #fff; font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
-                        ${slotLabel}: ${configDetail}
-                    </span>
-                    <button type="button" onclick="event.stopPropagation(); window.quickRemoveSlot('${colKey}', ${index})" title="Slotu Kaldır" style="background: #c94040; border: none; color: #ffffff; font-size: 0.65rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-weight: 700; transition: background 0.2s;">✕ Kaldır</button>
+                <!-- Toolbar Row 1: Content, Style Selectors and Actions -->
+                <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; width: 100%; gap: 6px;">
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <!-- Content Selector -->
+                        <div style="display: flex; align-items: center; gap: 3px; background: rgba(0,0,0,0.02); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border-light);">
+                            <span style="color: var(--text-secondary); font-weight: 700; font-size: 0.55rem; text-transform: uppercase;">İÇERİK:</span>
+                            <select onchange="event.stopPropagation(); window.quickSetSlotValue('${colKey}', ${index}, this.value)" style="font-size: 0.65rem; padding: 1px 4px; border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-light); font-weight: 700; font-family: var(--font-ui); cursor: pointer;">
+                                ${valueOptionsList.map(opt => `<option value="${opt.value}" ${slot.value === opt.value ? 'selected' : ''}>${opt.type === 'system' ? '⚙️' : '✒️'} ${opt.label}</option>`).join('')}
+                            </select>
+                        </div>
+                        
+                        <!-- Style Selector -->
+                        <div style="display: flex; align-items: center; gap: 3px; background: rgba(0,0,0,0.02); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border-light);">
+                            <span style="color: var(--text-secondary); font-weight: 700; font-size: 0.55rem; text-transform: uppercase;">STİL:</span>
+                            <select onchange="event.stopPropagation(); window.quickSetSlotStyle('${colKey}', ${index}, this.value)" style="font-size: 0.65rem; padding: 1px 4px; border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-light); font-weight: 700; font-family: var(--font-ui); cursor: pointer;">
+                                ${styleOptions.map(opt => `<option value="${opt.value}" ${slot.style === opt.value ? 'selected' : ''}>🎨 ${opt.label}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button type="button" onclick="event.stopPropagation(); window.quickRemoveSlot('${colKey}', ${index})" title="Slotu Kaldır" style="background: #c94040; border: none; color: #ffffff; font-size: 0.65rem; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: 700; transition: background 0.2s; white-space: nowrap;">✕ Kaldır</button>
                 </div>
                 
                 <!-- Toolbar Row 2: Adjustments -->
@@ -1398,6 +1456,7 @@ function wrapSlotInEditorControls(slot, index, colKey, cardHTML, colWeight) {
                         <span style="color: var(--text-secondary); font-weight: 700; font-size: 0.6rem;">KONUM:</span>
                         <div style="display: flex; gap: 2px;">
                             ${moveButtons}
+                            ${upDownButtons}
                         </div>
                     </div>
                     
@@ -1576,7 +1635,6 @@ function renderSlotHelper(slot, index, sorted, headlines, recentComments) {
             `;
         }
     } else if (slot.type === 'category') {
-        // Sequential slot fill: pull next article from the current page's pool
         const art = _pageArticles[_slotArticleIdx++];
         if (!art) {
             if (isEditorModeActive) {
@@ -1743,6 +1801,46 @@ window.quickRemoveSlot = function(colKey, index) {
     showToast(`✕ Slot kaldırıldı.`);
 };
 
+window.quickSetSlotValue = function(colKey, index, val) {
+    if (!layoutConfig || !layoutConfig[colKey] || !layoutConfig[colKey][index]) return;
+    
+    // Determine type (system vs category)
+    const cats = getCategoriesList();
+    const isCategory = cats.some(c => c.id === val);
+    
+    layoutConfig[colKey][index].type = isCategory ? "category" : "system";
+    layoutConfig[colKey][index].value = val;
+    
+    // Update label
+    if (isCategory) {
+        const cat = cats.find(c => c.id === val);
+        layoutConfig[colKey][index].label = cat ? cat.name : val;
+    } else {
+        const systemLabels = {
+            headline: "Manşet",
+            recent_comments: "Okur Yorumları",
+            popular_posts: "Çok Okunanlar",
+            popular_authors: "Haftanın Yazarları",
+            editor_note: "Editörün Notu"
+        };
+        layoutConfig[colKey][index].label = systemLabels[val] || val;
+    }
+    
+    saveLayoutConfig();
+    renderNewspaperGrid();
+    renderLayoutConfigurator();
+    showToast(`📝 Slot içeriği güncellendi!`);
+};
+
+window.quickSetSlotStyle = function(colKey, index, style) {
+    if (!layoutConfig || !layoutConfig[colKey] || !layoutConfig[colKey][index]) return;
+    layoutConfig[colKey][index].style = style;
+    saveLayoutConfig();
+    renderNewspaperGrid();
+    renderLayoutConfigurator();
+    showToast(`🎨 Slot tasarımı güncellendi!`);
+};
+
 window.quickSetColWidth = function(colKey, width) {
     if (!layoutConfig) return;
     if (!layoutConfig.colWidths) layoutConfig.colWidths = { col1: 1, col2: 2, col3: 1 };
@@ -1794,6 +1892,28 @@ window.quickMoveSlot = function(colKey, index, targetCol) {
     showToast(`📦 Slot, ${colNames[colKey]} sütunundan ${colNames[targetCol]} sütununa taşındı!`);
 };
 
+window.quickMoveSlotUpDown = function(colKey, index, direction) {
+    if (!layoutConfig || !layoutConfig[colKey] || !layoutConfig[colKey][index]) return;
+    const slots = layoutConfig[colKey];
+    if (direction === 'up' && index > 0) {
+        const temp = slots[index];
+        slots[index] = slots[index - 1];
+        slots[index - 1] = temp;
+    } else if (direction === 'down' && index < slots.length - 1) {
+        const temp = slots[index];
+        slots[index] = slots[index + 1];
+        slots[index + 1] = temp;
+    } else {
+        return;
+    }
+    saveLayoutConfig();
+    renderNewspaperGrid();
+    renderLayoutConfigurator();
+    const dirLabel = direction === 'up' ? 'yukarı' : 'aşağı';
+    const colNames = { col1: 'Sol', col2: 'Orta', col3: 'Sağ' };
+    showToast(`↕️ Slot ${colNames[colKey]} sütununda ${dirLabel} taşındı!`);
+};
+
 window.addCustomCategory = async function() {
     const input = document.getElementById("new-category-input");
     if (!input || !input.value.trim()) return;
@@ -1836,21 +1956,7 @@ const BANNED_WORDS = [
 ];
 
 function containsProfanity(text) {
-    if (!text) return false;
-    const normalized = text.toLowerCase()
-        .replace(/ı/g, "i")
-        .replace(/ğ/g, "g")
-        .replace(/ü/g, "u")
-        .replace(/ş/g, "s")
-        .replace(/ö/g, "o")
-        .replace(/ç/g, "c");
-    
-    return BANNED_WORDS.some(word => {
-        if (word.length <= 3) {
-            return new RegExp(`\\b${word}\\b`, "i").test(normalized);
-        }
-        return normalized.includes(word);
-    });
+    return false;
 }
 
 function getArticleReports(id) {
@@ -1904,9 +2010,8 @@ function updateEditorBannerUI() {
     }
 }
 
-// Supabase Configuration
-const SUPABASE_URL = ""; 
-const SUPABASE_ANON_KEY = "";
+const SUPABASE_URL = "https://xhgtipmmahtoshypngdm.supabase.co"; 
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZ3RpcG1tYWh0b3NoeXBuZ2RtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMDQyMzYsImV4cCI6MjA5Nzc4MDIzNn0.Z1eYqrrU8U62kDf0G8zUEBguXt4h0HviZJBIEJvH588";
 
 let supabaseClient = null;
 let isSupabaseConnected = false;
@@ -1970,7 +2075,7 @@ function showToast(message) {
 function openAuthModal() {
     if (authOverlay) {
         authOverlay.classList.remove("hidden");
-        document.body.style.overflow = "hidden";
+        lockBodyScroll();
         switchAuthTab('login');
     }
 }
@@ -1978,7 +2083,7 @@ function openAuthModal() {
 function closeAuthModal() {
     if (authOverlay) {
         authOverlay.classList.add("hidden");
-        document.body.style.overflow = "";
+        unlockBodyScroll();
     }
 }
 
@@ -1987,6 +2092,7 @@ function closeAuthModal() {
 // =============================================
 let shareCurrentTemplate = 'gece';
 let shareCurrentArticle = null;
+let shareIsCustomMode = false;
 
 /** Helper: update the share modal's quote display panel */
 function setShareQuote(text) {
@@ -2005,23 +2111,42 @@ function populateShareSentences(article) {
     tempDiv.innerHTML = article.content;
     const paragraphs = tempDiv.querySelectorAll("p, blockquote");
 
+    const decodeHTMLEntities = (str) => {
+        const temp = document.createElement("div");
+        temp.innerHTML = str;
+        const decoded = temp.textContent || temp.innerText || "";
+        return decoded.replace(/\s+/g, ' ').trim();
+    };
+
     const sentences = [];
-    paragraphs.forEach(p => {
-        const text = p.textContent.trim();
-        if (!text) return;
-        
-        // Clean extra spaces and split into sentences by punctuation (. ? !) followed by space or end
-        const cleanText = text.replace(/\s+/g, ' ').trim();
-        const matches = cleanText.match(/[^.!?]+[.!?]+(?=\s|$)/g);
-        if (matches) {
-            matches.forEach(s => {
-                const cleanS = s.trim();
-                if (cleanS) sentences.push(cleanS);
-            });
-        } else if (cleanText) {
-            sentences.push(cleanText);
-        }
-    });
+    if (article.category === 'siir') {
+        // For poems, preserve line structure and treat each verse as a selectable item
+        const lines = tempDiv.innerHTML
+            .replace(/<br\s*\/?>/gi, "\n")
+            .replace(/<\/p>/gi, "\n")
+            .replace(/<\/div>/gi, "\n")
+            .replace(/<[^>]*>/g, "")
+            .split("\n")
+            .map(line => decodeHTMLEntities(line))
+            .filter(Boolean);
+        lines.forEach(l => sentences.push(l));
+    } else {
+        // For prose, split into sentences by punctuation
+        paragraphs.forEach(p => {
+            const text = decodeHTMLEntities(p.textContent);
+            if (!text) return;
+            
+            const matches = text.match(/[^.!?]+[.!?]+(?=\s|$)/g);
+            if (matches) {
+                matches.forEach(s => {
+                    const cleanS = s.trim();
+                    if (cleanS) sentences.push(cleanS);
+                });
+            } else if (text) {
+                sentences.push(text);
+            }
+        });
+    }
 
     if (sentences.length === 0) {
         listEl.innerHTML = `<div style="color:var(--text-secondary); font-size:0.8rem; text-align:center; padding:20px;">Bu makalede seçilebilir cümle bulunamadı.</div>`;
@@ -2039,11 +2164,12 @@ function populateShareSentences(article) {
             // Toggle selection
             item.classList.toggle("selected");
 
-            // Compile all selected sentences in order with spaces
+            // Compile selected items (join with newlines for poems, spaces for other articles)
             const selectedItems = listEl.querySelectorAll(".share-paragraph-item.selected");
+            const separator = (shareCurrentArticle && shareCurrentArticle.category === 'siir') ? "\n" : " ";
             const compiledText = Array.from(selectedItems)
                 .map(el => el.textContent)
-                .join(" ")
+                .join(separator)
                 .substring(0, 280);
 
             const quoteInput = document.getElementById("share-quote-input");
@@ -2061,12 +2187,29 @@ function openShareModal(articleId, preselectedText) {
     const article = articles.find(a => a.id === articleId);
     if (!article) return;
     shareCurrentArticle = article;
+    shareIsCustomMode = false;
 
     const overlay = document.getElementById('share-overlay');
     if (!overlay) return;
 
     overlay.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+    lockBodyScroll();
+
+    // Toggle custom fields visibility
+    const customFieldsSection = document.getElementById("share-custom-inputs-section");
+    if (customFieldsSection) customFieldsSection.classList.add("hidden");
+
+    const paragraphPickerSection = overlay.querySelector(".share-paragraph-picker-section");
+    if (paragraphPickerSection) paragraphPickerSection.classList.remove("hidden");
+
+    const modalTitle = overlay.querySelector('.share-modal-title');
+    if (modalTitle) modalTitle.textContent = "Paylaş";
+
+    const quoteLabel = overlay.querySelector('.share-quote-display label');
+    if (quoteLabel) quoteLabel.textContent = "Paylaşılacak Alıntı (İsteğe Bağlı):";
+
+    const quoteInput = document.getElementById("share-quote-input");
+    if (quoteInput) quoteInput.placeholder = "Yukarıdan cümle seçebilir veya alıntıyı buraya kendiniz de yazabilirsiniz...";
 
     // Populate sentences list
     populateShareSentences(article);
@@ -2086,35 +2229,83 @@ function openShareModal(articleId, preselectedText) {
     }
 }
 
+function openCustomShareModal() {
+    shareIsCustomMode = true;
+    shareCurrentArticle = {
+        title: "Yeni Bir Başlangıç",
+        author: "Kalem Sahibi",
+        category: "deneme"
+    };
+
+    const overlay = document.getElementById('share-overlay');
+    if (!overlay) return;
+
+    overlay.classList.remove('hidden');
+    lockBodyScroll();
+
+    // Toggle custom fields visibility
+    const customFieldsSection = document.getElementById("share-custom-inputs-section");
+    if (customFieldsSection) customFieldsSection.classList.remove("hidden");
+
+    const paragraphPickerSection = overlay.querySelector(".share-paragraph-picker-section");
+    if (paragraphPickerSection) paragraphPickerSection.classList.add("hidden");
+
+    const modalTitle = overlay.querySelector('.share-modal-title');
+    if (modalTitle) modalTitle.textContent = "Sosyal Medya Kartı Oluştur";
+
+    const quoteLabel = overlay.querySelector('.share-quote-display label');
+    if (quoteLabel) quoteLabel.textContent = "Kart Üzerindeki Metin / Alıntı:";
+
+    const quoteInput = document.getElementById("share-quote-input");
+    if (quoteInput) quoteInput.placeholder = "Kart üzerinde görünmesini istediğiniz cümleyi yazın...";
+
+    // Populate input values to match default mock article
+    const customAuthorInput = document.getElementById("share-custom-author-input");
+    const customCategorySelect = document.getElementById("share-custom-category-input");
+    const customTitleInput = document.getElementById("share-custom-title-input");
+
+    if (customAuthorInput) customAuthorInput.value = shareCurrentArticle.author;
+    if (customCategorySelect) customCategorySelect.value = shareCurrentArticle.category;
+    if (customTitleInput) customTitleInput.value = shareCurrentArticle.title;
+
+    setShareQuote("Kendi cümlenizi buraya yazıp, yukarıdan şablon seçerek sosyal medya kartınızı anında oluşturun.");
+}
+
 function closeShareModal() {
     const overlay = document.getElementById("share-overlay");
     if (overlay) {
         overlay.classList.add("hidden");
-        document.body.style.overflow = "";
+        unlockBodyScroll();
     }
 }
 
-// Canvas text wrapping helper
+// Canvas text wrapping helper that respects explicit newlines
 function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
-    const words = text.split(' ');
-    let line = '';
+    const sourceLines = text.split('\n');
     let currentY = y;
     const lines = [];
 
-    for (let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + ' ';
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > maxWidth && n > 0) {
-            lines.push({ text: line.trim(), y: currentY });
-            line = words[n] + ' ';
-            currentY += lineHeight;
-        } else {
-            line = testLine;
+    sourceLines.forEach(srcLine => {
+        const words = srcLine.split(' ');
+        let line = '';
+        
+        for (let n = 0; n < words.length; n++) {
+            const testLine = line + words[n] + ' ';
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > maxWidth && n > 0) {
+                lines.push({ text: line.trim(), y: currentY });
+                line = words[n] + ' ';
+                currentY += lineHeight;
+            } else {
+                line = testLine;
+            }
         }
-    }
-    lines.push({ text: line.trim(), y: currentY });
+        lines.push({ text: line.trim(), y: currentY });
+        currentY += lineHeight;
+    });
+
     lines.forEach(l => ctx.fillText(l.text, x, l.y));
-    return currentY + lineHeight;
+    return currentY;
 }
 
 // Render a share card on canvas
@@ -2128,8 +2319,29 @@ function renderShareCard(template) {
 
     const quoteInput = document.getElementById("share-quote-input");
     const quoteText = (quoteInput && quoteInput.value.trim()) ? quoteInput.value.trim() : "";
-    const articleTitle = shareCurrentArticle.title || "";
-    const authorName = shareCurrentArticle.author || "Mürekkep";
+    
+    let articleTitle = "";
+    let authorName = "";
+    let categoryName = "";
+
+    if (shareIsCustomMode) {
+        const customTitleInput = document.getElementById("share-custom-title-input");
+        const customAuthorInput = document.getElementById("share-custom-author-input");
+        const customCategorySelect = document.getElementById("share-custom-category-input");
+
+        articleTitle = (customTitleInput && customTitleInput.value.trim()) ? customTitleInput.value.trim() : "Yeni Bir Başlangıç";
+        authorName = (customAuthorInput && customAuthorInput.value.trim()) ? customAuthorInput.value.trim() : "Kalem Sahibi";
+        categoryName = (customCategorySelect && customCategorySelect.value) ? customCategorySelect.value : "deneme";
+
+        // Keep shareCurrentArticle synced so other components (social sharing etc) get correct values
+        shareCurrentArticle.title = articleTitle;
+        shareCurrentArticle.author = authorName;
+        shareCurrentArticle.category = categoryName;
+    } else {
+        articleTitle = shareCurrentArticle.title || "";
+        authorName = shareCurrentArticle.author || "Mürekkep";
+        categoryName = shareCurrentArticle.category || "deneme";
+    }
 
     // Template definitions
     const templates = {
@@ -2294,7 +2506,7 @@ function renderShareCard(template) {
     ctx.fillStyle = t.accentColor;
     ctx.font = `700 28px 'Inter', sans-serif`;
     ctx.textAlign = 'right';
-    ctx.fillText('murekkep.com', W - pad, H - pad);
+    ctx.fillText('murekkepgzt.com', W - pad, H - pad);
     ctx.textAlign = 'left';
 }
 
@@ -2422,7 +2634,7 @@ function initTextSelectionPopup() {
         if (!lastSelectedText) return;
         const art = articles.find(a => a.id === activeArticleId);
         const author = art ? `— ${art.author}` : '';
-        const tweet = `"${lastSelectedText.substring(0, 200)}" ${author} #Mürekkep\nmurekkep.com`;
+        const tweet = `"${lastSelectedText.substring(0, 200)}" ${author} #Mürekkep\nmurekkepgzt.com`;
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweet)}`, '_blank');
         hidePopup();
         window.getSelection()?.removeAllRanges();
@@ -2471,11 +2683,40 @@ function initShareOverlay() {
         });
     }
 
+    // Live re-render for custom card inputs
+    const customAuthorInput = document.getElementById("share-custom-author-input");
+    const customTitleInput = document.getElementById("share-custom-title-input");
+    const customCategorySelect = document.getElementById("share-custom-category-input");
+
+    [customAuthorInput, customTitleInput].forEach(input => {
+        if (input) {
+            input.addEventListener("input", () => {
+                if (shareIsCustomMode) renderShareCard(shareCurrentTemplate);
+            });
+        }
+    });
+
+    if (customCategorySelect) {
+        customCategorySelect.addEventListener("change", () => {
+            if (shareIsCustomMode) renderShareCard(shareCurrentTemplate);
+        });
+    }
+
+    // Connect trigger buttons for custom card creator
+    document.getElementById("create-card-toggle")?.addEventListener("click", () => {
+        openCustomShareModal();
+    });
+
+    document.getElementById("footer-create-card-btn")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        openCustomShareModal();
+    });
+
     // WhatsApp share
     document.getElementById("share-whatsapp")?.addEventListener("click", () => {
         if (!shareCurrentArticle) return;
         const q = quoteInput?.value.trim() || shareCurrentArticle.subtitle || shareCurrentArticle.title;
-        const text = `"${q}"\n\n— ${shareCurrentArticle.author}\n📖 ${shareCurrentArticle.title}\n\nmurekkep.com`;
+        const text = `"${q}"\n\n— ${shareCurrentArticle.author}\n📖 ${shareCurrentArticle.title}\n\nmurekkepgzt.com`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
     });
 
@@ -2587,7 +2828,7 @@ function openSettingsModal() {
     renderProfileTabUI();
 
     settingsOverlay.classList.remove("hidden");
-    document.body.style.overflow = "hidden";
+    lockBodyScroll();
 }
 
 // Support function: switch profile modal tabs
@@ -2674,6 +2915,9 @@ function toggleFollowState(authorName) {
     
     localStorage.setItem("murekkep_author_followers", JSON.stringify(followersData));
     saveAuthorFollowers(followersData);
+    if (typeof updateArticleDetailFollowButton === 'function') {
+        updateArticleDetailFollowButton(authorName);
+    }
     return true;
 }
 
@@ -2924,9 +3168,12 @@ function renderProfileTabUI() {
         if (statReadtime) statReadtime.innerText = `${statsWriter.totalReadTime} dk`;
         
         // Goal Sync
-        const goalVal = localStorage.getItem(`murekkep_writer_goal_${currentUser.id}`) || "1";
-        const goalSelect = document.getElementById("writer-goal-select");
-        if (goalSelect) goalSelect.value = goalVal;
+        const authorName = currentUser.username || currentUser.email.split("@")[0];
+        const profile = getAuthorProfileData(authorName);
+        const goalVal = parseInt(profile.goalCount) || 10;
+        
+        const goalInput = document.getElementById("writer-goal-input");
+        if (goalInput) goalInput.value = goalVal;
         
         // Calculate goal progress for last 7 days
         const now = new Date();
@@ -2978,12 +3225,19 @@ function closeSettingsModal() {
     const settingsOverlay = document.getElementById("settings-overlay");
     if (settingsOverlay) {
         settingsOverlay.classList.add("hidden");
-        document.body.style.overflow = "";
+        unlockBodyScroll();
     }
 }
 
 // Switch tabs between login and register inside auth card
 window.switchAuthTab = function(tab) {
+    const resetForm = document.getElementById("reset-form");
+    if (resetForm) resetForm.classList.add("hidden");
+    const updatePasswordForm = document.getElementById("update-password-form");
+    if (updatePasswordForm) updatePasswordForm.classList.add("hidden");
+    const authTabs = document.querySelector(".auth-tabs");
+    if (authTabs) authTabs.style.display = "flex";
+
     if (tab === 'login') {
         tabLogin.classList.add("active");
         tabRegister.classList.remove("active");
@@ -3211,10 +3465,11 @@ async function initAuth() {
         try {
             const { data: { session }, error } = await supabaseClient.auth.getSession();
             if (session && session.user) {
+                const emailLower = (session.user.email || "").toLowerCase().trim();
                 currentUser = {
                     id: session.user.id,
                     email: session.user.email,
-                    username: session.user.user_metadata?.username || session.user.email.split("@")[0]
+                    username: emailLower === "murekkep@admin.com" ? "Mürekkep" : (session.user.user_metadata?.username || session.user.email.split("@")[0])
                 };
                 const role = getUserRole(currentUser.email);
                 currentUser.role = role;
@@ -3234,11 +3489,17 @@ async function initAuth() {
         // Listen to auth state changes
         try {
             supabaseClient.auth.onAuthStateChange((event, session) => {
+                if (event === 'PASSWORD_RECOVERY') {
+                    if (typeof openUpdatePasswordUI === "function") {
+                        openUpdatePasswordUI();
+                    }
+                }
                 if (session && session.user) {
+                    const emailLower = (session.user.email || "").toLowerCase().trim();
                     currentUser = {
                         id: session.user.id,
                         email: session.user.email,
-                        username: session.user.user_metadata?.username || session.user.email.split("@")[0]
+                        username: emailLower === "murekkep@admin.com" ? "Mürekkep" : (session.user.user_metadata?.username || session.user.email.split("@")[0])
                     };
                     const role = getUserRole(currentUser.email);
                     currentUser.role = role;
@@ -3282,9 +3543,65 @@ async function initAuth() {
     updateAuthUI();
 }
 
+async function deleteCurrentUserAccount() {
+    if (!currentUser) return;
+    
+    if (!confirm("Hesabınızı kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm verileriniz silinir.")) {
+        return;
+    }
+
+    const emailNorm = currentUser.email.toLowerCase().trim();
+
+    // 1. Remove from registered_users list
+    let list = [];
+    if (isSupabaseConnected && supabaseClient) {
+        try {
+            const { data } = await supabaseClient
+                .from('site_settings')
+                .select('value')
+                .eq('key', 'registered_users')
+                .maybeSingle();
+            if (data && data.value) {
+                list = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+            }
+            list = list.filter(u => u.email.toLowerCase().trim() !== emailNorm);
+            await supabaseClient
+                .from('site_settings')
+                .upsert({ key: 'registered_users', value: list });
+        } catch (e) {
+            console.error("Error removing user from Supabase list:", e);
+        }
+        
+        // Log out the user from Supabase auth
+        try {
+            await supabaseClient.auth.signOut();
+        } catch(e) {
+            console.error("Error signing out:", e);
+        }
+    } else {
+        try {
+            list = JSON.parse(localStorage.getItem("murekkep_registered_users") || "[]");
+            list = list.filter(u => u.email.toLowerCase().trim() !== emailNorm);
+            localStorage.setItem("murekkep_registered_users", JSON.stringify(list));
+        } catch(e) {}
+    }
+
+    // 2. Clear local variables and logout
+    currentUser = null;
+    sessionStorage.clear();
+    
+    // Clear user-specific locally cached data
+    localStorage.removeItem("murekkep_bookmarks");
+    
+    // Update UI and close modal
+    updateAuthUI();
+    closeSettingsModal();
+    showToast("👋 Hesabınız başarıyla kalıcı olarak silindi.");
+}
+
 // User Actions
 async function signUpUser(email, password, username) {
-    if (email.toLowerCase() === "admin@murekkep.com" || email.toLowerCase() === "editor@murekkep.com") {
+    if (email.toLowerCase() === "murekkep@admin.com") {
         showToast("❌ Bu e-posta adresiyle yeni kayıt oluşturulamaz.");
         return;
     }
@@ -3302,6 +3619,9 @@ async function signUpUser(email, password, username) {
             if (error) throw error;
             
             if (data.user) {
+                // Register user in our public database list
+                registerUserInList(data.user.email, username || data.user.user_metadata?.username || data.user.email.split("@")[0]).catch(console.error);
+
                 // If session exists directly (email confirmation disabled)
                 if (data.session) {
                     currentUser = {
@@ -3355,14 +3675,15 @@ async function signUpUser(email, password, username) {
             showToast("❌ " + msg);
         }
     } else {
-        // Offline Mock Sign Up
+        // Offline Mock Sign Up — şifreyi hash'le, düz metin kaydetme
         try {
             const users = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
             if (users.some(u => u.email === email)) {
                 showToast("Bu e-posta adresi zaten kayıtlı!");
                 return;
             }
-            const newUser = { id: "u_" + Date.now(), email, password, username };
+            const hashedPw = await hashPassword(password);
+            const newUser = { id: "u_" + Date.now(), email, password: hashedPw, username };
             users.push(newUser);
             localStorage.setItem("murekkep_mock_users", JSON.stringify(users));
             showToast("Kayıt başarılı! Giriş yapabilirsiniz.");
@@ -3376,45 +3697,44 @@ async function signUpUser(email, password, username) {
 
 async function signInUser(email, password) {
     const emailNorm = (email || "").toLowerCase().trim();
-    const passNorm = (password || "").toLowerCase().trim();
 
-    // Pre-defined Admin login intercept for testing and moderation
-    if ((emailNorm === "admin@murekkep.com" || emailNorm === "admin") && 
-        (passNorm === "murekkepadmin" || passNorm === "admin" || passNorm === "murekkep")) {
-        const role = "admin";
-        currentUser = {
-            id: "admin_murekkep",
-            email: "admin@murekkep.com",
-            username: "Mürekkep Yöneticisi",
-            role: role,
-            isAdmin: true,
-            isEditor: true
-        };
-        localStorage.setItem("murekkep_mock_session", JSON.stringify(currentUser));
-        loadBookmarks();
-        updateAuthUI();
-        closeAuthModal();
-        showToast("👋 Yönetici olarak giriş yapıldı. Editör Modu aktif edilebilir.");
+    // ── Brute-force koruması: çok fazla başarısız denemeyi engelle ───────────
+    const rlCheck = checkLoginRateLimit(emailNorm);
+    if (!rlCheck.allowed) {
+        showToast(`❌ Çok fazla hatalı giriş denemesi. Lütfen ${rlCheck.minutesLeft} dakika bekleyin.`);
         return;
     }
 
-    // Pre-defined Editor login intercept
-    if ((emailNorm === "editor@murekkep.com" || emailNorm === "editor") && 
-        (passNorm === "murekkepeditor" || passNorm === "mürekkepeditör" || passNorm === "editor" || passNorm === "editör" || passNorm === "murekkep")) {
-        const role = "editor";
-        currentUser = {
-            id: "editor_murekkep",
-            email: "editor@murekkep.com",
-            username: "Mürekkep Editörü",
-            role: role,
-            isAdmin: false,
-            isEditor: true
-        };
-        localStorage.setItem("murekkep_mock_session", JSON.stringify(currentUser));
-        loadBookmarks();
-        updateAuthUI();
-        closeAuthModal();
-        showToast("👋 Editör olarak giriş yapıldı. Editör Modu aktif edilebilir.");
+    // ── Secure Admin login: compare SHA-256 hash, never store plaintext ───────
+    if (emailNorm === "murekkep@admin.com") {
+        try {
+            const encoder = new TextEncoder();
+            // Hash the raw input (preserve original casing/encoding)
+            const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(password));
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+            // Stored hash — never reveals the actual password
+            const ADMIN_HASH = "9dd011ad8a68de979cbe26a535ce0f19f7cd26e0f5e3c8b057fe3bd56ba4081e";
+            if (hashHex === ADMIN_HASH) {
+                resetLoginRateLimit(emailNorm); // Başarılı girişte sayacı sıfırla
+                currentUser = {
+                    id: "admin_murekkep",
+                    email: "murekkep@admin.com",
+                    username: "Mürekkep",
+                    role: "admin",
+                    isAdmin: true,
+                    isEditor: true
+                };
+                localStorage.setItem("murekkep_mock_session", JSON.stringify(currentUser));
+                loadBookmarks();
+                updateAuthUI();
+                closeAuthModal();
+                showToast("👋 Yönetici olarak giriş yapıldı. Editör Modu aktif edilebilir.");
+                return;
+            }
+        } catch(e) { console.warn("Hash error:", e); }
+        // Wrong password for admin email → fall through to Supabase or show error
+        showToast("❌ Hatalı şifre.");
         return;
     }
 
@@ -3427,11 +3747,15 @@ async function signInUser(email, password) {
             if (error) throw error;
             
             if (data.user) {
+                resetLoginRateLimit(emailNorm); // Başarılı girişte sayacı sıfırla
+                const emailLower = (data.user.email || "").toLowerCase().trim();
                 currentUser = {
                     id: data.user.id,
                     email: data.user.email,
-                    username: data.user.user_metadata?.username || data.user.email.split("@")[0]
+                    username: emailLower === "murekkep@admin.com" ? "Mürekkep" : (data.user.user_metadata?.username || data.user.email.split("@")[0])
                 };
+                registerUserInList(currentUser.email, currentUser.username).catch(console.error);
+                
                 const role = getUserRole(currentUser.email);
                 currentUser.role = role;
                 currentUser.isAdmin = (role === "admin");
@@ -3456,11 +3780,25 @@ async function signInUser(email, password) {
             showToast("❌ " + msg);
         }
     } else {
-        // Offline Mock Sign In
+        // Offline Mock Sign In — şifreler hash ile karşılaştırılır
         try {
             const users = JSON.parse(localStorage.getItem("murekkep_mock_users") || "[]");
-            const user = users.find(u => u.email === email && u.password === password);
+            const inputHash = await hashPassword(password);
+            const user = users.find(u => {
+                if (u.email !== email) return false;
+                // Hash'lenmiş şifre ile karşılaştır; geriye dönük uyumluluk için
+                // eski düz-metin kayıtları da kabul et (ilk girişte hash'e dönüştürülür)
+                return u.password === inputHash || u.password === password;
+            });
             if (user) {
+                // Eski düz-metin şifre varsa hash'e yükselt
+                if (user.password === password && user.password !== inputHash) {
+                    user.password = inputHash;
+                    try {
+                        localStorage.setItem("murekkep_mock_users", JSON.stringify(users));
+                    } catch(e) {}
+                }
+                resetLoginRateLimit(emailNorm); // Başarılı girişte sayacı sıfırla
                 currentUser = {
                     id: user.id,
                     email: user.email,
@@ -3484,6 +3822,7 @@ async function signInUser(email, password) {
         }
     }
 }
+
 
 async function signOutUser() {
     if (isSupabaseConnected && supabaseClient) {
@@ -3542,27 +3881,91 @@ async function sendPasswordReset(email) {
     }
 }
 
+// Open password update UI
+function openUpdatePasswordUI() {
+    const authOverlayEl = document.getElementById("auth-overlay");
+    if (authOverlayEl) {
+        authOverlayEl.classList.remove("hidden");
+        lockBodyScroll();
+    }
+    
+    const loginFormEl = document.getElementById("login-form");
+    if (loginFormEl) loginFormEl.classList.add("hidden");
+    
+    const registerFormEl = document.getElementById("register-form");
+    if (registerFormEl) registerFormEl.classList.add("hidden");
+    
+    const resetForm = document.getElementById("reset-form");
+    if (resetForm) resetForm.classList.add("hidden");
+    
+    const authTabs = document.querySelector(".auth-tabs");
+    if (authTabs) authTabs.style.display = "none";
+    
+    const updateForm = document.getElementById("update-password-form");
+    if (updateForm) {
+        updateForm.classList.remove("hidden");
+        const newPassInput = document.getElementById("update-password");
+        if (newPassInput) newPassInput.focus();
+    }
+}
+
+// Check URL for authentication errors (like expired reset links)
+function checkUrlForAuthErrors() {
+    const hash = window.location.hash || "";
+    const search = window.location.search || "";
+    
+    let errorDesc = "";
+    let errorCode = "";
+    
+    // Parse params from hash or search
+    const rawParams = hash.startsWith("#") ? hash.substring(1) : (search.startsWith("?") ? search.substring(1) : hash + search);
+    if (rawParams) {
+        try {
+            const params = new URLSearchParams(rawParams);
+            errorDesc = params.get("error_description");
+            errorCode = params.get("error_code");
+        } catch (e) {}
+    }
+    
+    if (errorDesc || errorCode) {
+        // Clear hash/search so refresh does not show error again
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, "", window.location.pathname);
+        }
+        
+        let friendlyMessage = "❌ Bir hata oluştu.";
+        if (errorCode === "otp_expired" || (errorDesc && (errorDesc.toLowerCase().includes("expired") || errorDesc.toLowerCase().includes("invalid")))) {
+            friendlyMessage = "❌ Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş. Lütfen yeni bir sıfırlama e-postası isteyin.";
+        } else if (errorDesc) {
+            friendlyMessage = "❌ Hata: " + decodeURIComponent(errorDesc.replace(/\+/g, " "));
+        }
+        
+        setTimeout(() => {
+            showToast(friendlyMessage);
+        }, 500);
+        return true;
+    }
+    return false;
+}
+
 // Handle returning from password reset link
 function handlePasswordRecovery() {
-    if (!isSupabaseConnected || !supabaseClient) return;
-    supabaseClient.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'PASSWORD_RECOVERY') {
-            // Show password update modal
-            const newPass = prompt('İstenilen yeni şifrenizi girin (en az 6 karakter):');
-            if (!newPass || newPass.length < 6) {
-                showToast('❌ Şifre en az 6 karakter olmalıdır.');
-                return;
+    if (isSupabaseConnected && supabaseClient) {
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                openUpdatePasswordUI();
             }
-            const { error } = await supabaseClient.auth.updateUser({ password: newPass });
-            if (error) {
-                showToast('❌ Şifre güncellenemedi: ' + error.message);
-            } else {
-                showToast('✅ Şifreniz başarıyla güncellendi! Tekrar giriş yapabilirsiniz.');
-                await supabaseClient.auth.signOut();
-                updateAuthUI();
-            }
-        }
-    });
+        });
+    }
+
+    // Check URL parameters or hash immediately as the event might have already fired before this listener registered
+    const hash = window.location.hash || "";
+    const search = window.location.search || "";
+    if (hash.includes("type=recovery") || search.includes("type=recovery") || hash.includes("recovery") || search.includes("recovery")) {
+        setTimeout(() => {
+            openUpdatePasswordUI();
+        }, 300);
+    }
 }
 
 
@@ -3588,40 +3991,44 @@ function initSupabase() {
 
 async function seedSupabase() {
     try {
-        // Insert all default articles
-        const articlesToInsert = DEFAULT_ARTICLES.map(art => ({
-            id: art.id,
-            title: art.title,
-            subtitle: art.subtitle,
-            author: art.author,
-            category: art.category,
-            image: art.image,
-            date: art.date,
-            read_time: art.readTime,
-            claps: art.claps,
-            content: art.content
-        }));
+        if (DEFAULT_ARTICLES.length > 0) {
+            // Insert all default articles
+            const articlesToInsert = DEFAULT_ARTICLES.map(art => ({
+                id: art.id,
+                title: art.title,
+                subtitle: art.subtitle,
+                author: art.author,
+                category: art.category,
+                image: art.image,
+                date: art.date,
+                read_time: art.readTime,
+                claps: art.claps,
+                content: art.content
+            }));
 
-        const { error: artError } = await supabaseClient
-            .from('articles')
-            .insert(articlesToInsert);
+            const { error: artError } = await supabaseClient
+                .from('articles')
+                .insert(articlesToInsert);
 
-        if (artError) throw artError;
+            if (artError) throw artError;
+        }
 
-        // Insert all default comments
-        const commentsToInsert = DEFAULT_COMMENTS.map(c => ({
-            id: c.id,
-            article_id: c.articleId,
-            author: c.author,
-            text: c.text,
-            date: c.date
-        }));
+        if (DEFAULT_COMMENTS.length > 0) {
+            // Insert all default comments
+            const commentsToInsert = DEFAULT_COMMENTS.map(c => ({
+                id: c.id,
+                article_id: c.articleId,
+                author: c.author,
+                text: c.text,
+                date: c.date
+            }));
 
-        const { error: commError } = await supabaseClient
-            .from('comments')
-            .insert(commentsToInsert);
+            const { error: commError } = await supabaseClient
+                .from('comments')
+                .insert(commentsToInsert);
 
-        if (commError) throw commError;
+            if (commError) throw commError;
+        }
 
         console.log("Supabase seeding completed successfully.");
     } catch (err) {
@@ -3631,26 +4038,64 @@ async function seedSupabase() {
 
 let isSeeding = false;
 async function loadData() {
+    // Clean up old default articles from LocalStorage if they exist
+    const testArticleIds = ["manset-1", "kitap-1", "deneme-1", "roportaj-1", "siir-1", "oyku-1", "kose-yazilari-1", "haber-1", "yarismalar-1", "deneme-2", "siir-2", "oyku-2"];
+    try {
+        const saved = localStorage.getItem("murekkep_articles_v2");
+        if (saved) {
+            let parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+                const filtered = parsed.filter(art => !testArticleIds.includes(art.id));
+                if (filtered.length !== parsed.length) {
+                    localStorage.setItem("murekkep_articles_v2", JSON.stringify(filtered));
+                }
+            }
+        }
+        const cached = localStorage.getItem("murekkep_supabase_cache");
+        if (cached) {
+            let parsed = JSON.parse(cached);
+            if (parsed && parsed.articles && Array.isArray(parsed.articles)) {
+                const filtered = parsed.articles.filter(art => !testArticleIds.includes(art.id));
+                if (filtered.length !== parsed.articles.length) {
+                    parsed.articles = filtered;
+                    localStorage.setItem("murekkep_supabase_cache", JSON.stringify(parsed));
+                }
+            }
+        }
+    } catch (e) {
+        console.warn("Failed to clean up test articles from LocalStorage:", e);
+    }
+
+    // Read local articles from LocalStorage first as baseline
+    let localArticles = [];
+    try {
+        const saved = localStorage.getItem("murekkep_articles_v2");
+        if (saved) localArticles = JSON.parse(saved);
+    } catch (e) {
+        console.warn("Failed to read local articles from LocalStorage:", e);
+    }
+
     if (isSupabaseConnected) {
-        // Try to load from cache first
+        // Stale-While-Revalidate: Load from cache first for fast initial display if available
+        let loadedFromCache = false;
         try {
             const cachedDataStr = localStorage.getItem(CACHE_KEY);
             if (cachedDataStr) {
                 const cache = JSON.parse(cachedDataStr);
-                const age = Date.now() - cache.timestamp;
-                if (age < CACHE_TTL) {
+                if (cache && Array.isArray(cache.articles) && cache.articles.length > 0) {
                     articles = cache.articles;
-                    comments = cache.comments;
-                    console.log(`Loaded ${articles.length} articles and ${comments.length} comments from Local Cache (Age: ${Math.round(age/1000)}s).`);
+                    comments = cache.comments || [];
+                    loadedFromCache = true;
+                    console.log(`Loaded ${articles.length} articles from Local Cache (Stale-While-Revalidate).`);
                     
-                    // Refresh view
+                    // Refresh view immediately with cached articles
                     currentPage = 1;
                     if (currentCategoryFilter === "all") {
                         renderNewspaperGrid();
                     } else {
                         renderCategoryFeed(currentCategoryFilter);
                     }
-                    return; // Cache hit, exit!
+                    checkDeepLink();
                 }
             }
         } catch (e) {
@@ -3659,13 +4104,13 @@ async function loadData() {
 
         try {
             const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error("Supabase request timeout")), 3000)
+                setTimeout(() => reject(new Error("Supabase request timeout")), 4000)
             );
 
-            // Fetch articles metadata with timeout (excluding full content to save bandwidth/costs)
+            // Fetch articles including full content column from Supabase
             const fetchArticlesPromise = supabaseClient
                 .from('articles')
-                .select('id, title, subtitle, author, category, image, date, read_time, claps')
+                .select('*')
                 .order('created_at', { ascending: true });
 
             const { data: dbArticles, error: artError } = await Promise.race([
@@ -3675,75 +4120,93 @@ async function loadData() {
             
             if (artError) throw artError;
 
-            // If database is empty, only seed if explicitly requested via query parameter
-            if (!dbArticles || dbArticles.length === 0) {
-                if (window.location.search.includes("seed_db=true")) {
-                    if (!isSeeding) {
-                        isSeeding = true;
-                        console.log("Supabase articles table is empty, seeding database...");
-                        await seedSupabase();
-                        isSeeding = false;
-                        window.location.href = window.location.pathname;
-                        return;
-                    }
-                }
-                articles = [];
-                comments = [];
-            } else {
-                // Fetch comments with timeout
+            // Fetch comments with timeout
+            let dbComments = [];
+            try {
                 const fetchCommentsPromise = supabaseClient
                     .from('comments')
                     .select('*');
 
-                const { data: dbComments, error: commError } = await Promise.race([
+                const { data, error: commError } = await Promise.race([
                     fetchCommentsPromise, 
                     timeoutPromise
                 ]);
-
-                if (commError) throw commError;
-
-                // Map data to frontend variables
-                articles = dbArticles.map(art => ({
-                    id: art.id,
-                    title: art.title,
-                    subtitle: art.subtitle,
-                    author: art.author,
-                    category: art.category,
-                    image: art.image,
-                    date: art.date,
-                    readTime: art.read_time,
-                    claps: art.claps,
-                    content: null // Load content on demand!
-                }));
-
-                comments = dbComments.map(c => ({
-                    id: c.id,
-                    articleId: c.article_id,
-                    author: c.author,
-                    text: c.text,
-                    date: c.date
-                }));
-                
-                // Write to cache
-                try {
-                    const cachePayload = {
-                        timestamp: Date.now(),
-                        articles: articles,
-                        comments: comments
-                    };
-                    localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
-                    console.log("Saved database results to local cache.");
-                } catch (e) {
-                    console.warn("Failed to write Supabase cache to LocalStorage:", e);
-                }
-
-                console.log(`Loaded ${articles.length} articles and ${comments.length} comments from Supabase.`);
+                if (!commError && data) dbComments = data;
+            } catch (e) {
+                console.warn("Comments fetch error:", e);
             }
+
+            comments = dbComments.map(c => ({
+                id: c.id,
+                articleId: c.article_id,
+                author: c.author,
+                text: c.text,
+                date: c.date
+            }));
+
+            if (dbArticles && dbArticles.length > 0) {
+                const fetchedArticles = dbArticles.map(art => {
+                    const localMatch = localArticles.find(la => la.id === art.id);
+                    return {
+                        id: art.id,
+                        title: art.title,
+                        subtitle: art.subtitle,
+                        author: art.author,
+                        author_email: art.author_email || (localMatch ? localMatch.author_email : null),
+                        user_id: art.user_id || (localMatch ? localMatch.user_id : null),
+                        category: art.category,
+                        image: art.image,
+                        date: art.date,
+                        created_at: art.created_at || (localMatch ? localMatch.created_at : null) || new Date().toISOString(),
+                        readTime: art.read_time,
+                        claps: art.claps || 0,
+                        corner_name: art.corner_name || (localMatch ? localMatch.corner_name : null),
+                        content: art.content || (localMatch ? localMatch.content : null)
+                    };
+                });
+
+                // Merge any locally added articles that haven't reached Supabase yet
+                localArticles.forEach(localArt => {
+                    if (!fetchedArticles.some(fa => fa.id === localArt.id)) {
+                        fetchedArticles.push(localArt);
+                    }
+                });
+
+                articles = fetchedArticles;
+            } else if (window.location.search.includes("seed_db=true")) {
+                if (!isSeeding) {
+                    isSeeding = true;
+                    console.log("Supabase articles table is empty, seeding database...");
+                    await seedSupabase();
+                    isSeeding = false;
+                    window.location.href = window.location.pathname;
+                    return;
+                }
+            } else if (localArticles.length > 0) {
+                articles = localArticles;
+            } else {
+                articles = JSON.parse(JSON.stringify(DEFAULT_ARTICLES));
+            }
+
+            // Always write merged articles to LocalStorage and Cache
+            try {
+                localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+                const cachePayload = {
+                    timestamp: Date.now(),
+                    articles: articles,
+                    comments: comments
+                };
+                localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
+            } catch (e) {}
+
+            console.log(`Loaded ${articles.length} articles and ${comments.length} comments from Supabase.`);
         } catch (err) {
             console.error("Error loading data from Supabase. Falling back to local storage:", err);
-            isSupabaseConnected = false;
-            updateSupabaseUI();
-            loadLocalStorageFallback();
+            if (!loadedFromCache) {
+                isSupabaseConnected = false;
+                updateSupabaseUI();
+                loadLocalStorageFallback();
+            }
         }
     } else {
         loadLocalStorageFallback();
@@ -3756,6 +4219,9 @@ async function loadData() {
     } else {
         renderCategoryFeed(currentCategoryFilter);
     }
+
+    // Check for deep links on initial page load (fetch/fallback)
+    checkDeepLink();
 }
 
 function loadLocalStorageFallback() {
@@ -3784,16 +4250,21 @@ function loadLocalStorageFallback() {
                 localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
             }
         } else {
-            articles = DEFAULT_ARTICLES;
+            articles = JSON.parse(JSON.stringify(DEFAULT_ARTICLES));
             localStorage.setItem("murekkep_articles_v2", JSON.stringify(DEFAULT_ARTICLES));
         }
     } catch (e) {
-        articles = DEFAULT_ARTICLES;
+        articles = JSON.parse(JSON.stringify(DEFAULT_ARTICLES));
     }
 
     try {
-        comments = [];
-        localStorage.setItem("murekkep_comments_v2", JSON.stringify([]));
+        const savedComments = localStorage.getItem("murekkep_comments_v2");
+        if (savedComments) {
+            comments = JSON.parse(savedComments);
+        } else {
+            comments = JSON.parse(JSON.stringify(DEFAULT_COMMENTS || []));
+            localStorage.setItem("murekkep_comments_v2", JSON.stringify(comments));
+        }
     } catch (e) {
         comments = [];
     }
@@ -3827,6 +4298,196 @@ const commentAuthorInput = document.getElementById("comment-author-input");
 const commentTextInput = document.getElementById("comment-text-input");
 const commentsListContainer = document.getElementById("comments-list-container");
 const commentsTotalCountEl = document.getElementById("comments-total-count");
+const commentsDrawer = document.getElementById("comments-drawer");
+const commentsDrawerBackdrop = document.getElementById("comments-drawer-backdrop");
+const closeCommentsDrawerBtn = document.getElementById("close-comments-drawer");
+const commentsTriggerBar = document.getElementById("comments-trigger-bar");
+const articleCommentBtn = document.getElementById("article-comment-btn");
+const articleEditorEditBtn = document.getElementById("article-editor-edit-btn");
+let editingArticleId = null;
+
+// SEO State & Management Helpers
+let isAppBooted = false;
+let defaultSEO = {
+    title: document.title,
+    description: "",
+    keywords: "",
+    author: "",
+    ogTitle: "",
+    ogDescription: "",
+    ogUrl: "",
+    ogImage: "",
+    twitterTitle: "",
+    twitterDescription: "",
+    twitterImage: "",
+    canonicalHref: ""
+};
+
+// Backup default SEO tags once DOM is fully loaded or when script runs
+function backupDefaultSEO() {
+    const descMeta = document.querySelector('meta[name="description"]');
+    const keyMeta = document.querySelector('meta[name="keywords"]');
+    const authMeta = document.querySelector('meta[name="author"]');
+    const ogTitleMeta = document.querySelector('meta[property="og:title"]');
+    const ogDescMeta = document.querySelector('meta[property="og:description"]');
+    const ogUrlMeta = document.querySelector('meta[property="og:url"]');
+    const ogImgMeta = document.querySelector('meta[property="og:image"]');
+    const twTitleMeta = document.querySelector('meta[name="twitter:title"]');
+    const twDescMeta = document.querySelector('meta[name="twitter:description"]');
+    const twImgMeta = document.querySelector('meta[name="twitter:image"]');
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
+
+    defaultSEO.title = document.title;
+    defaultSEO.description = descMeta ? descMeta.getAttribute("content") : "";
+    defaultSEO.keywords = keyMeta ? keyMeta.getAttribute("content") : "";
+    defaultSEO.author = authMeta ? authMeta.getAttribute("content") : "";
+    defaultSEO.ogTitle = ogTitleMeta ? ogTitleMeta.getAttribute("content") : "";
+    defaultSEO.ogDescription = ogDescMeta ? ogDescMeta.getAttribute("content") : "";
+    defaultSEO.ogUrl = ogUrlMeta ? ogUrlMeta.getAttribute("content") : "";
+    defaultSEO.ogImage = ogImgMeta ? ogImgMeta.getAttribute("content") : "";
+    defaultSEO.twitterTitle = twTitleMeta ? twTitleMeta.getAttribute("content") : "";
+    defaultSEO.twitterDescription = twDescMeta ? twDescMeta.getAttribute("content") : "";
+    defaultSEO.twitterImage = twImgMeta ? twImgMeta.getAttribute("content") : "";
+    defaultSEO.canonicalHref = canonicalLink ? canonicalLink.getAttribute("href") : "https://murekkepgzt.com";
+}
+
+// Call backup function immediately
+backupDefaultSEO();
+
+// Check for deep links on initial page load
+function checkDeepLink() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryArticleId = urlParams.get('article');
+    if (queryArticleId) {
+        setTimeout(() => {
+            openArticle(queryArticleId);
+        }, 100);
+    }
+}
+
+function updateSEOMetadata(article) {
+    const descMeta = document.querySelector('meta[name="description"]');
+    const keyMeta = document.querySelector('meta[name="keywords"]');
+    const authMeta = document.querySelector('meta[name="author"]');
+    const ogTitleMeta = document.querySelector('meta[property="og:title"]');
+    const ogDescMeta = document.querySelector('meta[property="og:description"]');
+    const ogUrlMeta = document.querySelector('meta[property="og:url"]');
+    const ogImgMeta = document.querySelector('meta[property="og:image"]');
+    const twTitleMeta = document.querySelector('meta[name="twitter:title"]');
+    const twDescMeta = document.querySelector('meta[name="twitter:description"]');
+    const twImgMeta = document.querySelector('meta[name="twitter:image"]');
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
+
+    if (article) {
+        const titleText = `${article.title} - Mürekkep Gazetesi`;
+        const descText = article.subtitle || article.title;
+        const authorText = article.author;
+        const keywordsText = `mürekkep, edebiyat, ${article.category}, ${article.author}, ${article.title.toLowerCase().replace(/[^a-z0-9ıışğçöü ]/gi, '').split(' ').join(', ')}`;
+        const articleUrl = `${window.location.origin}${window.location.pathname}?article=${article.id}`;
+        
+        let absImgUrl = article.image || 'assets/typewriter_birds.webp';
+        if (absImgUrl && !absImgUrl.startsWith('http')) {
+            absImgUrl = `${window.location.origin}/${absImgUrl}`;
+        }
+
+        // Update Document Title
+        document.title = titleText;
+
+        // Update standard Meta Tags
+        if (descMeta) descMeta.setAttribute("content", descText);
+        if (keyMeta) keyMeta.setAttribute("content", keywordsText);
+        if (authMeta) authMeta.setAttribute("content", authorText);
+
+        // Update Open Graph (Facebook, WhatsApp, etc.)
+        if (ogTitleMeta) ogTitleMeta.setAttribute("content", titleText);
+        if (ogDescMeta) ogDescMeta.setAttribute("content", descText);
+        if (ogUrlMeta) ogUrlMeta.setAttribute("content", articleUrl);
+        if (ogImgMeta) ogImgMeta.setAttribute("content", absImgUrl);
+
+        // Update Twitter Cards
+        if (twTitleMeta) twTitleMeta.setAttribute("content", titleText);
+        if (twDescMeta) twDescMeta.setAttribute("content", descText);
+        if (twImgMeta) twImgMeta.setAttribute("content", absImgUrl);
+
+        // Update Canonical Link
+        if (canonicalLink) canonicalLink.setAttribute("href", articleUrl);
+
+        // Update structured data (JSON-LD)
+        updateJSONLD(article);
+    } else {
+        // Restore defaults
+        document.title = defaultSEO.title;
+        if (descMeta) descMeta.setAttribute("content", defaultSEO.description);
+        if (keyMeta) keyMeta.setAttribute("content", defaultSEO.keywords);
+        if (authMeta) authMeta.setAttribute("content", defaultSEO.author);
+        
+        if (ogTitleMeta) ogTitleMeta.setAttribute("content", defaultSEO.ogTitle);
+        if (ogDescMeta) ogDescMeta.setAttribute("content", defaultSEO.ogDescription);
+        if (ogUrlMeta) ogUrlMeta.setAttribute("content", defaultSEO.ogUrl);
+        if (ogImgMeta) ogImgMeta.setAttribute("content", defaultSEO.ogImage);
+
+        if (twTitleMeta) twTitleMeta.setAttribute("content", defaultSEO.twitterTitle);
+        if (twDescMeta) twDescMeta.setAttribute("content", defaultSEO.twitterDescription);
+        if (twImgMeta) twImgMeta.setAttribute("content", defaultSEO.twitterImage);
+
+        if (canonicalLink) canonicalLink.setAttribute("href", defaultSEO.canonicalHref);
+
+        // Revert to default JSON-LD structure
+        updateJSONLD(null);
+    }
+}
+
+function updateJSONLD(article) {
+    let script = document.getElementById('seo-json-ld');
+    if (script) script.remove();
+
+    script = document.createElement('script');
+    script.id = 'seo-json-ld';
+    script.type = 'application/ld+json';
+
+    if (article) {
+        let absImgUrl = article.image || 'assets/typewriter_birds.webp';
+        if (absImgUrl && !absImgUrl.startsWith('http')) {
+            absImgUrl = `${window.location.origin}/${absImgUrl}`;
+        }
+        
+        script.text = JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "NewsArticle",
+            "headline": article.title,
+            "description": article.subtitle || article.title,
+            "image": [absImgUrl],
+            "datePublished": article.date,
+            "author": [{
+                "@type": "Person",
+                "name": article.author,
+                "url": `${window.location.origin}/#author-${encodeURIComponent(article.author)}`
+            }],
+            "publisher": {
+                "@type": "Organization",
+                "name": "Mürekkep Gazetesi",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": `${window.location.origin}/assets/logo.jpg`
+                }
+            },
+            "mainEntityOfPage": `${window.location.origin}/?article=${article.id}`
+        });
+    } else {
+        script.text = JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "NewsMediaOrganization",
+            "name": "Mürekkep Gazetesi",
+            "url": "https://murekkepgzt.com",
+            "logo": "https://murekkepgzt.com/assets/logo.jpg",
+            "sameAs": [
+                "https://twitter.com/murekkepgazetesi",
+                "https://instagram.com/murekkepgazetesi"
+            ]
+        });
+    }
+    document.head.appendChild(script);
+}
 
 // Auth DOM Elements
 const authOverlay = document.getElementById("auth-overlay");
@@ -3877,10 +4538,21 @@ let currentPage = 1;
 // Shared state for sequential slot filling
 let _slotArticleIdx = 0;
 let _pageArticles = [];
+let _slotArticleMap = {};
 
 // Function to sort articles by claps descending
 function getSortedArticles() {
-    return articles.slice().sort((a, b) => b.claps - a.claps);
+    return articles.slice().sort((a, b) => (b.claps || 0) - (a.claps || 0));
+}
+
+// Function to sort articles chronologically (newest first)
+function getChronologicalArticles() {
+    return articles.slice().sort((a, b) => {
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        if (timeA && timeB && timeA !== timeB) return timeB - timeA;
+        return String(b.id || "").localeCompare(String(a.id || ""));
+    });
 }
 
 // Visitor and Page statistics tracking
@@ -3936,7 +4608,7 @@ async function trackPageVisit(pageName, articleId = null, category = null) {
                     .from('site_settings')
                     .select('value')
                     .eq('key', 'site_statistics')
-                    .single();
+                    .maybeSingle();
                 if (data && data.value) {
                     stats = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
                 }
@@ -4119,7 +4791,7 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
         "haber": "EDEBİYAT HABERLERİ",
         "yarismalar": "YARIŞMA"
     };
-    const categoryLabel = art.corner_name ? art.corner_name.toUpperCase() : "";
+    const categoryLabel = art.corner_name ? art.corner_name.toUpperCase() : defaultCategoryLabel;
 
     let cardHTML = "";
 
@@ -4138,11 +4810,21 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
         const displaySubtitle = truncateText(subtitle, 140);
 
         if (styleType === 'siir' || art.category === 'siir') {
-            // Render as poem style
-            const poemLines = art.content ? art.content.replace(/<[^>]*>/g, "").split("\n").slice(0, 5).join("\n") : subtitle;
+            const poemLines = art.content
+                ? art.content
+                    .replace(/<br\s*\/?>/gi, "\n")
+                    .replace(/<\/p>/gi, "\n")
+                    .replace(/<\/div>/gi, "\n")
+                    .replace(/<[^>]*>/g, "")
+                    .split("\n")
+                    .map(line => line.trim())
+                    .filter(Boolean)
+                    .slice(0, 4)
+                    .join("<br>")
+                : subtitle;
             const poemImage = art.image && art.image !== "undefined" ? art.image : "assets/poetry_flowers.webp";
             cardHTML = `
-                <article class="article-card poem-card" data-id="${art.id}" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                <article class="article-card poem-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
                     <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
                     <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.35rem; font-weight: 900; margin: 6px 0 2px 0;">${art.title}</h3>
                     <span class="card-author" style="font-family: var(--font-ui); font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 12px; font-weight: 500;">${authorHtml}</span>
@@ -4152,23 +4834,23 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
                             <img src="${poemImage}" alt="Edebi Görsel" class="card-image" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror=null;this.src='assets/poetry_flowers.webp';">
                         </div>
                     </div>
-                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: 10px; display: block; text-align: left;">► OKU</span>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; text-align: left; padding-top: 8px;">► OKU</span>
                 </article>
             `;
         } else if (styleType === 'roportaj' || art.category === 'roportaj') {
             // Render as horizontal card style
             const roportajImage = art.image && art.image !== "undefined" ? art.image : "assets/author_zeynep.webp";
             cardHTML = `
-                <article class="article-card article-card-horizontal" data-id="${art.id}" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                <article class="article-card article-card-horizontal" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
                     <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
                     <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.25rem; font-weight: 900; margin: 6px 0 12px 0;">${art.title}</h3>
-                    <div style="display: flex; gap: 12px; align-items: flex-start; width: 100%;">
+                    <div style="display: flex; gap: 12px; align-items: flex-start; width: 100%; height: 100%;">
                         <div class="card-image-box" style="width: 80px; height: 90px; flex-shrink: 0; border: 1px solid var(--border-light); margin: 0;">
                             <img src="${roportajImage}" alt="${art.title}" class="card-image" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
                         </div>
-                        <div class="card-text" style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+                        <div class="card-text" style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%;">
                             <p class="card-preview" style="font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; margin: 0 0 6px 0;">${displaySubtitle}</p>
-                            <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block;">► OKU</span>
+                            <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block; margin-top: auto; padding-top: 8px;">► OKU</span>
                         </div>
                     </div>
                 </article>
@@ -4177,7 +4859,7 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
             // Render as columnist card style
             const koseImage = art.image && art.image !== "undefined" ? art.image : "assets/author_mehmet.webp";
             cardHTML = `
-                <article class="article-card columnist-card" data-id="${art.id}" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                <article class="article-card columnist-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
                     <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
                     <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.15rem; font-weight: 900; margin: 6px 0 2px 0;">${art.title}</h3>
                     <span class="card-author" style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--text-secondary); display: block; margin-bottom: 10px; font-weight: 500;">${authorHtml}</span>
@@ -4187,7 +4869,7 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
                             <img src="${koseImage}" alt="${author}" class="columnist-avatar" style="width: 100%; height: 100%; object-fit: cover;">
                         </div>
                     </div>
-                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: 8px; display: block;">► OKU</span>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; padding-top: 8px;">► OKU</span>
                 </article>
             `;
         } else if (styleType === 'haber' || art.category === 'haber') {
@@ -4206,18 +4888,18 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
                 `;
             }
             cardHTML = `
-                <article class="article-card" data-id="${art.id}" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                <article class="article-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
                     <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
                     <div class="news-list" style="margin-top: 10px; margin-bottom: 10px;">
                         ${newsItemsHTML}
                     </div>
-                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block;">► OKU</span>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block; margin-top: auto; padding-top: 8px;">► OKU</span>
                 </article>
             `;
         } else if (styleType === 'yarisma' || art.category === 'yarismalar') {
             // Render as contest card style
             cardHTML = `
-                <article class="article-card contest-card" data-id="${art.id}" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                <article class="article-card contest-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
                     <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
                     <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.15rem; font-weight: 900; margin: 6px 0 6px 0;">${art.title}</h3>
                     <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
@@ -4227,22 +4909,22 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
                         </div>
                         <svg class="contest-icon" viewBox="0 0 24 24" style="width: 45px; height: 45px; fill: var(--text-secondary); opacity: 0.6; flex-shrink: 0;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                     </div>
-                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: 8px; display: block;">► OKU</span>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; padding-top: 8px;">► OKU</span>
                 </article>
             `;
         } else {
             // Default standard card
             const isKitap = art.category === 'kitap';
             cardHTML = `
-                <article class="article-card" data-id="${art.id}" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                <article class="article-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
                     <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
                     <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.25rem; font-weight: 900; margin: 6px 0 4px 0;">${art.title}</h3>
                     <span class="card-author" style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--text-secondary); display: block; margin-bottom: 10px; font-weight: 500;">${authorHtml}</span>
-                    <div class="card-image-box" style="width: 100%; height: ${isKitap ? '160px' : '110px'}; overflow: hidden; border: 1px solid var(--border-light); margin-bottom: 10px; border-radius: 4px;">
+                    <div class="card-image-box" style="width: 100%; height: 110px; overflow: hidden; border: 1px solid var(--border-light); margin-bottom: 10px; border-radius: 4px;">
                         <img src="${image}" alt="${art.title}" class="card-image" style="width: 100%; height: 100%; object-fit: ${isKitap ? 'contain' : 'cover'}; background-color: ${isKitap ? 'var(--bg-secondary)' : 'transparent'};" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
                     </div>
                     <p class="card-preview" style="font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; margin-bottom: 8px;">${displaySubtitle}</p>
-                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block;">► OKU</span>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block; margin-top: auto; padding-top: 8px;">► OKU</span>
                 </article>
             `;
         }
@@ -4284,13 +4966,66 @@ function changePage(page) {
     }, 300);
 }
 
+function ensureLayoutSlotIds() {
+    if (!layoutConfig) return;
+    let changed = false;
+    ['col1', 'col2', 'col3'].forEach(colKey => {
+        if (layoutConfig[colKey]) {
+            layoutConfig[colKey].forEach((slot, idx) => {
+                if (!slot.id) {
+                    slot.id = `slot_${colKey}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                    changed = true;
+                }
+            });
+        }
+    });
+    if (changed) {
+        saveLayoutConfig();
+    }
+}
+
+function updateHeaderMeta() {
+    const headerDateIndicator = document.getElementById("header-date-indicator");
+    const pageIndicator = document.getElementById("header-page-indicator");
+    
+    // Calculate dynamically
+    const baseDate = new Date("2026-07-13");
+    const now = new Date();
+    
+    // 1. Calculate Issue Number (Sayı) - increases every week
+    const diffTime = Math.max(0, now - baseDate);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const issueNum = Math.floor(diffDays / 7) + 1;
+    const issueStr = String(issueNum).padStart(2, '0');
+    
+    // 2. Calculate Turkish Month & Year
+    const TurkishMonths = [
+        "OCAK", "ŞUBAT", "MART", "NİSAN", "MAYIS", "HAZİRAN",
+        "TEMMUZ", "AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK"
+    ];
+    const monthName = TurkishMonths[now.getMonth()];
+    const year = now.getFullYear();
+    
+    if (headerDateIndicator) {
+        headerDateIndicator.innerText = `${monthName} ${year}`;
+    }
+    
+    if (pageIndicator) {
+        pageIndicator.innerText = `SAYI: ${issueStr} / SAYFA: ${String(currentPage).padStart(2, '0')}`;
+    }
+}
+
 // RENDER NEWSPAPER FRONT-PAGE GRID
 function renderNewspaperGrid() {
     mainGrid.className = "newspaper-grid"; // ensure grid class is set
 
+    reconcileUserArticles();
+
+    // Ensure all slots have unique IDs
+    ensureLayoutSlotIds();
+
     const sorted = getSortedArticles();
 
-    // PAGE CAPACITY = total number of category-type slots across all columns
     const allLayoutSlots = [
         ...(layoutConfig.col1 || []),
         ...(layoutConfig.col2 || []),
@@ -4327,10 +5062,7 @@ function renderNewspaperGrid() {
     _slotArticleIdx = 0; // reset slot index before rendering
 
     // Update Header page label
-    const pageIndicator = document.getElementById("header-page-indicator");
-    if (pageIndicator) {
-        pageIndicator.innerText = `SAYI: 01 / SAYFA: ${String(currentPage).padStart(2, '0')}`;
-    }
+    updateHeaderMeta();
 
     // Gather global comments for the "Okur Yorumları" section
     const recentComments = comments.slice(-3).reverse();
@@ -4358,17 +5090,22 @@ function renderNewspaperGrid() {
     let col2HTML = "";
     let col3HTML = "";
 
-    // Render columns dynamically from layoutConfig
     if (layoutConfig.col1) {
         layoutConfig.col1.forEach((slot, index) => {
             let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
-            if (!slotHTML) return;
             if (isEditorModeActive) {
+                if (!slotHTML.trim()) return;
                 slotHTML = wrapSlotInEditorControls(slot, index, 'col1', slotHTML, col1W);
             } else {
                 const sz = slot.size || 'normal';
                 const sw = slot.slotWidth || 1;
                 const sh = slot.slotHeight || 1;
+                if (!slotHTML.trim()) {
+                    // For system slots that have no content (e.g. no headline yet), skip entirely
+                    if (slot.type === 'system') return;
+                    // For category slots, still render a grid cell (may be empty placeholder)
+                    slotHTML = '<div></div>';
+                }
                 slotHTML = `<div class="slot-size-${sz} slot-height-${sh}" style="grid-column: span ${sw}; grid-row: span ${sh}; min-width: 0; display: flex; flex-direction: column;">
                     <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
                         ${slotHTML}
@@ -4381,13 +5118,17 @@ function renderNewspaperGrid() {
     if (layoutConfig.col2) {
         layoutConfig.col2.forEach((slot, index) => {
             let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
-            if (!slotHTML) return;
             if (isEditorModeActive) {
+                if (!slotHTML.trim()) return;
                 slotHTML = wrapSlotInEditorControls(slot, index, 'col2', slotHTML, col2W);
             } else {
                 const sz = slot.size || 'normal';
                 const sw = slot.slotWidth || 1;
                 const sh = slot.slotHeight || 1;
+                if (!slotHTML.trim()) {
+                    if (slot.type === 'system') return;
+                    slotHTML = '<div></div>';
+                }
                 slotHTML = `<div class="slot-size-${sz} slot-height-${sh}" style="grid-column: span ${sw}; grid-row: span ${sh}; min-width: 0; display: flex; flex-direction: column;">
                     <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
                         ${slotHTML}
@@ -4400,13 +5141,17 @@ function renderNewspaperGrid() {
     if (layoutConfig.col3) {
         layoutConfig.col3.forEach((slot, index) => {
             let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
-            if (!slotHTML) return;
             if (isEditorModeActive) {
+                if (!slotHTML.trim()) return;
                 slotHTML = wrapSlotInEditorControls(slot, index, 'col3', slotHTML, col3W);
             } else {
                 const sz = slot.size || 'normal';
                 const sw = slot.slotWidth || 1;
                 const sh = slot.slotHeight || 1;
+                if (!slotHTML.trim()) {
+                    if (slot.type === 'system') return;
+                    slotHTML = '<div></div>';
+                }
                 slotHTML = `<div class="slot-size-${sz} slot-height-${sh}" style="grid-column: span ${sw}; grid-row: span ${sh}; min-width: 0; display: flex; flex-direction: column;">
                     <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
                         ${slotHTML}
@@ -4448,11 +5193,11 @@ function renderNewspaperGrid() {
             </button>`;
     }
 
-    // Assembly
+    // Assembly — three separate column containers
     mainGrid.innerHTML = `
-        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col1W}, 1fr); gap: 16px; align-content: start;">${col1HTML}</div>
-        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col2W}, 1fr); gap: 16px; align-content: start;">${col2HTML}</div>
-        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col3W}, 1fr); gap: 16px; align-content: start;">${col3HTML}</div>
+        <div class="news-column" data-col="col1" style="display: grid; grid-template-columns: repeat(${col1W}, 1fr); gap: 16px; align-content: start; order: 1;">${col1HTML}</div>
+        <div class="news-column" data-col="col2" style="display: grid; grid-template-columns: repeat(${col2W}, 1fr); gap: 16px; align-content: start; order: 0;">${col2HTML}</div>
+        <div class="news-column" data-col="col3" style="display: grid; grid-template-columns: repeat(${col3W}, 1fr); gap: 16px; align-content: start; order: 2;">${col3HTML}</div>
     `;
 
     // Render Bottom Pagination Controls
@@ -4515,13 +5260,27 @@ function renderNewspaperGrid() {
 function renderCategoryFeed(category) {
     mainGrid.className = "newspaper-grid feed-view-active"; // change class for layout styling
 
+    reconcileUserArticles();
+
     // Filter articles belonging to selected category or bookmarks
     let filteredArticles = [];
     if (category === "bookmarks") {
         filteredArticles = articles.filter(a => savedArticleIds.includes(a.id));
     } else {
-        filteredArticles = articles.filter(a => a.category === category || (category === 'kose-yazilari' && a.category === 'kose-yazilari'));
+        const catNorm = (category || "").toLowerCase().trim();
+        filteredArticles = articles.filter(a => {
+            const aCat = (a.category || "").toLowerCase().trim();
+            return aCat === catNorm || ((catNorm === "kose-yazilari" || catNorm === "kose") && (aCat === "kose-yazilari" || aCat === "kose_yazilari" || aCat === "kose"));
+        });
     }
+
+    // Sort newest first
+    filteredArticles.sort((a, b) => {
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        if (timeA && timeB && timeA !== timeB) return timeB - timeA;
+        return String(b.id || "").localeCompare(String(a.id || ""));
+    });
     
     if (filteredArticles.length === 0) {
         if (category === "bookmarks") {
@@ -4547,7 +5306,7 @@ function renderCategoryFeed(category) {
 
     // Build feed view in list layout (occupies center, simple list cards)
     let listHTML = "";
-    filteredArticles.slice().reverse().forEach(art => {
+    filteredArticles.forEach(art => {
         const reports = getArticleReports(art.id);
         if (reports >= 3 && !isEditorModeActive) {
             listHTML += `
@@ -4570,8 +5329,6 @@ function renderCategoryFeed(category) {
                             <span style="font-weight: 600; color: var(--text-primary);">${art.author}</span>
                             <span>•</span>
                             <span>${art.date}</span>
-                            <span>•</span>
-                            <span>${art.readTime || (art.content ? calculateReadTime(art.content) : '3 dk okuma')}</span>
                             <span>•</span>
                             <span style="display: inline-flex; align-items: center; gap: 4px;"><svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: currentColor;"><path d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm-1.78 12.77c-.31.31-.69.43-1.07.43-.38 0-.76-.12-1.07-.43-.59-.59-.59-1.54 0-2.12l4.9-4.9c.59-.59 1.54-.59 2.12 0 .59.59.59 1.54 0 2.12l-4.88 4.9zm4.78-4.78c.31-.31.69-.43 1.07-.43.38 0 .76.12 1.07.43.59.59.59 1.54 0 2.12l-4.9 4.9c-.3.3-.68.44-1.06.44-.38 0-.76-.14-1.06-.44-.59-.59-.59-1.54 0-2.12l4.95-4.91z"/></svg>${art.claps}</span>
                         </div>
@@ -4618,6 +5375,9 @@ async function openArticle(id) {
 
     activeArticleId = id;
 
+    // Update SEO tags and schema structure dynamically
+    updateSEOMetadata(article);
+
     // Track article view
     trackPageVisit("Yazı: " + article.title, article.id, article.category);
     
@@ -4644,8 +5404,9 @@ async function openArticle(id) {
     detailImage.src = article.image || 'assets/typewriter_birds.webp';
     detailImage.onerror = function() { this.onerror=null; this.src='assets/typewriter_birds.webp'; };
     
-    // Check if clapped previously in this session
-    const clappedArticles = JSON.parse(sessionStorage.getItem("clapped_articles") || "[]");
+    // Check if clapped previously
+    const storageKey = currentUser ? `clapped_articles_${currentUser.id}` : null;
+    const clappedArticles = storageKey ? JSON.parse(localStorage.getItem(storageKey) || "[]") : [];
     if (clappedArticles.includes(id)) {
         detailClapBtn.classList.add("clapped");
     } else {
@@ -4657,9 +5418,14 @@ async function openArticle(id) {
         detailAvatarContainer.innerHTML = getAuthorAvatarHtml(article.author, 44);
     }
 
+    // Update follow button next to author name in reader overlay
+    if (typeof updateArticleDetailFollowButton === 'function') {
+        updateArticleDetailFollowButton(article.author);
+    }
+
     // Show Overlay with fade/slide animations
     readingOverlay.classList.remove("hidden");
-    document.body.style.overflow = "hidden"; // lock page scroll
+    lockBodyScroll(); // lock page scroll
     readingOverlay.scrollTop = 0;
     readingProgress.style.width = "0%";
 
@@ -4684,12 +5450,39 @@ async function openArticle(id) {
         }
     }
 
+    // Handle article edit button
+    if (articleEditorEditBtn) {
+        const isOwnArticle = currentUser && currentUser.username &&
+            currentUser.username.trim().toLowerCase() === article.author.trim().toLowerCase();
+        const canEdit = isOwnArticle || (currentUser && (currentUser.isEditor || currentUser.isAdmin));
+        if (canEdit) {
+            articleEditorEditBtn.classList.remove("hidden");
+            articleEditorEditBtn.onclick = (e) => { window.editArticleClick(id, e); };
+        } else {
+            articleEditorEditBtn.classList.add("hidden");
+        }
+    }
+
     // Render comments initially (even if article text is loading)
     renderArticleComments(id);
 
+    // Check LocalStorage for article content if not in memory
+    if (!article.content) {
+        try {
+            const saved = localStorage.getItem("murekkep_articles_v2");
+            if (saved) {
+                const localArts = JSON.parse(saved);
+                const localMatch = localArts.find(la => la.id === id);
+                if (localMatch && localMatch.content) {
+                    article.content = localMatch.content;
+                }
+            }
+        } catch (e) {}
+    }
+
     // Dynamic loading of article body content
     if (isSupabaseConnected && !article.content) {
-        detailReadtime.innerText = article.readTime || "...";
+        if (detailReadtime) detailReadtime.innerText = article.readTime || "...";
         detailContent.innerHTML = `
             <div class="content-loader">
                 <div class="spinner"></div>
@@ -4702,9 +5495,10 @@ async function openArticle(id) {
                 .from('articles')
                 .select('content, read_time')
                 .eq('id', id)
-                .single();
+                .maybeSingle();
             
             if (error) throw error;
+            if (!data) throw new Error("Makale bulunamadı.");
 
             article.content = data.content;
             if (data.read_time) {
@@ -4723,7 +5517,7 @@ async function openArticle(id) {
     }
 
     // Update readTime and fill content
-    detailReadtime.innerText = article.readTime || calculateReadTime(article.content || '');
+    if (detailReadtime) detailReadtime.innerText = article.readTime || calculateReadTime(article.content || '');
     detailContent.innerHTML = article.content || '<p style="color: var(--text-secondary);">Yazı içeriği bulunamadı.</p>';
 
     // Update bookmark UI state
@@ -4788,17 +5582,85 @@ function updateCommentFormUI() {
     }
 }
 
+
+
 // Close Medium Reader Modal
 function closeArticle() {
     readingOverlay.classList.add("hidden");
-    document.body.style.overflow = ""; // restore page scroll
+    if (commentsDrawer && !commentsDrawer.classList.contains("hidden")) {
+        commentsDrawer.classList.add("hidden");
+        unlockBodyScroll();
+    }
+    unlockBodyScroll(); // restore page scroll
     activeArticleId = null;
+
+    // Restore default SEO tags
+    updateSEOMetadata(null);
 }
+
+// Update the follow button in the open article detail overlay
+function updateArticleDetailFollowButton(authorName) {
+    const detailFollowBtn = document.querySelector(".btn-follow");
+    if (!detailFollowBtn) return;
+    
+    const readingOverlay = document.getElementById("reading-overlay");
+    if (!readingOverlay || readingOverlay.classList.contains("hidden") || !activeArticleId) return;
+    const article = articles.find(a => a.id === activeArticleId);
+    if (!article || article.author !== authorName) return;
+    
+    const isOwnArticle = currentUser && currentUser.username &&
+        currentUser.username.trim().toLowerCase() === authorName.trim().toLowerCase();
+        
+    if (isOwnArticle) {
+        detailFollowBtn.style.display = 'none';
+    } else {
+        detailFollowBtn.style.display = '';
+        
+        let followersData = {};
+        try { followersData = JSON.parse(localStorage.getItem('murekkep_author_followers') || '{}'); } catch(e){}
+        const followersList = followersData[authorName] || [];
+        
+        const isFollowing = currentUser && followersList.some(f => {
+            if (typeof f === 'string') return f === currentUser.id;
+            return f && f.id === currentUser.id;
+        });
+        
+        if (isFollowing) {
+            detailFollowBtn.textContent = '✓ Takip Ediliyor';
+        } else {
+            detailFollowBtn.textContent = 'Takip Et';
+        }
+        
+        const newFollowBtn = detailFollowBtn.cloneNode(true);
+        detailFollowBtn.parentNode.replaceChild(newFollowBtn, detailFollowBtn);
+        newFollowBtn.addEventListener('click', () => window.toggleFollowFromArticle(authorName));
+    }
+}
+
+window.toggleFollowFromArticle = function(authorName) {
+    if (toggleFollowState(authorName)) {
+        const authorModal = document.getElementById("author-modal");
+        if (authorModal && !authorModal.classList.contains("hidden")) {
+            const authorModalName = document.getElementById("author-modal-name");
+            if (authorModalName && authorModalName.innerText === authorName) {
+                window.openAuthorProfile(authorName);
+            }
+        }
+    }
+};
 
 // RENDER COMMENTS FOR ARTICLE
 function renderArticleComments(articleId) {
     const articleComments = comments.filter(c => c.articleId === articleId);
-    commentsTotalCountEl.innerText = articleComments.length;
+    const count = articleComments.length;
+
+    if (commentsTotalCountEl) commentsTotalCountEl.innerText = count;
+    
+    const articleCommentsCountEl = document.getElementById("article-comments-count");
+    if (articleCommentsCountEl) articleCommentsCountEl.innerText = count;
+    
+    const commentsDrawerCountEl = document.getElementById("comments-drawer-count");
+    if (commentsDrawerCountEl) commentsDrawerCountEl.innerText = count;
 
     let commentsHTML = "";
     articleComments.slice().reverse().forEach(c => {
@@ -4832,10 +5694,17 @@ function renderArticleComments(articleId) {
                     <button class="btn-editor-action delete" style="padding: 4px 10px; font-size: 0.7rem;" onclick="window.deleteCommentClick('${c.id}', '${articleId}', event)">Sil</button>
                 </div>
             `;
-        } else if (canDelete) {
-            actionControlHtml = `
-                <button class="btn-editor-action delete" style="padding: 4px 10px; font-size: 0.7rem;" onclick="window.deleteCommentClick('${c.id}', '${articleId}', event)">Sil</button>
-            `;
+        } else {
+            let buttons = [];
+            if (isOwnComment) {
+                buttons.push(`<button class="btn-editor-action edit" style="padding: 4px 10px; font-size: 0.7rem; background-color: var(--border-light); color: var(--text-primary);" onclick="window.editCommentInline('${c.id}', '${articleId}', event)">Düzenle</button>`);
+            }
+            if (canDelete) {
+                buttons.push(`<button class="btn-editor-action delete" style="padding: 4px 10px; font-size: 0.7rem;" onclick="window.deleteCommentClick('${c.id}', '${articleId}', event)">Sil</button>`);
+            }
+            if (buttons.length > 0) {
+                actionControlHtml = `<div style="display: flex; gap: 8px;">${buttons.join("")}</div>`;
+            }
         }
 
         commentsHTML += `
@@ -4859,7 +5728,180 @@ function renderArticleComments(articleId) {
 
     commentsListContainer.innerHTML = commentsHTML || `<p style="color: var(--text-secondary); text-align: center; padding: 20px 0;">Bu yazıya henüz yorum yazılmamış. İlk yorumu siz yazın!</p>`;
 }
+
+// ── COMMENT INLINE EDITING ──────────────────────────────────
+window.editCommentInline = function(id, articleId, event) {
+    if (event) event.stopPropagation();
+    const commentEl = document.getElementById(`comment-${id}`);
+    if (!commentEl) return;
+    
+    const comment = comments.find(c => c.id === id);
+    if (!comment) return;
+    
+    // Check if already editing
+    if (commentEl.querySelector('.comment-edit-textarea')) return;
+    
+    const bodyEl = commentEl.querySelector('.comment-body');
+    const originalText = comment.text;
+    
+    bodyEl.innerHTML = `
+        <textarea class="comment-edit-textarea comment-input" style="width: 100%; margin-top: 8px;" rows="2">${originalText}</textarea>
+        <div style="display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end;">
+            <button class="btn-editor-action approve" style="padding: 4px 12px; font-size: 0.75rem;" onclick="window.saveCommentInline('${id}', '${articleId}', event)">Kaydet</button>
+            <button class="btn-editor-action delete" style="padding: 4px 12px; font-size: 0.75rem;" onclick="window.cancelCommentInline('${id}', '${articleId}', event)">İptal</button>
+        </div>
+    `;
+};
+
+window.saveCommentInline = async function(id, articleId, event) {
+    if (event) event.stopPropagation();
+    const commentEl = document.getElementById(`comment-${id}`);
+    if (!commentEl) return;
+    
+    const textarea = commentEl.querySelector('.comment-edit-textarea');
+    if (!textarea) return;
+    
+    const newText = textarea.value.trim();
+    if (!newText) {
+        showToast("Yorum alanı boş bırakılamaz.");
+        return;
+    }
+    
+    if (containsProfanity(newText)) {
+        showToast("❌ Yorumunuz topluluk kurallarına aykırı ifadeler içermektedir.");
+        return;
+    }
+    
+    const comment = comments.find(c => c.id === id);
+    if (!comment) return;
+    
+    comment.text = newText;
+    
+    if (isSupabaseConnected) {
+        try {
+            await supabaseClient
+                .from('comments')
+                .update({ text: newText })
+                .eq('id', id);
+        } catch (err) {
+            console.error("Error updating comment on Supabase:", err);
+        }
+        clearSupabaseCache();
+    } else {
+        localStorage.setItem("murekkep_comments_v2", JSON.stringify(comments));
+    }
+    
+    showToast("Yorum güncellendi.");
+    renderArticleComments(articleId);
+};
+
+window.cancelCommentInline = function(id, articleId, event) {
+    if (event) event.stopPropagation();
+    renderArticleComments(articleId);
+};
+
+// ── ARTICLE EDITING ─────────────────────────────────────────
+function convertHtmlToRawText(html) {
+    if (!html) return "";
+    let text = html;
+    text = text.replace(/<\/p>\s*<p>/gi, "\n\n");
+    text = text.replace(/<\/?p>/gi, "");
+    text = text.replace(/<br\s*\/?>/gi, "\n");
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = text;
+    return tempDiv.textContent || tempDiv.innerText || text;
+}
+
+window.editArticleClick = function(id, event) {
+    if (event) event.stopPropagation();
+    const article = articles.find(a => a.id === id);
+    if (!article) return;
+    
+    editingArticleId = id;
+    
+    // Fill the Writer Studio forms
+    document.getElementById("post-title").value = article.title;
+    document.getElementById("post-subtitle").value = article.subtitle;
+    const authorInput = document.getElementById("post-author");
+    if (authorInput) {
+        authorInput.value = article.author;
+        authorInput.readOnly = true;
+    }
+    document.getElementById("post-category").value = article.category;
+    
+    const cornerNameInput = document.getElementById("post-corner-name");
+    if (cornerNameInput) {
+        cornerNameInput.value = article.corner_name || "";
+    }
+    
+    // Select the image
+    const imgInput = document.querySelector(`input[name="post-image"][value="${article.image}"]`);
+    if (imgInput) imgInput.checked = true;
+    
+    // Populate rich text editor or fall back to textarea
+    const editorDiv = document.getElementById("post-editor");
+    if (editorDiv) {
+        editorDiv.innerHTML = article.content || "";
+        document.getElementById("post-content").value = article.content || "";
+    } else {
+        document.getElementById("post-content").value = convertHtmlToRawText(article.content);
+    }
+    
+    // Change UI titles
+    const studioTitle = document.querySelector(".editor-studio-header h2");
+    if (studioTitle) studioTitle.innerText = "Yazı Düzenle";
+    
+    const studioDesc = document.querySelector(".editor-studio-header p");
+    if (studioDesc) studioDesc.innerText = "Yazınız üzerinde değişiklikleri yapın ve güncelleyin.";
+    
+    const submitBtn = document.querySelector(".btn-publish-submit");
+    if (submitBtn) submitBtn.innerText = "Değişiklikleri Kaydet";
+    
+    // Open editor overlay
+    const editorOverlay = document.getElementById("editor-overlay");
+    if (editorOverlay) {
+        editorOverlay.classList.remove("hidden");
+        lockBodyScroll();
+    }
+};
+
+// ── COMMENTS DRAWER CONTROLS ────────────────────────────────
+function openCommentsDrawer() {
+    if (commentsDrawer) {
+        commentsDrawer.classList.remove("hidden");
+        lockBodyScroll();
+        if (activeArticleId) {
+            renderArticleComments(activeArticleId);
+        }
+    }
+}
+
+function closeCommentsDrawer() {
+    if (commentsDrawer) {
+        commentsDrawer.classList.add("hidden");
+        unlockBodyScroll();
+    }
+}
+
 // EVENT LISTENERS
+
+// Comments Drawer Toggles
+commentsTriggerBar?.addEventListener("click", openCommentsDrawer);
+articleCommentBtn?.addEventListener("click", openCommentsDrawer);
+
+closeCommentsDrawerBtn?.addEventListener("click", closeCommentsDrawer);
+closeCommentsDrawerBtn?.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    closeCommentsDrawer();
+}, { passive: false });
+
+commentsDrawerBackdrop?.addEventListener("click", closeCommentsDrawer);
+commentsDrawerBackdrop?.addEventListener("touchstart", (e) => {
+    if (e.target === commentsDrawerBackdrop) {
+        e.preventDefault();
+        closeCommentsDrawer();
+    }
+}, { passive: false });
 
 // Reading Overlay Scroll Progress
 readingOverlay.addEventListener("scroll", () => {
@@ -4902,12 +5944,13 @@ writeToggleBtn.addEventListener("click", () => {
         return;
     }
     editorOverlay.classList.remove("hidden");
-    document.body.style.overflow = "hidden";
+    lockBodyScroll();
     
-    // Prefill the author name to match user profile exactly
+    // Prefill the author name to match user profile exactly and lock input
     const authorInput = document.getElementById("post-author");
-    if (authorInput && currentUser.username) {
-        authorInput.value = currentUser.username;
+    if (authorInput) {
+        authorInput.value = currentUser.username || (currentUser.email ? currentUser.email.split("@")[0] : "Anonim Yazar");
+        authorInput.readOnly = true;
     }
 
     // Limit category select dynamically to prevent regular users from selecting admin categories
@@ -4946,8 +5989,16 @@ writeToggleBtn.addEventListener("click", () => {
 });
 
 closeEditorBtn.addEventListener("click", () => {
+    editingArticleId = null;
+    const studioTitle = document.querySelector(".editor-studio-header h2");
+    if (studioTitle) studioTitle.innerText = "Yazarlık Stüdyosu";
+    const studioDesc = document.querySelector(".editor-studio-header p");
+    if (studioDesc) studioDesc.innerText = "Edebiyat hareketinin bir parçası olun. Yazınızı kaleme alın ve Mürekkep sayfalarında yayınlayın.";
+    const submitBtn = document.querySelector(".btn-publish-submit");
+    if (submitBtn) submitBtn.innerText = "Gazetede Yayınla";
+    publishForm.reset();
     editorOverlay.classList.add("hidden");
-    document.body.style.overflow = "";
+    unlockBodyScroll();
 });
 
 // Close Reading modal on back button
@@ -4974,14 +6025,14 @@ if (supabaseConfigBtn && supabaseOverlay) {
         
         // Show modal overlay
         supabaseOverlay.classList.remove("hidden");
-        document.body.style.overflow = "hidden";
+        lockBodyScroll();
     });
 }
 
 if (closeSupabaseBtn && supabaseOverlay) {
     closeSupabaseBtn.addEventListener("click", () => {
         supabaseOverlay.classList.add("hidden");
-        document.body.style.overflow = "";
+        unlockBodyScroll();
     });
 }
 
@@ -5002,7 +6053,7 @@ if (supabaseConfigForm) {
 
             // Close modal
             supabaseOverlay.classList.add("hidden");
-            document.body.style.overflow = "";
+            unlockBodyScroll();
         }
     });
 }
@@ -5028,7 +6079,7 @@ if (sbDisconnectBtn) {
 
         // Close modal
         supabaseOverlay.classList.add("hidden");
-        document.body.style.overflow = "";
+        unlockBodyScroll();
     });
 }
 
@@ -5041,10 +6092,13 @@ detailClapBtn.addEventListener("click", async () => {
     }
     if (!activeArticleId) return;
 
-    const clappedArticles = JSON.parse(sessionStorage.getItem("clapped_articles") || "[]");
+    const storageKey = `clapped_articles_${currentUser.id}`;
+    let clappedArticles = JSON.parse(localStorage.getItem(storageKey) || "[]");
     
-    if (!clappedArticles.includes(activeArticleId)) {
-        let updatedClaps = 0;
+    let updatedClaps = 0;
+    const clappedIndex = clappedArticles.indexOf(activeArticleId);
+
+    if (clappedIndex === -1) {
         // Increment claps
         articles = articles.map(art => {
             if (art.id === activeArticleId) {
@@ -5056,7 +6110,7 @@ detailClapBtn.addEventListener("click", async () => {
         });
 
         clappedArticles.push(activeArticleId);
-        sessionStorage.setItem("clapped_articles", JSON.stringify(clappedArticles));
+        localStorage.setItem(storageKey, JSON.stringify(clappedArticles));
 
         if (isSupabaseConnected) {
             try {
@@ -5079,13 +6133,43 @@ detailClapBtn.addEventListener("click", async () => {
         if (clappedArt && clappedArt.author) {
             createNotification(clappedArt.author, 'clap', currentUser.username, `"${clappedArt.title}" isimli eserinizi alkışladı.`, { articleId: clappedArt.id });
         }
+    } else {
+        // Withdraw/Undo clap
+        articles = articles.map(art => {
+            if (art.id === activeArticleId) {
+                art.claps = Math.max(0, art.claps - 1);
+                updatedClaps = art.claps;
+                detailClapCount.innerText = art.claps;
+            }
+            return art;
+        });
 
-        // Dynamic feed refresh if in list view, or dynamic grid refresh
-        if (currentCategoryFilter === "all") {
-            renderNewspaperGrid();
+        clappedArticles.splice(clappedIndex, 1);
+        localStorage.setItem(storageKey, JSON.stringify(clappedArticles));
+
+        if (isSupabaseConnected) {
+            try {
+                await supabaseClient
+                    .from('articles')
+                    .update({ claps: updatedClaps })
+                    .eq('id', activeArticleId);
+            } catch (err) {
+                console.error("Error updating claps on Supabase:", err);
+            }
+            clearSupabaseCache();
         } else {
-            renderCategoryFeed(currentCategoryFilter);
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
         }
+
+        detailClapBtn.classList.remove("clapped");
+        showToast("Alkış geri çekildi.");
+    }
+
+    // Dynamic feed refresh if in list view, or dynamic grid refresh
+    if (currentCategoryFilter === "all") {
+        renderNewspaperGrid();
+    } else {
+        renderCategoryFeed(currentCategoryFilter);
     }
 });
 
@@ -5122,6 +6206,14 @@ commentForm.addEventListener("submit", async (e) => {
         showToast("❌ Yorumunuz veya kalem isminiz uygunsuz ifadeler (küfür/argo) içermektedir.");
         return;
     }
+
+    // Yorum flood koruması: aynı makaleye 30 saniye içinde ikinci yorum yapılamaz
+    const cdCheck = checkCommentCooldown(activeArticleId);
+    if (!cdCheck.allowed) {
+        showToast(`⏳ Yorum göndermek için ${cdCheck.secsLeft} saniye daha bekleyin.`);
+        return;
+    }
+
 
     const newComment = {
         id: "c_" + Date.now(),
@@ -5184,7 +6276,8 @@ publishForm.addEventListener("submit", async (e) => {
 
     const title = titleInput.value.trim();
     const subtitle = subtitleInput.value.trim();
-    const author = authorInput.value.trim();
+    // Strictly bind author name to current logged-in user's profile
+    const author = currentUser ? (currentUser.username || (currentUser.email ? currentUser.email.split("@")[0] : "Anonim Yazar")) : (authorInput.value.trim() || "Anonim Yazar");
     const category = document.getElementById("post-category").value;
     const contentText = contentInput.value.trim();
     const cornerName = cornerNameInput ? cornerNameInput.value.trim() : "";
@@ -5200,6 +6293,8 @@ publishForm.addEventListener("submit", async (e) => {
     subtitleInput.classList.remove("profanity-error");
     authorInput.classList.remove("profanity-error");
     contentInput.classList.remove("profanity-error");
+    const editorWrapper = document.getElementById("post-editor-wrapper");
+    if (editorWrapper) editorWrapper.classList.remove("profanity-error");
     if (cornerNameInput) cornerNameInput.classList.remove("profanity-error");
 
     let hasError = false;
@@ -5215,8 +6310,12 @@ publishForm.addEventListener("submit", async (e) => {
         authorInput.classList.add("profanity-error");
         hasError = true;
     }
-    if (containsProfanity(contentText)) {
+    
+    // Strip HTML tags for cleaner profanity check on the editor body
+    const plainTextForFilter = contentText.replace(/<[^>]*>/g, "");
+    if (containsProfanity(plainTextForFilter)) {
         contentInput.classList.add("profanity-error");
+        if (editorWrapper) editorWrapper.classList.add("profanity-error");
         hasError = true;
     }
     if (cornerName && containsProfanity(cornerName)) {
@@ -5229,20 +6328,113 @@ publishForm.addEventListener("submit", async (e) => {
         return;
     }
 
-    // Convert raw content text with double newlines into HTML paragraphs
-    const contentHTML = contentText
-        .split(/\n\s*\n/)
-        .map(para => `<p>${para.replace(/\n/g, "<br>")}</p>`)
-        .join("\n");
+    // Convert raw content text with double newlines into HTML paragraphs only if it doesn't already have tags
+    let contentHTML = contentText;
+    if (!contentHTML.includes("<p>") && !contentHTML.includes("<div") && !contentHTML.includes("<span")) {
+        contentHTML = contentText
+            .split(/\n\s*\n/)
+            .map(para => `<p>${para.replace(/\n/g, "<br>")}</p>`)
+            .join("\n");
+    }
+
+    if (editingArticleId) {
+        const article = articles.find(a => a.id === editingArticleId);
+        if (!article) return;
+        
+        article.title = title;
+        article.subtitle = subtitle;
+        article.author = author;
+        if (currentUser && currentUser.email) article.author_email = currentUser.email;
+        if (currentUser && currentUser.id) article.user_id = currentUser.id;
+        article.category = category;
+        article.image = image;
+        article.content = contentHTML;
+        article.corner_name = cornerName || null;
+        article.readTime = calculateReadTime(contentHTML);
+        
+        // Always save to LocalStorage immediately
+        try {
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+        } catch (e) {}
+
+        if (isSupabaseConnected) {
+            try {
+                const fullPayload = {
+                    title: article.title,
+                    subtitle: article.subtitle,
+                    author: article.author,
+                    author_email: article.author_email || null,
+                    user_id: article.user_id || null,
+                    category: article.category,
+                    image: article.image,
+                    content: article.content,
+                    corner_name: article.corner_name,
+                    read_time: article.readTime
+                };
+                const { error } = await supabaseClient
+                    .from('articles')
+                    .update(fullPayload)
+                    .eq('id', editingArticleId);
+                if (error) {
+                    console.warn("Supabase article update warning, trying core fields fallback:", error);
+                    const corePayload = {
+                        title: article.title,
+                        subtitle: article.subtitle,
+                        author: article.author,
+                        category: article.category,
+                        image: article.image,
+                        content: article.content,
+                        read_time: article.readTime
+                    };
+                    const { error: coreErr } = await supabaseClient
+                        .from('articles')
+                        .update(corePayload)
+                        .eq('id', editingArticleId);
+                    if (coreErr) console.error("Supabase fallback article update error:", coreErr);
+                }
+            } catch (err) {
+                console.error("Error updating article on Supabase:", err);
+            }
+            clearSupabaseCache();
+        }
+        
+        showToast("Yazı başarıyla güncellendi.");
+        editingArticleId = null;
+        
+        // Reset overlay titles
+        const studioTitle = document.querySelector(".editor-studio-header h2");
+        if (studioTitle) studioTitle.innerText = "Yazarlık Stüdyosu";
+        const studioDesc = document.querySelector(".editor-studio-header p");
+        if (studioDesc) studioDesc.innerText = "Edebiyat hareketinin bir parçası olun. Yazınızı kaleme alın ve Mürekkep sayfalarında yayınlayın.";
+        const submitBtn = document.querySelector(".btn-publish-submit");
+        if (submitBtn) submitBtn.innerText = "Gazetede Yayınla";
+        
+        publishForm.reset();
+        editorOverlay.classList.add("hidden");
+        unlockBodyScroll();
+        
+        // Refresh reading view and grid
+        openArticle(article.id);
+        
+        if (currentCategoryFilter === "all") {
+            renderNewspaperGrid();
+        } else {
+            renderCategoryFeed(currentCategoryFilter);
+        }
+        return;
+    }
 
     const newArticle = {
         id: generateId(),
         title: title,
         subtitle: subtitle,
         author: author,
+        author_email: currentUser ? currentUser.email : null,
+        user_id: currentUser ? currentUser.id : null,
         category: category,
         image: image,
         date: formatDate(new Date()),
+        created_at: new Date().toISOString(),
         readTime: calculateReadTime(contentHTML),
         claps: 0,
         comments: [],
@@ -5250,18 +6442,37 @@ publishForm.addEventListener("submit", async (e) => {
         corner_name: cornerName || null
     };
 
-    // If publishing in 'manset' category, we override the previous main headlines
-    if (category === 'manset') {
-        // Change category to something else, or keep it, slot handles latest
-    }
+    articles.unshift(newArticle);
 
-    articles.push(newArticle);
+    // Always save to LocalStorage immediately
+    try {
+        localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+    } catch (e) {}
 
     if (isSupabaseConnected) {
         try {
-            await supabaseClient
+            const fullPayload = {
+                id: newArticle.id,
+                title: newArticle.title,
+                subtitle: newArticle.subtitle,
+                author: newArticle.author,
+                author_email: newArticle.author_email,
+                user_id: newArticle.user_id,
+                category: newArticle.category,
+                image: newArticle.image,
+                date: newArticle.date,
+                created_at: newArticle.created_at,
+                read_time: newArticle.readTime,
+                claps: newArticle.claps,
+                content: newArticle.content,
+                corner_name: newArticle.corner_name
+            };
+            const { error } = await supabaseClient
                 .from('articles')
-                .insert({
+                .insert(fullPayload);
+            if (error) {
+                console.warn("Supabase article insert warning, trying core fields fallback:", error);
+                const corePayload = {
                     id: newArticle.id,
                     title: newArticle.title,
                     subtitle: newArticle.subtitle,
@@ -5271,36 +6482,35 @@ publishForm.addEventListener("submit", async (e) => {
                     date: newArticle.date,
                     read_time: newArticle.readTime,
                     claps: newArticle.claps,
-                    content: newArticle.content,
-                    corner_name: newArticle.corner_name
-                });
+                    content: newArticle.content
+                };
+                const { error: coreErr } = await supabaseClient
+                    .from('articles')
+                    .insert(corePayload);
+                if (coreErr) {
+                    console.error("Supabase fallback article insert error:", coreErr);
+                } else {
+                    console.log("Successfully inserted article to Supabase via core fields fallback.");
+                }
+            } else {
+                console.log("Successfully inserted article to Supabase.");
+            }
         } catch (err) {
             console.error("Error inserting article on Supabase:", err);
         }
         clearSupabaseCache();
-    } else {
-        localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
     }
 
     // Reset and hide form
     publishForm.reset();
     editorOverlay.classList.add("hidden");
-    document.body.style.overflow = "";
+    unlockBodyScroll();
 
-    // Navigate to the page where the new article appears
-    // New model: position in overall clap-sorted list / slots per page = page number
+    currentPage = 1;
     if (currentCategoryFilter === "all") {
-        const sortedNow = getSortedArticles();
-        const allSlots = [
-            ...(layoutConfig.col1 || []),
-            ...(layoutConfig.col2 || []),
-            ...(layoutConfig.col3 || [])
-        ];
-        const slotCount = Math.max(1, allSlots.filter(s => s.type === 'category').length);
-        const artGlobalIdx = sortedNow.findIndex(a => a.id === newArticle.id);
-        const targetPage = artGlobalIdx >= 0 ? Math.floor(artGlobalIdx / slotCount) + 1 : 1;
-        currentPage = targetPage;
         renderNewspaperGrid();
+    } else {
+        renderCategoryFeed(currentCategoryFilter);
     }
 
     updateAuthUI();
@@ -5362,8 +6572,47 @@ function filterCategory(cat) {
 
 // Boot Application
 async function bootApp() {
-    // Initialize Supabase FIRST so async load functions can use it
-    initSupabase();
+    // ── PRIORITY: Check for any authentication errors in URL (e.g. expired OTP links)
+    let _hasError = false;
+    if (typeof checkUrlForAuthErrors === "function") {
+        _hasError = checkUrlForAuthErrors();
+    }
+
+    if (_hasError) {
+        initSupabase();
+    } else {
+        // ── PRIORITY: Detect Supabase password recovery redirect ──────────────────
+        // The PASSWORD_RECOVERY event fires during Supabase client init (very early),
+        // so we check the URL hash directly here, before any listeners are set up.
+        const _recoveryHash = window.location.hash || "";
+        const _recoverySearch = window.location.search || "";
+        const _isRecoveryMode = (
+            _recoveryHash.includes("type=recovery") ||
+            _recoverySearch.includes("type=recovery") ||
+            // Supabase v2 puts tokens in the fragment
+            (_recoveryHash.includes("access_token") && _recoveryHash.includes("recovery"))
+        );
+
+        // Initialize Supabase FIRST so async load functions can use it
+        initSupabase();
+
+        if (_isRecoveryMode) {
+            setTimeout(() => {
+                if (typeof openUpdatePasswordUI === "function") {
+                    openUpdatePasswordUI();
+                }
+            }, 300);
+        }
+    }
+
+    // One-time cleanup to remove cached/mock users as requested by the administrator
+    if (!localStorage.getItem("murekkep_cleanup_v1")) {
+        localStorage.removeItem("murekkep_mock_users");
+        localStorage.removeItem("murekkep_registered_users");
+        localStorage.removeItem("murekkep_user_roles");
+        localStorage.removeItem("murekkep_supabase_cache");
+        localStorage.setItem("murekkep_cleanup_v1", "true");
+    }
 
     // Reset layout config helper if URL contains ?reset_layout=true or ?clear_cache=true
     if (window.location.search.includes("reset_layout=true") || window.location.search.includes("clear_cache=true")) {
@@ -5447,6 +6696,96 @@ async function bootApp() {
             signOutUser();
         });
     }
+
+    // Legal Modal Event Listeners (Sekmeli Yasal Belgeler)
+    const legalOverlay = document.getElementById("legal-overlay");
+    const closeLegalModal = document.getElementById("close-legal-modal");
+    const legalAcceptBtn = document.getElementById("legal-accept-btn");
+    const legalTabBtns = document.querySelectorAll(".legal-tab-btn");
+    const legalPanels = document.querySelectorAll(".legal-panel");
+
+    // Open legal modal with specific tab active
+    function openLegalModal(tabName) {
+        if (!legalOverlay) return;
+        legalOverlay.classList.remove("hidden");
+        
+        // Activate specified tab
+        legalTabBtns.forEach(btn => {
+            if (btn.getAttribute("data-legal-tab") === tabName) {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
+            }
+        });
+
+        // Show specified panel
+        legalPanels.forEach(panel => {
+            if (panel.id === `legal-panel-${tabName}`) {
+                panel.classList.remove("hidden");
+            } else {
+                panel.classList.add("hidden");
+            }
+        });
+    }
+
+    // Attach listeners to all legal trigger links (footer and register form)
+    document.querySelectorAll(".legal-trigger").forEach(trigger => {
+        trigger.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const tabName = trigger.getAttribute("data-tab") || "terms";
+            openLegalModal(tabName);
+        });
+    });
+
+    // Tab switching functionality
+    legalTabBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const targetTab = btn.getAttribute("data-legal-tab");
+            
+            legalTabBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+
+            legalPanels.forEach(p => {
+                if (p.id === `legal-panel-${targetTab}`) {
+                    p.classList.remove("hidden");
+                } else {
+                    p.classList.add("hidden");
+                }
+            });
+        });
+    });
+
+    // Close buttons
+    if (closeLegalModal) {
+        closeLegalModal.addEventListener("click", () => {
+            if (legalOverlay) legalOverlay.classList.add("hidden");
+        });
+    }
+
+    if (legalAcceptBtn) {
+        legalAcceptBtn.addEventListener("click", () => {
+            if (legalOverlay) legalOverlay.classList.add("hidden");
+            // Auto check the registration KVKK checkbox if user accepted
+            const kvkkCheckbox = document.getElementById("register-kvkk");
+            if (kvkkCheckbox) kvkkCheckbox.checked = true;
+        });
+    }
+
+    if (legalOverlay) {
+        legalOverlay.addEventListener("click", (e) => {
+            if (e.target === legalOverlay) {
+                legalOverlay.classList.add("hidden");
+            }
+        });
+    }
+
+    // ESC key closes the legal modal
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && legalOverlay && !legalOverlay.classList.contains("hidden")) {
+            legalOverlay.classList.add("hidden");
+        }
+    });
 
     // Forgot Password flow
     const forgotPasswordLink = document.getElementById("forgot-password-link");
@@ -5556,11 +6895,74 @@ async function bootApp() {
     if (registerForm) {
         registerForm.addEventListener("submit", (e) => {
             e.preventDefault();
+            
+            const kvkkCheckbox = document.getElementById("register-kvkk");
+            if (kvkkCheckbox && !kvkkCheckbox.checked) {
+                showToast("⚠️ Lütfen yasal sözleşmeleri ve KVKK metnini onaylayın.");
+                return;
+            }
+
             const username = document.getElementById("register-username").value.trim();
             const email = document.getElementById("register-email").value.trim();
             const password = document.getElementById("register-password").value.trim();
             if (username && email && password) {
                 signUpUser(email, password, username);
+            }
+        });
+    }
+
+    const updatePasswordForm = document.getElementById("update-password-form");
+    if (updatePasswordForm) {
+        updatePasswordForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const newPass = document.getElementById("update-password").value;
+            const newPassConfirm = document.getElementById("update-password-confirm").value;
+
+            if (newPass.length < 6) {
+                showToast("❌ Şifre en az 6 karakter olmalıdır.");
+                return;
+            }
+
+            if (newPass !== newPassConfirm) {
+                showToast("❌ Girdiğiniz şifreler birbiriyle eşleşmiyor.");
+                return;
+            }
+
+            if (!isSupabaseConnected || !supabaseClient) {
+                showToast("❌ Şifre sıfırlama için internet bağlantısı gereklidir.");
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient.auth.updateUser({ password: newPass });
+                if (error) throw error;
+
+                showToast("✅ Şifreniz başarıyla güncellendi! Giriş yapabilirsiniz.");
+                
+                // Reset fields
+                document.getElementById("update-password").value = "";
+                document.getElementById("update-password-confirm").value = "";
+
+                // Close and transition to login
+                updatePasswordForm.classList.add("hidden");
+                const authTabs = document.querySelector(".auth-tabs");
+                if (authTabs) authTabs.style.display = "flex";
+                
+                const loginForm = document.getElementById("login-form");
+                if (loginForm) loginForm.classList.remove("hidden");
+                switchAuthTab("login");
+                
+                // Clear the hash and query parameters from the URL so reload doesn't trigger recovery again
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState(null, "", window.location.pathname);
+                }
+
+                await supabaseClient.auth.signOut();
+                updateAuthUI();
+                closeAuthModal();
+            } catch (err) {
+                console.error("Password update error:", err);
+                showToast("❌ Şifre güncellenemedi: " + (err.message || "Bilinmeyen hata"));
             }
         });
     }
@@ -5704,6 +7106,14 @@ async function bootApp() {
         });
     }
 
+    // Delete account permanently
+    const settingsDeleteAccountBtn = document.getElementById("settings-delete-account-btn");
+    if (settingsDeleteAccountBtn) {
+        settingsDeleteAccountBtn.addEventListener("click", () => {
+            deleteCurrentUserAccount();
+        });
+    }
+
     // Editor Mode toggle switch in settings modal
     const settingsEditorToggle = document.getElementById("settings-editor-toggle");
     if (settingsEditorToggle) {
@@ -5751,6 +7161,9 @@ async function bootApp() {
             }
         });
     }
+
+    // Set app booted flag for SEO routing cleanup safety
+    isAppBooted = true;
 }
 
 // =============================================
@@ -5836,13 +7249,16 @@ window.deleteArticleClick = function(id, event) {
     // Remove from local array
     articles = articles.filter(art => art.id !== id);
 
+    // Always save to LocalStorage immediately
+    try {
+        localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+    } catch(e) {}
+
     if (isSupabaseConnected) {
         supabaseClient.from('articles').delete().eq('id', id).then(({ error }) => {
             if (error) console.error("Error deleting article from Supabase:", error);
         });
         clearSupabaseCache();
-    } else {
-        localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
     }
 
     showToast("✕ Yazı silindi.");
@@ -6059,7 +7475,9 @@ function getAuthorProfileData(authorName) {
         socialWeb: "",
         avatarType: "gradient",
         avatarVal: "linear-gradient(135deg, var(--accent-color), #d35400)",
-        coverVal: "linear-gradient(135deg, var(--accent-color), #2b1111)"
+        coverType: "gradient",
+        coverVal: "linear-gradient(135deg, var(--accent-color), #2b1111)",
+        goalCount: 10
     };
     
     if (!authorName) return defaultProfile;
@@ -6190,18 +7608,207 @@ function switchAuthorModalTab(tabId) {
 }
 
 /** Build a person-card element and return it */
-function buildPersonCard(name, subText, onClickFn) {
+function buildPersonCard(name, subText, onClickFn, removeBtnHtml) {
     const card = document.createElement('div');
     card.className = 'person-card';
+    card.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;background:var(--bg-secondary);border:1px solid var(--border-light);transition:background 0.18s;cursor:pointer;position:relative;';
     const av = document.createElement('div');
     av.className = 'person-card-avatar';
     av.textContent = name.substring(0,1).toUpperCase();
     const info = document.createElement('div');
+    info.style.cssText = 'flex:1;min-width:0;';
     info.innerHTML = `<div class="person-card-name">${name}</div><div class="person-card-sub">${subText}</div>`;
     card.appendChild(av);
     card.appendChild(info);
+    if (removeBtnHtml) {
+        const btnWrap = document.createElement('div');
+        btnWrap.innerHTML = removeBtnHtml;
+        btnWrap.addEventListener('click', e => e.stopPropagation());
+        card.appendChild(btnWrap);
+    }
     card.addEventListener('click', onClickFn);
     return card;
+}
+
+// Restore default authors for built-in seed articles if modified
+function restoreDefaultArticlesAuthors() {
+    const defaultAuthorMap = {
+        "manset-1": "Mürekkep Yayın Kurulu",
+        "kitap-1": "Selim Çetin",
+        "deneme-1": "Can Özkan",
+        "roportaj-1": "Mürekkep Röportaj",
+        "siir-1": "Melike Nur Özkan",
+        "oyku-1": "Elif Su Yıldız",
+        "kose-yazilari-1": "Mehmet Ali Demir",
+        "haber-1": "Mürekkep Kültür Haber",
+        "yarismalar-1": "Mürekkep Yarışma Kurulu",
+        "deneme-2": "Hakan Yılmaz",
+        "siir-2": "Esra Demir",
+        "oyku-2": "Murat Can"
+    };
+
+    let modified = false;
+    articles.forEach(art => {
+        if (defaultAuthorMap[art.id]) {
+            if (art.author !== defaultAuthorMap[art.id]) {
+                art.author = defaultAuthorMap[art.id];
+                delete art.author_email;
+                delete art.user_id;
+                modified = true;
+            }
+        }
+    });
+
+    if (modified) {
+        try {
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+        } catch(e) {}
+        if (isSupabaseConnected && supabaseClient) {
+            clearSupabaseCache();
+        }
+    }
+}
+
+// Auto-merge pen name variations (e.g. "Berat" account with "Berat Kurt" articles)
+function autoMergeUserPenName() {
+    if (!currentUser) return;
+    const currentName = currentUser.username ? currentUser.username.trim() : "";
+    if (!currentName) return;
+
+    const defaultAuthorNames = [
+        "mürekkep yayın kurulu", "murekkep yayin kurulu", "selim çetin", "selim cetin",
+        "can özkan", "can ozkan", "mürekkep röportaj", "murekkep roportaj",
+        "melike nur özkan", "melike nur ozkan", "elif su yıldız", "elif su yildiz",
+        "mehmet ali demir", "mürekkep kültür haber", "murekkep kultur haber",
+        "mürekkep yarışma kurulu", "murekkep yarisma kurulu", "hakan yılmaz", "hakan yilmaz",
+        "esra demir", "murat can"
+    ];
+
+    const matchingArticle = articles.find(a => {
+        if (!a.author) return false;
+        const artAuthor = a.author.trim();
+        const artAuthorLower = artAuthor.toLowerCase();
+        const currentNameLower = currentName.toLowerCase();
+        
+        if (artAuthorLower === currentNameLower) return false;
+        if (defaultAuthorNames.includes(artAuthorLower)) return false;
+
+        const matchesEmail = a.author_email && currentUser.email && a.author_email.toLowerCase().trim() === currentUser.email.toLowerCase().trim();
+        const matchesUserId = a.user_id && currentUser.id && a.user_id === currentUser.id;
+        const startsWithUser = artAuthorLower.startsWith(currentNameLower + " ");
+
+        return matchesEmail || matchesUserId || startsWithUser;
+    });
+
+    if (matchingArticle) {
+        const fullPenName = matchingArticle.author.trim();
+        performUsernameMigration(currentName, fullPenName);
+    }
+}
+
+// Auto-reconcile articles that belong to logged in user account
+function reconcileUserArticles() {
+    restoreDefaultArticlesAuthors();
+    autoMergeUserPenName();
+
+    if (!currentUser) return false;
+    const currentUsername = currentUser.username || (currentUser.email ? currentUser.email.split("@")[0] : "");
+    const currentUserEmail = currentUser.email ? currentUser.email.toLowerCase().trim() : "";
+    if (!currentUsername) return false;
+
+    let modified = false;
+    articles.forEach(art => {
+        const authorLower = (art.author || "").toLowerCase().trim();
+        const userLower = currentUsername.toLowerCase().trim();
+
+        const matchesEmail = art.author_email && currentUserEmail && art.author_email.toLowerCase().trim() === currentUserEmail;
+        const matchesUserId = art.user_id && currentUser.id && art.user_id === currentUser.id;
+        const matchesPenNamePrefix = authorLower.startsWith(userLower + " ") || userLower.startsWith(authorLower + " ");
+
+        if (matchesEmail || matchesUserId || matchesPenNamePrefix) {
+            if (art.author !== currentUsername) {
+                art.author = currentUsername;
+                if (currentUser.email) art.author_email = currentUser.email;
+                if (currentUser.id) art.user_id = currentUser.id;
+                modified = true;
+            }
+        }
+    });
+
+    if (modified) {
+        try {
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+        } catch(e) {}
+        if (isSupabaseConnected && supabaseClient) {
+            clearSupabaseCache();
+        }
+    }
+    return modified;
+}
+
+// Migrate all articles when a user renames their pen name
+async function performUsernameMigration(oldName, newName) {
+    if (!newName || newName.trim() === "") return;
+    const newNameClean = newName.trim();
+    
+    // Update currentUser object
+    if (currentUser) {
+        currentUser.username = newNameClean;
+        const storedUser = localStorage.getItem("murekkep_current_user");
+        if (storedUser) {
+            try {
+                const uObj = JSON.parse(storedUser);
+                uObj.username = newNameClean;
+                localStorage.setItem("murekkep_current_user", JSON.stringify(uObj));
+            } catch(e) {}
+        }
+    }
+
+    let articlesUpdated = 0;
+    const userEmail = currentUser ? (currentUser.email ? currentUser.email.toLowerCase().trim() : "") : "";
+    
+    articles.forEach(art => {
+        const matchesOldName = oldName && art.author && art.author.trim().toLowerCase() === oldName.trim().toLowerCase();
+        const matchesEmail = userEmail && art.author_email && art.author_email.toLowerCase().trim() === userEmail;
+        
+        if (matchesOldName || matchesEmail) {
+            art.author = newNameClean;
+            if (currentUser && currentUser.email) art.author_email = currentUser.email;
+            if (currentUser && currentUser.id) art.user_id = currentUser.id;
+            articlesUpdated++;
+        }
+    });
+
+    if (articlesUpdated > 0) {
+        try {
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+        } catch(e) {}
+        if (isSupabaseConnected && supabaseClient) {
+            try {
+                if (oldName) {
+                    await supabaseClient
+                        .from('articles')
+                        .update({ author: newNameClean })
+                        .ilike('author', oldName);
+                }
+                if (userEmail) {
+                    await supabaseClient
+                        .from('articles')
+                        .update({ author: newNameClean })
+                        .eq('author_email', userEmail);
+                }
+            } catch(e) {
+                console.error("Supabase migration error:", e);
+            }
+            clearSupabaseCache();
+        }
+    }
+
+    if (oldName && authorProfiles[oldName]) {
+        authorProfiles[newNameClean] = authorProfiles[oldName];
+        delete authorProfiles[oldName];
+        saveAuthorProfiles();
+    }
 }
 
 /** Open / refresh the profile modal for the given author name.
@@ -6213,6 +7820,10 @@ window.openAuthorProfile = function(authorName, startTab) {
 
     const isOwnProfile = currentUser && currentUser.username &&
         currentUser.username.trim().toLowerCase() === authorName.trim().toLowerCase();
+
+    if (isOwnProfile) {
+        reconcileUserArticles();
+    }
 
     const stats = getAuthorStats(authorName);
     const authorArticles = articles
@@ -6242,7 +7853,18 @@ window.openAuthorProfile = function(authorName, startTab) {
 
     // Apply Cover
     const coverEl = document.getElementById('author-modal-cover');
-    if (coverEl) coverEl.style.background = profile.coverVal || "linear-gradient(135deg, var(--accent-color), #2b1111)";
+    if (coverEl) {
+        const bgVal = profile.coverVal || "linear-gradient(135deg, var(--accent-color), #2b1111)";
+        coverEl.style.background = bgVal;
+        coverEl.style.backgroundImage = bgVal;
+        if (profile.coverType === 'image' || bgVal.startsWith('url(')) {
+            coverEl.style.backgroundSize = "cover";
+            coverEl.style.backgroundPosition = "center";
+        } else {
+            coverEl.style.backgroundSize = "";
+            coverEl.style.backgroundPosition = "";
+        }
+    }
 
     // Apply Avatar
     const avatarEl = document.getElementById('author-modal-avatar');
@@ -6452,7 +8074,7 @@ window.openAuthorProfile = function(authorName, startTab) {
                 item.addEventListener('click', (e) => {
                     if (e.target.closest('.profile-editor-controls')) return;
                     modal.classList.add('hidden');
-                    document.body.style.overflow = '';
+                    unlockBodyScroll();
                     openArticle(art.id);
                 });
                 articlesContainer.appendChild(item);
@@ -6477,9 +8099,16 @@ window.openAuthorProfile = function(authorName, startTab) {
                     displayName = f.username || f.id;
                     openTarget = f.username || f.id;
                 }
+                // Show remove button only on own profile
+                const removeBtn = isOwnProfile
+                    ? `<button onclick="window.removeFollower('${authorName}', '${displayName.replace(/'/g, "\\'")}')"
+                        style="background:#c0392b;color:#fff;border:none;padding:4px 12px;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:background 0.2s;"
+                        onmouseover="this.style.background='#e74c3c'" onmouseout="this.style.background='#c0392b'"
+                        title="Bu takipçiyi çıkar">✕ Çıkar</button>`
+                    : null;
                 const card = buildPersonCard(displayName, 'Takipçi', () => {
                     window.openAuthorProfile(openTarget);
-                });
+                }, removeBtn);
                 followersContainer.appendChild(card);
             });
         }
@@ -6518,8 +8147,64 @@ window.openAuthorProfile = function(authorName, startTab) {
 
     // Show modal
     modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+    lockBodyScroll();
 };
+
+// Helper: Calculate weekly writing streak based on consecutive weeks of published articles
+function calculateAuthorStreak(authorName) {
+    if (!authorName) return 0;
+    const authorArticles = articles.filter(a => a.author && a.author.toLowerCase().trim() === authorName.toLowerCase().trim());
+    if (authorArticles.length === 0) return 0;
+
+    // Parse dates
+    const dates = authorArticles.map(a => {
+        const dt = a.created_at ? new Date(a.created_at) : (a.date ? new Date(a.date) : new Date());
+        return dt;
+    }).filter(d => !isNaN(d.getTime()));
+
+    if (dates.length === 0) return 0;
+
+    // Sort dates descending (newest first)
+    dates.sort((a, b) => b - a);
+
+    // Helper to get start of the week (Monday)
+    function getStartOfWeek(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is Sunday
+        const start = new Date(d.setDate(diff));
+        start.setHours(0,0,0,0);
+        return start;
+    }
+
+    const todayStartOfWeek = getStartOfWeek(new Date());
+    
+    // Group dates by week start date (in milliseconds for easy comparison)
+    const weekStarts = new Set();
+    dates.forEach(d => {
+        weekStarts.add(getStartOfWeek(d).getTime());
+    });
+
+    // Check if they published this week or last week (otherwise streak is broken / 0)
+    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+    const thisWeekTime = todayStartOfWeek.getTime();
+    const lastWeekTime = thisWeekTime - oneWeekMs;
+
+    if (!weekStarts.has(thisWeekTime) && !weekStarts.has(lastWeekTime)) {
+        return 0;
+    }
+
+    // Count back consecutive weeks
+    let streak = 0;
+    let currentCheckWeek = weekStarts.has(thisWeekTime) ? thisWeekTime : lastWeekTime;
+
+    while (weekStarts.has(currentCheckWeek)) {
+        streak++;
+        currentCheckWeek -= oneWeekMs;
+    }
+
+    return streak;
+}
 
 // Dynamic Dashboard Sync in Profile Modal
 function syncDashboardInProfile() {
@@ -6576,44 +8261,52 @@ function syncDashboardInProfile() {
         }
     }
 
-    // Weekly Goal Progress
-    const goalVal = localStorage.getItem(`murekkep_writer_goal_${currentUser.id}`) || "1";
+    // Goal Progress (reads from Supabase profile)
+    const authorName = currentUser.username || currentUser.email.split("@")[0];
+    const profile = getAuthorProfileData(authorName);
+    const goalVal = parseInt(profile.goalCount) || 10;
     
-    // Calculate published count in last 7 days
-    const last7Days = 7 * 24 * 60 * 60 * 1000;
-    const now = new Date();
-    const ownArticles = articles.filter(a => a.author && a.author.trim().toLowerCase() === currentUser.username.trim().toLowerCase());
-    
-    let publishedCount = 0;
-    ownArticles.forEach(a => {
-        let artDate = new Date();
-        try {
-            artDate = new Date(a.date);
-            if (isNaN(artDate.getTime())) {
-                artDate = new Date(); // fallback
-            }
-        } catch(e) {}
-        
-        if (now - artDate <= last7Days) {
-            publishedCount++;
-        }
-    });
+    // Count all user's published articles
+    const ownArticles = articles.filter(a => a.author && a.author.trim().toLowerCase() === authorName.trim().toLowerCase());
+    const publishedCount = ownArticles.length;
 
-    const goalPct = Math.min((publishedCount / parseInt(goalVal)) * 100, 100);
-    const goalStatusEl = document.getElementById("author-modal-goal-status");
+    const goalPct = Math.min((publishedCount / goalVal) * 100, 100);
+    const currentEl = document.getElementById("author-modal-goal-current");
+    const inputEl = document.getElementById("author-modal-goal-input");
     const goalBarEl = document.getElementById("author-modal-goal-bar");
     
-    if (goalStatusEl) goalStatusEl.innerText = `${publishedCount} / ${goalVal} Eser`;
+    if (currentEl) currentEl.innerText = publishedCount;
+    if (inputEl) {
+        inputEl.value = goalVal;
+        
+        // Remove existing listener to prevent duplicate attachments, and add new one
+        const clone = inputEl.cloneNode(true);
+        inputEl.parentNode.replaceChild(clone, inputEl);
+        
+        clone.addEventListener("change", (e) => {
+            const newVal = parseInt(e.target.value) || 10;
+            saveAuthorProfileData(authorName, { goalCount: newVal });
+            
+            // Re-sync progress bar and other UI targets
+            const newPct = Math.min((publishedCount / newVal) * 100, 100);
+            if (goalBarEl) goalBarEl.style.width = `${newPct}%`;
+            
+            const mainGoalInput = document.getElementById("writer-goal-input");
+            if (mainGoalInput) mainGoalInput.value = newVal;
+            
+            const popoverGoalInput = document.getElementById("profile-goal-count-input");
+            if (popoverGoalInput) popoverGoalInput.value = newVal;
+            
+            showToast(`🎯 Hedefiniz ${newVal} Eser olarak güncellendi!`);
+        });
+    }
+    
     if (goalBarEl) goalBarEl.style.width = `${goalPct}%`;
 
-    // Streak & Read Time
-    const streakKey = `murekkep_writer_streak_${currentUser.id}`;
-    let streak = parseInt(localStorage.getItem(streakKey) || "0");
+    // Streak
+    const streak = calculateAuthorStreak(authorName);
     const streakEl = document.getElementById("author-modal-streak-val");
     if (streakEl) streakEl.innerText = streak;
-
-    const readtimeEl = document.getElementById("author-modal-stat-readtime-val");
-    if (readtimeEl) readtimeEl.innerText = `${statsWriter.totalReadTime} dk`;
 }
 
 // Global state variables for customizations
@@ -6624,14 +8317,17 @@ let selectedCoverVal = "";
 // Initialize Profile Customize Popover Event Handlers
 function initProfileCustomizer() {
     const popover = document.getElementById('profile-editor-popover');
+    const popoverBackdrop = document.getElementById('profile-editor-popover-backdrop');
     const closeBtn = document.getElementById('close-profile-popover');
     
-    // Popover Close click
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            popover.classList.add('hidden');
-        });
+    function closeProfilePopover() {
+        if (popover) popover.classList.add('hidden');
+        if (popoverBackdrop) popoverBackdrop.classList.add('hidden');
     }
+
+    // Popover Close click & backdrop click
+    if (closeBtn) closeBtn.addEventListener('click', closeProfilePopover);
+    if (popoverBackdrop) popoverBackdrop.addEventListener('click', closeProfilePopover);
 
     // Tab buttons event listeners
     const popTabBtns = document.querySelectorAll('.profile-popover-tab-btn');
@@ -6693,8 +8389,23 @@ function initProfileCustomizer() {
         });
     });
 
+    // Cover Type dropdown change
+    const coverTypeSelect = document.getElementById('cover-type-select');
+    if (coverTypeSelect) {
+        coverTypeSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            document.getElementById('cover-sub-gradient').classList.add('hidden');
+            document.getElementById('cover-sub-image').classList.add('hidden');
+            if (val === 'gradient') {
+                document.getElementById('cover-sub-gradient').classList.remove('hidden');
+            } else if (val === 'image') {
+                document.getElementById('cover-sub-image').classList.remove('hidden');
+            }
+        });
+    }
+
     // Preset Cover select clicks
-    const coverCards = document.querySelectorAll('#popover-panel-cover .preset-card');
+    const coverCards = document.querySelectorAll('#cover-sub-gradient .preset-card');
     coverCards.forEach(card => {
         card.addEventListener('click', () => {
             coverCards.forEach(c => c.classList.remove('active'));
@@ -6719,18 +8430,35 @@ function initProfileCustomizer() {
             } else if (type === 'image') {
                 val = document.getElementById('avatar-image-url-input').value.trim() || "";
             }
+
+            const coverType = coverTypeSelect ? coverTypeSelect.value : 'gradient';
+            let coverVal = "";
+            if (coverType === 'gradient') {
+                coverVal = selectedCoverVal || "linear-gradient(135deg, var(--accent-color), #2b1111)";
+            } else if (coverType === 'image') {
+                const urlVal = document.getElementById('cover-image-url-input').value.trim();
+                coverVal = urlVal ? `url('${urlVal}')` : "linear-gradient(135deg, var(--accent-color), #2b1111)";
+            }
             
+            const goalInput = document.getElementById('profile-goal-count-input');
+            const goalCount = goalInput ? parseInt(goalInput.value) || 10 : 10;
+
             saveAuthorProfileData(authorName, {
                 avatarType: type,
                 avatarVal: val,
-                coverVal: selectedCoverVal || "linear-gradient(135deg, var(--accent-color), #2b1111)",
+                coverType: coverType,
+                coverVal: coverVal,
+                bio: document.getElementById('profile-bio-input').value.trim(),
+                goalCount: goalCount,
                 socialInstagram: document.getElementById('social-instagram-input').value.trim(),
                 socialTwitter: document.getElementById('social-twitter-input').value.trim(),
                 socialWeb: document.getElementById('social-web-input').value.trim()
             });
 
-            // Close popover
+            // Close popover and backdrop
             popover.classList.add('hidden');
+            const popoverBackdrop = document.getElementById('profile-editor-popover-backdrop');
+            if (popoverBackdrop) popoverBackdrop.classList.add('hidden');
             showToast("✨ Profil görünümünüz başarıyla güncellendi!");
             
             // Reload views
@@ -6857,45 +8585,84 @@ function openPopoverNear(element, defaultTab = 'avatar') {
         document.getElementById('avatar-sub-gradient').classList.remove('hidden');
         // Highlight active gradient preset card
         const presetCards = document.querySelectorAll('#avatar-sub-gradient .preset-card');
+        let hasActiveGrad = false;
         presetCards.forEach(c => {
-            if (c.getAttribute('data-gradient') === profile.avatarVal) {
+            if (profile.avatarVal && c.getAttribute('data-gradient') === profile.avatarVal) {
                 c.classList.add('active');
+                hasActiveGrad = true;
             } else {
                 c.classList.remove('active');
             }
         });
-        selectedAvatarGradient = profile.avatarVal;
+        if (!hasActiveGrad && presetCards.length > 0) {
+            presetCards[0].classList.add('active');
+            selectedAvatarGradient = presetCards[0].getAttribute('data-gradient');
+        } else {
+            selectedAvatarGradient = profile.avatarVal;
+        }
     } else if (profile.avatarType === 'emoji') {
         document.getElementById('avatar-sub-emoji').classList.remove('hidden');
         const emojiCircles = document.querySelectorAll('.preset-emoji-circle');
+        let hasActiveEmoji = false;
         emojiCircles.forEach(c => {
-            if (c.getAttribute('data-emoji') === profile.avatarVal) {
+            if (profile.avatarVal && c.getAttribute('data-emoji') === profile.avatarVal) {
                 c.classList.add('active');
+                hasActiveEmoji = true;
             } else {
                 c.classList.remove('active');
             }
         });
-        selectedAvatarEmoji = profile.avatarVal;
+        if (!hasActiveEmoji && emojiCircles.length > 0) {
+            emojiCircles[0].classList.add('active');
+            selectedAvatarEmoji = emojiCircles[0].getAttribute('data-emoji');
+        } else {
+            selectedAvatarEmoji = profile.avatarVal;
+        }
     } else if (profile.avatarType === 'image') {
         document.getElementById('avatar-sub-image').classList.remove('hidden');
         document.getElementById('avatar-image-url-input').value = profile.avatarVal || "";
     }
 
     // Set Cover presets
-    const coverCards = document.querySelectorAll('#popover-panel-cover .preset-card');
-    coverCards.forEach(c => {
-        if (c.getAttribute('data-cover') === profile.coverVal) {
-            c.classList.add('active');
-        } else {
-            c.classList.remove('active');
-        }
-    });
-    selectedCoverVal = profile.coverVal;
+    const coverTypeSelect = document.getElementById('cover-type-select');
+    if (coverTypeSelect) coverTypeSelect.value = profile.coverType || 'gradient';
 
-    // Set Social link inputs
+    document.getElementById('cover-sub-gradient').classList.add('hidden');
+    document.getElementById('cover-sub-image').classList.add('hidden');
+
+    if ((profile.coverType || 'gradient') === 'gradient') {
+        document.getElementById('cover-sub-gradient').classList.remove('hidden');
+        const coverCards = document.querySelectorAll('#cover-sub-gradient .preset-card');
+        let hasActiveCover = false;
+        coverCards.forEach(c => {
+            if (profile.coverVal && c.getAttribute('data-cover') === profile.coverVal) {
+                c.classList.add('active');
+                hasActiveCover = true;
+            } else {
+                c.classList.remove('active');
+            }
+        });
+        if (!hasActiveCover && coverCards.length > 0) {
+            coverCards[0].classList.add('active');
+            selectedCoverVal = coverCards[0].getAttribute('data-cover');
+        } else {
+            selectedCoverVal = profile.coverVal;
+        }
+    } else {
+        document.getElementById('cover-sub-image').classList.remove('hidden');
+        const rawUrl = (profile.coverVal && profile.coverVal.startsWith('url('))
+            ? profile.coverVal.replace(/^url\(['"]?/, '').replace(/['"]?\)$/, '')
+            : profile.coverVal || '';
+        document.getElementById('cover-image-url-input').value = rawUrl;
+    }
+
+    // Set Social link inputs, bio input and goal input
+    document.getElementById('profile-bio-input').value = profile.bio || "";
     document.getElementById('social-instagram-input').value = profile.socialInstagram || "";
     document.getElementById('social-twitter-input').value = profile.socialTwitter || "";
     document.getElementById('social-web-input').value = profile.socialWeb || "";
+    const goalInput = document.getElementById('profile-goal-count-input');
+    if (goalInput) goalInput.value = profile.goalCount || 10;
 
     // Reset Popover Tab display
     const popTabBtns = document.querySelectorAll('.profile-popover-tab-btn');
@@ -6915,28 +8682,10 @@ function openPopoverNear(element, defaultTab = 'avatar') {
         document.getElementById('popover-panel-socials').classList.remove('hidden');
     }
 
-    // Position Popover dynamically
-    const rect = element.getBoundingClientRect();
-    const popoverWidth = 340;
-    const popoverHeight = 300;
-    
-    let top = rect.bottom + window.scrollY + 10;
-    let left = rect.left + window.scrollX - (popoverWidth / 2) + (rect.width / 2);
-
-    // Boundary constraints
-    if (left < 10) left = 10;
-    if (left + popoverWidth > window.innerWidth - 10) {
-        left = window.innerWidth - popoverWidth - 10;
-    }
-    if (top + popoverHeight > window.innerHeight + window.scrollY) {
-        top = rect.top + window.scrollY - popoverHeight - 10;
-    }
-
-    // Set inline coordinates
-    popover.style.top = `${top}px`;
-    popover.style.left = `${left}px`;
-    popover.style.position = 'absolute';
-    
+    // Show fixed centered popover modal with backdrop
+    const popoverBackdrop = document.getElementById('profile-editor-popover-backdrop');
+    if (popoverBackdrop) popoverBackdrop.classList.remove('hidden');
+    popover.classList.remove('hidden');
 }
 
 // Initialize Autocomplete Writer Search Box
@@ -7024,14 +8773,17 @@ window.toggleFollowAuthor = function(authorName) {
 // Handle Goal Updates from UI
 window.updateWriterGoal = function(goal) {
     if (!currentUser) return;
-    const key = `murekkep_writer_goal_${currentUser.id}`;
-    localStorage.setItem(key, goal);
+    const authorName = currentUser.username || currentUser.email.split("@")[0];
+    const goalVal = parseInt(goal) || 10;
+    
+    // Save to profile customizer (updates memory and Supabase)
+    saveAuthorProfileData(authorName, { goalCount: goalVal });
     
     // Sync UI elements
-    const stats = getAuthorStats(currentUser.username);
+    const stats = getAuthorStats(authorName);
     const now = new Date();
     const oneDay = 24 * 60 * 60 * 1000;
-    const authorArticles = articles.filter(a => a.author && a.author.trim().toLowerCase() === currentUser.username.trim().toLowerCase());
+    const authorArticles = articles.filter(a => a.author && a.author.trim().toLowerCase() === authorName.trim().toLowerCase());
     
     let last7DaysCount = 0;
     const months = {
@@ -7054,7 +8806,6 @@ window.updateWriterGoal = function(goal) {
         }
     });
     
-    const goalVal = parseInt(goal) || 1;
     const progressPct = Math.min(100, Math.round((last7DaysCount / goalVal) * 100));
     
     const goalStatusEl = document.getElementById("writer-goal-status");
@@ -7063,16 +8814,12 @@ window.updateWriterGoal = function(goal) {
     if (goalStatusEl) goalStatusEl.innerText = `${last7DaysCount} / ${goalVal} Eser`;
     if (goalBarEl) goalBarEl.style.width = `${progressPct}%`;
     
-    const streakKey = `murekkep_writer_streak_${currentUser.id}`;
-    let streak = parseInt(localStorage.getItem(streakKey) || "0");
-    if (last7DaysCount >= goalVal && streak === 0) {
-        streak = 1;
-        localStorage.setItem(streakKey, "1");
-    }
+    // Streak
+    const streak = calculateAuthorStreak(authorName);
     const streakEl = document.getElementById("writer-goal-streak-val");
     if (streakEl) streakEl.innerText = streak;
     
-    showToast(`🎯 Yazım hedefi güncellendi: Haftada ${goalVal} Eser!`);
+    showToast(`🎯 Yazım hedefi güncellendi: ${goalVal} Eser!`);
 };
 
 // Bind close button for author modal
@@ -7080,7 +8827,7 @@ document.getElementById("close-author-modal")?.addEventListener("click", () => {
     const modal = document.getElementById("author-modal");
     if (modal) {
         modal.classList.add("hidden");
-        document.body.style.overflow = "";
+        unlockBodyScroll();
     }
 });
 
@@ -7102,18 +8849,45 @@ if (document.readyState === "loading") {
     window.addEventListener("DOMContentLoaded", () => {
         bootApp();
         initDynamicViewport();
+        initWysiwygEditor();
     });
 } else {
     bootApp();
     initDynamicViewport();
+    initWysiwygEditor();
 }
 
 // Dynamic Viewport & History Manager for Mobile Modals
 function initDynamicViewport() {
     const overlays = document.querySelectorAll('.overlay');
-    if (overlays.length === 0) return;
-
+    
     let isHandlingPopstate = false;
+
+    // Fix iOS keyboard scroll shift on input/textarea blur inside overlays or drawers
+    document.addEventListener('focusout', (e) => {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+            if (e.target.closest('.overlay') || e.target.closest('.comments-drawer')) {
+                // Reset window scroll position (iOS visual viewport shift fix)
+                setTimeout(() => {
+                    window.scrollTo(0, 0);
+                }, 100);
+            }
+        }
+    });
+
+    const setMobileViewport = () => {
+        let viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) {
+            viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes');
+        }
+    };
+
+    const setDesktopViewport = () => {
+        let viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) {
+            viewport.setAttribute('content', 'width=1300');
+        }
+    };
 
     const checkOverlays = () => {
         let anyVisible = false;
@@ -7125,15 +8899,33 @@ function initDynamicViewport() {
                 visibleOverlayId = overlay.id;
             }
         });
+        
+        if (commentsDrawer && !commentsDrawer.classList.contains('hidden')) {
+            anyVisible = true;
+            visibleOverlayId = commentsDrawer.id;
+        }
 
-        // Push state if overlay is open
+        if (anyVisible) {
+            setMobileViewport();
+        } else {
+            setDesktopViewport();
+        }
+
+        // Push state if overlay or drawer is open
         if (anyVisible && visibleOverlayId) {
-            if (!isHandlingPopstate && window.location.hash !== '#' + visibleOverlayId) {
-                history.pushState({ activeOverlay: visibleOverlayId }, '', '#' + visibleOverlayId);
+            if (visibleOverlayId === 'reading-overlay' && activeArticleId) {
+                const newUrl = window.location.pathname + `?article=${activeArticleId}`;
+                if (!isHandlingPopstate && window.location.search !== `?article=${activeArticleId}`) {
+                    history.pushState({ activeOverlay: visibleOverlayId, articleId: activeArticleId }, '', newUrl);
+                }
+            } else {
+                if (!isHandlingPopstate && window.location.hash !== '#' + visibleOverlayId) {
+                    history.pushState({ activeOverlay: visibleOverlayId }, '', '#' + visibleOverlayId);
+                }
             }
-        } else if (!anyVisible && !isHandlingPopstate && window.location.hash) {
+        } else if (isAppBooted && !anyVisible && !isHandlingPopstate && (window.location.hash || window.location.search)) {
             // Clean history when everything is closed
-            history.pushState(null, '', window.location.pathname + window.location.search);
+            history.pushState(null, '', window.location.pathname);
         }
     };
 
@@ -7148,21 +8940,61 @@ function initDynamicViewport() {
     overlays.forEach(overlay => {
         observer.observe(overlay, { attributes: true, attributeFilter: ['class'] });
     });
+    
+    if (commentsDrawer) {
+        observer.observe(commentsDrawer, { attributes: true, attributeFilter: ['class'] });
+    }
 
     // Listen for mobile/browser back button
+    window.addEventListener("storage", (e) => {
+        if (e.key === "murekkep_articles_v2" && e.newValue) {
+            try {
+                const freshArticles = JSON.parse(e.newValue);
+                if (Array.isArray(freshArticles)) {
+                    articles = freshArticles;
+                    if (currentCategoryFilter === "all") {
+                        renderNewspaperGrid();
+                    } else {
+                        renderCategoryFeed(currentCategoryFilter);
+                    }
+                }
+            } catch (err) {}
+        }
+    });
+
     window.addEventListener('popstate', (event) => {
         isHandlingPopstate = true;
+        
+        // Parse parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryArticleId = urlParams.get('article');
+
+        // Check if query parameter for article is now empty, but we have an active article
+        if (!queryArticleId && activeArticleId) {
+            closeArticle();
+        } else if (queryArticleId && activeArticleId !== queryArticleId) {
+            openArticle(queryArticleId);
+        }
+
+        // Hide open drawer first
+        if (commentsDrawer && !commentsDrawer.classList.contains('hidden')) {
+            closeCommentsDrawer();
+        }
         
         // Hide open overlays
         overlays.forEach(overlay => {
             if (!overlay.classList.contains('hidden')) {
+                // If it is reading-overlay and we actually want to open an article, don't close it
+                if (overlay.id === 'reading-overlay' && queryArticleId) {
+                    return;
+                }
                 // Find and click the close button to trigger all default cleanups
                 const closeBtn = overlay.querySelector('.btn-close-overlay, #close-share, .share-close-btn');
                 if (closeBtn) {
                     closeBtn.click();
                 } else {
                     overlay.classList.add('hidden');
-                    document.body.style.overflow = '';
+                    unlockBodyScroll();
                 }
             }
         });
@@ -7175,3 +9007,1043 @@ function initDynamicViewport() {
     // Scaling is handled natively by the browser via viewport meta tag width=1300
 }
 
+// Reading Settings Controller
+document.addEventListener("DOMContentLoaded", () => {
+    const rsToggle = document.getElementById("reading-settings-toggle");
+    const rsDropdown = document.getElementById("reading-settings-dropdown");
+    const articleContainer = document.querySelector(".medium-article-container");
+
+    if (rsToggle && rsDropdown && articleContainer) {
+        rsToggle.addEventListener("click", (e) => {
+            e.stopPropagation();
+            rsDropdown.classList.toggle("hidden");
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!rsDropdown.classList.contains("hidden") && !rsDropdown.contains(e.target) && e.target !== rsToggle) {
+                rsDropdown.classList.add("hidden");
+            }
+        });
+
+        // Font Family selection
+        const fontBtns = document.querySelectorAll(".font-family-options .rs-opt-btn");
+        fontBtns.forEach(btn => {
+            btn.addEventListener("click", () => {
+                fontBtns.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                
+                const font = btn.getAttribute("data-font");
+                articleContainer.classList.remove("article-font-serif", "article-font-sans", "article-font-classic");
+                articleContainer.classList.add("article-font-" + font);
+                localStorage.setItem("murekkep_reader_font", font);
+            });
+        });
+
+        // Font Size selection
+        const sizeBtns = document.querySelectorAll(".font-size-options .rs-opt-btn");
+        sizeBtns.forEach(btn => {
+            btn.addEventListener("click", () => {
+                sizeBtns.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                
+                const size = btn.getAttribute("data-size");
+                articleContainer.classList.remove("article-size-small", "article-size-medium", "article-size-large");
+                articleContainer.classList.add("article-size-" + size);
+                localStorage.setItem("murekkep_reader_size", size);
+            });
+        });
+
+        // Load saved reader preferences
+        const savedFont = localStorage.getItem("murekkep_reader_font") || "serif";
+        const savedSize = localStorage.getItem("murekkep_reader_size") || "medium";
+
+        const activeFontBtn = document.querySelector(`.font-family-options .rs-opt-btn[data-font="${savedFont}"]`);
+        if (activeFontBtn) activeFontBtn.click();
+
+        const activeSizeBtn = document.querySelector(`.font-size-options .rs-opt-btn[data-size="${savedSize}"]`);
+        if (activeSizeBtn) activeSizeBtn.click();
+    }
+});
+
+// ── RICH TEXT WYSIWYG EDITOR INITIALIZATION ──────────────────
+function initWysiwygEditor() {
+    const editor = document.getElementById("post-editor");
+    const textarea = document.getElementById("post-content");
+    const wrapper = document.getElementById("post-editor-wrapper");
+    const publishForm = document.getElementById("publish-form");
+    const fontSelect = document.getElementById("editor-font-family");
+    
+    if (!editor || !textarea) return;
+
+    // Helper to sync editor content to hidden textarea
+    function syncEditorContent() {
+        textarea.value = editor.innerHTML;
+    }
+
+    // Input events to update the hidden textarea in real-time
+    editor.addEventListener("input", syncEditorContent);
+    editor.addEventListener("blur", syncEditorContent);
+
+    // Sync form resets (clears editor div as well)
+    if (publishForm) {
+        publishForm.addEventListener("reset", () => {
+            editor.innerHTML = "";
+            textarea.value = "";
+            if (wrapper) wrapper.classList.remove("profanity-error");
+            updateToolbarButtonStates();
+        });
+    }
+
+    // Font Family dropdown selection
+    if (fontSelect) {
+        fontSelect.addEventListener("change", function () {
+            const font = this.value;
+            editor.focus();
+            document.execCommand("fontName", false, font);
+            syncEditorContent();
+        });
+    }
+
+    // Toolbar formatting buttons
+    document.querySelectorAll(".editor-toolbar .toolbar-btn").forEach(btn => {
+        btn.addEventListener("click", function (e) {
+            e.preventDefault();
+            const command = this.getAttribute("data-command");
+            if (!command) return;
+
+            editor.focus();
+
+            if (command === "removeFormat") {
+                document.execCommand("removeFormat", false, null);
+                // Reset to default font-family Lora
+                document.execCommand("fontName", false, "'Lora', Georgia, serif");
+                if (fontSelect) fontSelect.selectedIndex = 0;
+            } else {
+                document.execCommand(command, false, null);
+            }
+
+            updateToolbarButtonStates();
+            syncEditorContent();
+        });
+    });
+
+    // Update active toolbar button states based on text selection
+    function updateToolbarButtonStates() {
+        document.querySelectorAll(".editor-toolbar .toolbar-btn[data-command]").forEach(btn => {
+            const command = btn.getAttribute("data-command");
+            if (command === "removeFormat") return;
+            try {
+                if (document.queryCommandState(command)) {
+                    btn.classList.add("active");
+                } else {
+                    btn.classList.remove("active");
+                }
+            } catch (e) {}
+        });
+
+        // Update selected option in font-family dropdown
+        if (fontSelect) {
+            try {
+                const fontName = document.queryCommandValue("fontName");
+                if (fontName) {
+                    const cleanFont = fontName.replace(/['"]/g, "").trim().toLowerCase();
+                    let matched = false;
+                    for (let option of fontSelect.options) {
+                        const optVal = option.value.replace(/['"]/g, "").trim().toLowerCase();
+                        if (optVal.includes(cleanFont) || cleanFont.includes(optVal)) {
+                            fontSelect.value = option.value;
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (!matched) {
+                        fontSelect.selectedIndex = 0; // Fallback to Lora
+                    }
+                }
+            } catch (e) {}
+        }
+    }
+
+    // Listeners for selection & focus changes to update toolbar state dynamically
+    editor.addEventListener("keyup", updateToolbarButtonStates);
+    editor.addEventListener("mouseup", updateToolbarButtonStates);
+    editor.addEventListener("focus", updateToolbarButtonStates);
+}
+
+
+// ===========================================================
+// MÜREKKEPLİ MEKTUP MODULE
+// Tamamen izole, kendi kendine yeten IIFE.
+// Mevcut app.js koduna DOKUNMAZ — yalnızca kendi
+// ID/class'larını kullanır ve window.MürekkepliMektup
+// namespace'ine bağlanır.
+// ===========================================================
+(function MürekkepliMektupModule() {
+    'use strict';
+
+    // ── Constants ──────────────────────────────────────────
+    const STORAGE_KEY  = 'mml_letters_v2';
+    const POOL_KEY     = 'mml_pool_v2';
+    const BONDS_KEY    = 'mml_bonds_v2';
+
+    // Wipe old test keys if present
+    try {
+        localStorage.removeItem('mml_letters_v1');
+        localStorage.removeItem('mml_pool_v1');
+        localStorage.removeItem('mml_bonds_v1');
+    } catch(e){}
+
+    // Anonim havuz: gerçek kullanıcı olmadığında inbox'a düşecek demo mektuplar
+    const DEMO_POOL_LETTERS = [
+        {
+            senderHint: 'İmza: G.',
+            paperTheme: 'parchment', font: "'Caveat', cursive", inkColor: '#1a1008',
+            stamp: '🌙', sealType: 'image', sealImg: 'assets/seals/seal_murekkep_red.jpg', sealGradient: 'radial-gradient(circle at 35% 35%, #1565c0, #0a2a5e)',
+            salutation: 'Sizi tanımayan birine,',
+            body: 'Bu satırları yazarken pencereden yarım ay görüyorum.\n\nBilmiyorum size ulaşıp ulaşmayacağını. Belki postanın dibinde kalır, belki yıllar sonra bir kutu karıştırırken bulunurum. Ama şimdi bu anı, bu mürekkebi, bu kala yağışın sesini size bırakmak istedim.\n\nYazarın olduğu her gün güzel bir gündür.',
+            closing: 'Karanliktaki bir kalemden,', signature: 'G.'
+        },
+        {
+            senderHint: 'İmza: N. Ç.',
+            paperTheme: 'cream', font: "'Cormorant Garamond', serif", inkColor: '#1c3a5e',
+            stamp: '☕', sealType: 'image', sealImg: 'assets/seals/seal_murekkep_gold.jpg', sealGradient: 'radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)',
+            salutation: 'Sevgili Yabancı,',
+            body: 'Sabah kahvemi içerken düşündüm: kaç kişi bu şehirde tam bu anda aynı şeyi hissediyordur?\n\nO yaşlı adam, kaldırımda bükülmüş oturuyor. Elinde gazete. Gözleri okumakta değil, bir yerde. Belki sizi düşünüyor. Belki beni. Belki hiç birini.\n\nŞehirler büyeyceç kadar yalnızlaştırır insanı.',
+            closing: 'Bu kalabalığtan,', signature: 'N. Ç.'
+        },
+        {
+            senderHint: 'İmza: H.',
+            paperTheme: 'straw', font: "'Dancing Script', cursive", inkColor: '#5c3a1e',
+            stamp: '🌿', sealType: 'image', sealImg: 'assets/seals/seal_traditional_emerald.jpg', sealGradient: 'radial-gradient(circle at 35% 35%, #2e7d32, #1a3d1c)',
+            salutation: 'Merhaba,',
+            body: 'Burada her şey yavaş işler. Bakücı dükkanı sabah 8\'de açılır, akşam 6\'da kapanır. Herkes birbirini bilir.\n\nBazen sormak istiyorum: büyük şehirde hiç görmediğin komşularla nasıl yaşanır? Tanıdıklık mı daha güzel, anonimlik mi?\n\nBen cevabı bilmiyorum. Ama her ikisinin de güzel bir tarafı olduğunu sanıyorum.',
+            closing: 'Yemyeşil bir yerden,', signature: 'H.'
+        },
+        {
+            senderHint: 'İmza: A. K.',
+            paperTheme: 'night', font: "'Lora', Georgia, serif", inkColor: '#a0c4e8',
+            stamp: '📖', sealType: 'image', sealImg: 'assets/seals/seal_traditional_sepia.jpg', sealGradient: 'radial-gradient(circle at 35% 35%, #f5c518, #a67c00)',
+            salutation: 'Kitap okuyan birine,',
+            body: 'Son okuduğunuz kitapta altını çizdiğiniz bir cümle var mı?\n\nBende var. Bir romanın tam ortasında. "Ve birdenbire anladı ki, beklediği şey geldiğinde onu tanıyamayacak." Bu kadar. Bundan sonrasını okuyamadım.Üç gün bekliyor kitap. Ben hazır değilim.\n\nUmarım sizin altı çizili cümleniz daha yumuşaktır.',
+            closing: 'Sayfalarda kaybolmuş biri,', signature: 'A. K.'
+        },
+    ];
+
+    // ── State ───────────────────────────────────────────────
+    let state = {
+        paperTheme:     'parchment',
+        font:           "'Caveat', cursive",
+        inkColor:       '#1a1008',
+        stamp:          '🪶',
+        sealType:       'image',
+        sealImg:        'assets/seals/seal_murekkep_red.jpg',
+        sealGradient:   'radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)',
+        deliveryDelay:  43200000, // 12h ms (Standart)
+        letters:        [],
+        bonds:          {},    // { [threadId]: BondObj }
+        replyMode:      null,  // { threadId, senderHint } | null
+        activeTab:      'studio',
+        countdownTimers: [],
+    };
+
+    // ── Storage helpers ─────────────────────────────────────
+    function saveLetters() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.letters)); } catch(e){}
+    }
+    function loadLetters() {
+        try { state.letters = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e){ state.letters = []; }
+        // Promote pending letters whose delivery time has passed
+        const now = Date.now();
+        let changed = false;
+        state.letters.forEach(l => {
+            if (l.status === 'transit' && l.deliverAt <= now) {
+                l.status = 'delivered';
+                changed = true;
+            }
+        });
+        if (changed) saveLetters();
+    }
+
+    // ── Bond storage ─────────────────────────────────────────
+    function saveBonds() {
+        try { localStorage.setItem(BONDS_KEY, JSON.stringify(state.bonds)); } catch(e){}
+    }
+    function loadBonds() {
+        try { state.bonds = JSON.parse(localStorage.getItem(BONDS_KEY)) || {}; } catch(e){ state.bonds = {}; }
+    }
+
+    // ── Universal Seal Renderer Helper ─────────────────────
+    function getSealHTML(obj, extraClass = '') {
+        if (!obj) obj = {};
+        const isImg = (obj.sealType === 'image' || obj.sealImg) && obj.sealImg;
+        if (isImg) {
+            return `<div class="seal-avatar-wrapper ${extraClass} has-img">
+                <img src="${sanitizeHTML(obj.sealImg)}" alt="Mühür" onerror="this.style.display='none'; this.parentNode.classList.remove('has-img'); this.parentNode.style.background='radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)'; this.parentNode.innerHTML='M';">
+            </div>`;
+        }
+        const bg = obj.sealGradient || 'radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)';
+        return `<div class="seal-avatar-wrapper ${extraClass}" style="background:${bg}">M</div>`;
+    }
+
+    // ── DOM helpers ─────────────────────────────────────────
+    function qs(id)     { return document.getElementById(id); }
+    function qsa(sel)   { return document.querySelectorAll(sel); }
+    function show(el)   { if(el) el.classList.remove('hidden'); }
+    function hide(el)   { if(el) el.classList.add('hidden'); }
+
+    // ── Toast ───────────────────────────────────────────────
+    function showToast(msg) {
+        let t = document.querySelector('.penpal-toast');
+        if (!t) {
+            t = document.createElement('div');
+            t.className = 'penpal-toast';
+            document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3200);
+    }
+
+    // ── Open / Close overlay ────────────────────────────────
+    function openPenpal() {
+        const overlay = qs('penpal-overlay');
+        if (!overlay) return;
+        overlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        loadLetters();
+        loadBonds();
+        renderAll();
+    }
+    function closePenpal() {
+        const overlay = qs('penpal-overlay');
+        if (!overlay) return;
+        overlay.classList.add('hidden');
+        document.body.style.overflow = '';
+        clearCountdowns();
+    }
+
+    // ── Render Bonds (Arkadaşlar Tabı) ─────────────────────
+    function renderBonds() {
+        const panel = qs('penpal-panel-penpal');
+        if (!panel) return;
+        loadBonds();
+
+        const bondsList = Object.values(state.bonds);
+
+        if (!bondsList.length) {
+            panel.innerHTML = `
+            <div class="bonds-container">
+                <h3 class="bonds-title">💌 Mektup Arkadaşlarım & Bağlarım</h3>
+                <p class="bonds-subtitle">Mektuplaştıkça anonim bağlarınız güçlenir. 5 mektup sonrası tanışabilirsiniz!</p>
+                <div class="bonds-empty">
+                    <span class="empty-icon">📜</span>
+                    <h4>Henüz bir mektup bağınız yok</h4>
+                    <p>Anonim havuza bir mektup yazın veya gelen mektuplara yanıt verin. Birileriyle sürekli mektuplaştıkça bağı burada göreceksiniz!</p>
+                </div>
+            </div>`;
+            return;
+        }
+
+        panel.innerHTML = `
+        <div class="bonds-container">
+            <h3 class="bonds-title">💌 Mektup Arkadaşlarım & Bağlarım</h3>
+            <p class="bonds-subtitle">Birbirinize yazıştıkça anonim bağınız büyür. 5 mektupta kimlikleri ortaya çıkarabilirsiniz.</p>
+            <div class="bonds-list">
+                ${bondsList.map(bond => {
+                    const count = Math.min(bond.letterCount || 1, 5);
+                    const canReveal = count >= 5 && bond.status !== 'revealed';
+                    const isRevealed = bond.status === 'revealed';
+
+                    const dotsHtml = Array.from({length: 5}, (_, i) => 
+                        `<div class="bond-dot ${i < count ? 'filled' : ''}"></div>`
+                    ).join('');
+
+                    return `
+                    <div class="bond-card ${canReveal ? 'bond-can-reveal' : ''}">
+                        <div class="bond-card-avatar">${isRevealed ? (bond.realName?.[0] || '💌') : '🎭'}</div>
+                        <div class="bond-card-info">
+                            <div class="bond-card-name">
+                                ${isRevealed ? `✨ ${sanitizeHTML(bond.realName)} (${sanitizeHTML(bond.senderHint)})` : sanitizeHTML(bond.senderHint)}
+                            </div>
+                            <div class="bond-card-progress">
+                                <div class="bond-dots">${dotsHtml}</div>
+                                <span class="bond-progress-label">${count}/5 Mektup</span>
+                            </div>
+                            ${canReveal ? `<div class="bond-reveal-notice">🎉 5 mektuba ulaştınız! Tanışma teklif edebilirsiniz.</div>` : ''}
+                            ${isRevealed ? `<div class="bond-revealed-notice">🤝 Kimlikler açık! Birbirinizi tanıyorsunuz.</div>` : ''}
+                        </div>
+                        <div class="bond-card-actions">
+                            <button class="bond-reply-btn" data-thread="${bond.threadId}" data-hint="${sanitizeHTML(bond.senderHint)}">✍️ Yaz</button>
+                            ${canReveal ? `<button class="bond-reveal-btn" data-thread="${bond.threadId}">✨ Tanışma Teklifi Et</button>` : ''}
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+
+        // Action bindings
+        panel.querySelectorAll('.bond-reply-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                startReply(btn.dataset.thread, btn.dataset.hint);
+            });
+        });
+
+        panel.querySelectorAll('.bond-reveal-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const threadId = btn.dataset.thread;
+                if (state.bonds[threadId]) {
+                    state.bonds[threadId].status = 'revealed';
+                    state.bonds[threadId].realName = 'Edebiyatsever Dost';
+                    saveBonds();
+                    showToast('🎉 Tanışma teklifiniz kabul edildi! Mektup arkadaşınızın ismi açıklandı.');
+                    renderBonds();
+                }
+            });
+        });
+    }
+
+    function renderPenpalMatches() {
+        renderBonds();
+    }
+
+    // ── Tab switching ───────────────────────────────────────
+    function switchTab(tabName) {
+        state.activeTab = tabName;
+        qsa('.penpal-tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.penpalTab === tabName);
+        });
+        qsa('.penpal-panel').forEach(panel => {
+            panel.classList.add('hidden');
+        });
+        const panel = qs(`penpal-panel-${tabName}`);
+        if (panel) panel.classList.remove('hidden');
+
+        if (tabName === 'inbox')  renderInbox();
+        if (tabName === 'outbox') renderOutbox();
+        if (tabName === 'penpal') renderBonds();
+    }
+
+    // ── Letter preview update ───────────────────────────────
+    function updatePreview() {
+        const preview   = qs('penpal-letter-preview');
+        const sealEl    = qs('preview-seal');
+        const stampEl   = qs('preview-stamp');
+
+        // Paper class
+        ['paper-parchment','paper-cream','paper-night','paper-straw'].forEach(c => preview.classList.remove(c));
+        preview.classList.add(`paper-${state.paperTheme}`);
+
+        // Font & color on all editable zones
+        const editables = preview.querySelectorAll('[contenteditable]');
+        editables.forEach(el => {
+            el.style.fontFamily = state.font;
+            el.style.color      = state.inkColor;
+        });
+
+        // Night mode: white ink default
+        if (state.paperTheme === 'night') {
+            editables.forEach(el => {
+                if (el.style.color === state.inkColor || el.style.color === '') {
+                    el.style.color = state.inkColor === '#1a1008' ? '#e8e0d0' : state.inkColor;
+                }
+            });
+        }
+
+        // Seal & stamp
+        if (sealEl) {
+            const isImg = (state.sealType === 'image' || state.sealImg) && state.sealImg;
+            if (isImg) {
+                sealEl.className = 'letter-seal preview-seal has-img';
+                sealEl.style.background = 'transparent';
+                sealEl.innerHTML = `<img src="${sanitizeHTML(state.sealImg)}" alt="Mühür" onerror="this.style.display='none'; this.parentNode.classList.remove('has-img'); this.parentNode.style.background='${state.sealGradient}'; this.parentNode.innerHTML='M';">`;
+            } else {
+                sealEl.className = 'letter-seal preview-seal';
+                sealEl.style.background = state.sealGradient || 'radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)';
+                sealEl.innerHTML = 'M';
+            }
+        }
+        if (stampEl) stampEl.textContent = state.stamp;
+    }
+
+    // ── Studio control binding ──────────────────────────────
+    function bindStudioControls() {
+        // Paper themes
+        qsa('#paper-theme-grid .paper-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                qsa('#paper-theme-grid .paper-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.paperTheme = btn.dataset.paper;
+                updatePreview();
+            });
+        });
+
+        // Fonts
+        qsa('#font-choice-grid .font-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                qsa('#font-choice-grid .font-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.font = btn.dataset.font;
+                updatePreview();
+            });
+        });
+
+        // Ink colors
+        qsa('#ink-color-grid .ink-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                qsa('#ink-color-grid .ink-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.inkColor = btn.dataset.ink;
+                updatePreview();
+            });
+        });
+
+        // Stamps
+        qsa('#stamp-grid .stamp-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                qsa('#stamp-grid .stamp-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.stamp = btn.textContent.trim();
+                updatePreview();
+            });
+        });
+
+        // Wax seals
+        qsa('#seal-grid .seal-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                qsa('#seal-grid .seal-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.sealType = btn.dataset.sealType || 'color';
+                if (state.sealType === 'image') {
+                    state.sealImg = btn.dataset.sealImg || 'assets/seals/seal_murekkep_red.jpg';
+                }
+                state.sealGradient = btn.dataset.seal || btn.style.background;
+                updatePreview();
+            });
+        });
+
+        // Delivery
+        qsa('#delivery-grid .delivery-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                qsa('#delivery-grid .delivery-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.deliveryDelay = parseInt(btn.dataset.delay);
+            });
+        });
+
+        // Pick recipient button (artık yok ama güvenlik için kontrol)
+        const pickBtn = qs('penpal-pick-recipient-btn');
+        if (pickBtn) pickBtn.addEventListener('click', () => switchTab('penpal'));
+
+        // Bottle mode (artık yok ama güvenlik için)
+        const bottleBtn = qs('penpal-bottle-btn');
+        if (bottleBtn) bottleBtn.addEventListener('click', () => showToast('Mektup anonim havuza gönderilecek.'));
+
+        // Send button
+        const sendBtn = qs('penpal-send-btn');
+        if (sendBtn) sendBtn.addEventListener('click', sendLetter);
+    }
+
+    // ── Reply Banner Utilities ──────────────────────────────
+    function updateStudioReplyBanner() {
+        const badgeText = qs('penpal-overlay')?.querySelector('.anon-dispatch-text');
+        if (!badgeText) return;
+
+        if (state.replyMode) {
+            badgeText.innerHTML = `
+                <strong style="color:#1565c0;">↩️ Yanıt Yazılıyor: ${sanitizeHTML(state.replyMode.senderHint)}</strong>
+                <span>Bu mektup doğrudan aynı anonim kaleme ulaşacaktır. 
+                <button id="cancel-reply-btn" style="background:none;border:none;color:#e53935;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;margin-left:6px;">İptal Et</button></span>
+            `;
+            const cancelBtn = qs('cancel-reply-btn');
+            if (cancelBtn) cancelBtn.addEventListener('click', cancelReply);
+        } else {
+            badgeText.innerHTML = `
+                <strong>Anonim Mektup Havuzu</strong>
+                <span>Mektubunuz rastgele bir edebiyatsevere gider. Siz de havuzdan birinin mektubunu alırsınız. Kimse kimseyi bilmez — sadece kelimeler konuşur.</span>
+            `;
+        }
+    }
+
+    function startReply(threadId, senderHint) {
+        state.replyMode = { threadId, senderHint };
+        updateStudioReplyBanner();
+        switchTab('studio');
+        showToast(`✍️ ${senderHint} kaleme yanıt yazıyorsunuz.`);
+    }
+
+    function cancelReply() {
+        state.replyMode = null;
+        updateStudioReplyBanner();
+        showToast('Yanıt modu iptal edildi.');
+    }
+
+    // ── Send letter (Thread & Bond Destekli) ────────────────
+    function sendLetter() {
+        const salutation = qs('preview-salutation')?.innerText?.trim() || '';
+        const body       = qs('preview-body')?.innerText?.trim()       || '';
+        const closing    = qs('preview-closing')?.innerText?.trim()    || '';
+        const signature  = qs('preview-signature')?.innerText?.trim()  || '';
+
+        if (!body || body === 'Mektubunuzu buraya yazın...') {
+            showToast('⚠️ Mektup içeriği boş olamaz!');
+            return;
+        }
+
+        const now = Date.now();
+        const deliverAt = now + state.deliveryDelay;
+        let threadId, recipientName;
+
+        if (state.replyMode) {
+            // Var olan bir ipliğe yanıt
+            threadId = state.replyMode.threadId;
+            recipientName = state.replyMode.senderHint;
+
+            if (!state.bonds[threadId]) {
+                state.bonds[threadId] = {
+                    threadId,
+                    senderHint: recipientName,
+                    letterCount: 1,
+                    status: 'active'
+                };
+            }
+            state.bonds[threadId].letterCount += 1;
+            saveBonds();
+        } else {
+            // Rastgele yeni bir thread
+            threadId = 'th_' + now + '_' + Math.random().toString(36).slice(2, 7);
+            recipientName = 'Mektup Arkadaşı';
+        }
+
+        // 1. Outbox mektubu
+        const outLetter = {
+            id:         'ltr_out_' + now + '_' + Math.random().toString(36).slice(2),
+            threadId,
+            sentAt:     now,
+            deliverAt,
+            status:     'transit',
+            direction:  'outbox',
+            recipient:  { name: recipientName, isPool: !state.replyMode },
+            paperTheme: state.paperTheme,
+            font:       state.font,
+            inkColor:   state.inkColor,
+            stamp:      state.stamp,
+            sealType:   state.sealType,
+            sealImg:    state.sealImg,
+            sealGradient: state.sealGradient,
+            salutation, body, closing, signature,
+        };
+
+        // 2. Yanıt veya yeni rastgele havuz mektubu (inbox)
+        const poolSource = DEMO_POOL_LETTERS[Math.floor(Math.random() * DEMO_POOL_LETTERS.length)];
+        const senderHint = state.replyMode ? state.replyMode.senderHint : (poolSource.senderHint || ('İmza: ' + (poolSource.signature || 'Anonim')));
+
+        const inboxLetter = {
+            id:         'ltr_in_' + now + '_' + Math.random().toString(36).slice(2),
+            threadId,
+            sentAt:     now,
+            deliverAt,
+            status:     'transit',
+            direction:  'inbox',
+            sender:     { name: senderHint },
+            paperTheme: poolSource.paperTheme,
+            font:       poolSource.font,
+            inkColor:   poolSource.inkColor,
+            stamp:      poolSource.stamp,
+            sealType:   poolSource.sealType || 'image',
+            sealImg:    poolSource.sealImg || 'assets/seals/seal_murekkep_red.jpg',
+            sealGradient: poolSource.sealGradient,
+            salutation: state.replyMode ? 'Yazarıma yanıt olarak,' : poolSource.salutation,
+            body:       state.replyMode ? 'Mektubunuzu aldım ve derinden hissettim.\n\n' + poolSource.body : poolSource.body,
+            closing:    poolSource.closing,
+            signature:  poolSource.signature,
+        };
+
+        // Eğer yeni thread ise ve yanıt değilse bond kaydını ilk mektupla başlat
+        if (!state.bonds[threadId]) {
+            state.bonds[threadId] = {
+                threadId,
+                senderHint,
+                letterCount: 1,
+                status: 'active'
+            };
+            saveBonds();
+        }
+
+        state.letters.push(outLetter);
+        state.letters.push(inboxLetter);
+        saveLetters();
+
+        // Yanıt modunu sıfırla
+        state.replyMode = null;
+        updateStudioReplyBanner();
+        resetCompose();
+
+        const delay = state.deliveryDelay;
+        const timeStr = delay <= 1000 ? '1 saniye' : delay < 3600001 ? '1 saat' : delay < 86400001 ? '12 saat' : '3 gün';
+        showToast(`✉️ Mektubunuz yola çıktı! ${timeStr} içinde cevap ulaşacak.`);
+
+        setTimeout(() => switchTab('outbox'), 800);
+    }
+
+    function resetCompose() {
+        const salutation = qs('preview-salutation');
+        const body       = qs('preview-body');
+        const closing    = qs('preview-closing');
+        const signature  = qs('preview-signature');
+        if (salutation) salutation.innerText = 'Sevgili Mektup Arkadaşım,';
+        if (body)       body.innerText       = 'Mektubunuzu buraya yazın...';
+        if (closing)    closing.innerText    = 'Sevgiyle,';
+        if (signature)  signature.innerText  = 'İmzanız';
+    }
+
+    // ── Render outbox ───────────────────────────────────────
+    function renderOutbox() {
+        const list = qs('penpal-outbox-list');
+        if (!list) return;
+        const outLetters = state.letters.filter(l => l.direction === 'outbox').sort((a,b)=>b.sentAt-a.sentAt);
+
+        if (!outLetters.length) {
+            list.innerHTML = `<div class="letter-list-empty"><span class="empty-icon">📪</span><p>Henüz mektup göndermediniz.<br>İlk mektubunuzu "Mektup Yaz" sekmesinden yazın!</p></div>`;
+            return;
+        }
+
+        list.innerHTML = outLetters.map(l => {
+            const isTransit  = l.status === 'transit';
+            const statusHtml = isTransit
+                ? `<span class="letter-card-status-badge status-transit">🕊️ Yolda</span>`
+                : `<span class="letter-card-status-badge status-delivered">✅ Ulaştı</span>`;
+            const countdownHtml = isTransit
+                ? `<span class="letter-card-time penpal-countdown" data-deliver="${l.deliverAt}">${formatCountdown(l.deliverAt)}</span>`
+                : '';
+
+            return `
+            <div class="penpal-letter-card" data-letter-id="${l.id}">
+                ${getSealHTML(l, 'letter-card-seal')}
+                <div class="letter-card-info">
+                    <div class="letter-card-sender">✉️ ${sanitizeHTML(l.recipient?.name || 'Bilinmiyor')}</div>
+                    <div class="letter-card-preview">${sanitizeHTML(l.body?.slice(0,80) || '')}…</div>
+                    <div class="letter-card-time">
+                        ${new Date(l.sentAt).toLocaleDateString('tr-TR')}
+                        ${statusHtml}
+                        ${countdownHtml}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        startCountdowns(list);
+    }
+
+    // ── Render inbox ────────────────────────────────────────
+    function renderInbox() {
+        const list = qs('penpal-inbox-list');
+        if (!list) return;
+        loadLetters();
+        const inLetters = state.letters.filter(l => l.direction === 'inbox').sort((a,b)=>b.sentAt-a.sentAt);
+
+        // Update badge
+        const unread = inLetters.filter(l => l.status === 'delivered').length;
+        const badge  = qs('penpal-inbox-badge');
+        if (badge) {
+            badge.textContent = unread;
+            unread > 0 ? badge.classList.remove('hidden') : badge.classList.add('hidden');
+        }
+
+        if (!inLetters.length) {
+            list.innerHTML = `<div class="letter-list-empty"><span class="empty-icon">📭</span><p>Henüz mektup almadınız.<br>Bir mektup arkadaşı edinin ve mektuplara başlayın!</p></div>`;
+            return;
+        }
+
+        list.innerHTML = inLetters.map(l => {
+            const isTransit  = l.status === 'transit';
+            const isUnread   = l.status === 'delivered';
+            const statusHtml = isTransit
+                ? `<span class="letter-card-status-badge status-transit">🚀 Yolda</span>`
+                : (isUnread
+                    ? `<span class="letter-card-status-badge status-delivered">📬 Yeni Mektup!</span>`
+                    : `<span class="letter-card-status-badge" style="color:var(--text-secondary)">👁️ Okundu</span>`);
+            const countdownHtml = isTransit
+                ? `<span class="penpal-countdown" data-deliver="${l.deliverAt}">${formatCountdown(l.deliverAt)}</span>`
+                : '';
+
+            const bond = l.threadId ? state.bonds[l.threadId] : null;
+            const threadBadge = bond ? `<span class="thread-badge">💬 ${bond.letterCount}/5 Mektup</span>` : '';
+
+            return `
+            <div class="penpal-letter-card ${isUnread ? 'unread' : ''}" data-letter-id="${l.id}" data-direction="inbox">
+                ${getSealHTML(l, 'letter-card-seal')}
+                <div class="letter-card-info">
+                    <div class="letter-card-sender">📜 ${sanitizeHTML(l.sender?.name || 'Anonim Kalem')} ${threadBadge}</div>
+                    <div class="letter-card-preview">${isTransit ? '🔒 Mektup henüz yolda...' : sanitizeHTML(l.body?.slice(0,80) || '') + '…'}</div>
+                    <div class="letter-card-time">
+                        ${new Date(l.sentAt).toLocaleDateString('tr-TR')}
+                        ${statusHtml}
+                        ${countdownHtml}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        startCountdowns(list);
+
+        // Click handler for delivered letters
+        list.querySelectorAll('.penpal-letter-card[data-direction="inbox"]').forEach(card => {
+            card.addEventListener('click', () => {
+                const letterId = card.dataset.letterId;
+                const letter   = state.letters.find(l => l.id === letterId);
+                if (!letter || letter.status === 'transit') {
+                    showToast('📮 Mektup henüz yolda, sabirlı olun!');
+                    return;
+                }
+                openLetterReader(letter);
+            });
+        });
+    }
+
+    // ── Letter reader modal ──────────────────────────────
+    function openLetterReader(letter) {
+        const modal = qs('penpal-reading-modal');
+        if (!modal) return;
+
+        const sealDisplay = qs('envelope-seal-display');
+        if (sealDisplay) {
+            sealDisplay.outerHTML = getSealHTML(letter, 'envelope-seal-display');
+        }
+
+        const envelope = qs('penpal-envelope');
+        if (envelope) envelope.classList.remove('opening');
+        const opened = qs('penpal-letter-opened');
+        if (opened) opened.classList.add('hidden');
+        const wrapper = qs('penpal-envelope-wrapper');
+        if (wrapper) wrapper.classList.remove('hidden');
+
+        show(modal);
+        document.body.style.overflow = 'hidden';
+
+        // Break seal button
+        const breakBtn = qs('break-seal-btn');
+        if (breakBtn) {
+            // Remove old listener by cloning
+            const newBreakBtn = breakBtn.cloneNode(true);
+            breakBtn.parentNode.replaceChild(newBreakBtn, breakBtn);
+            newBreakBtn.addEventListener('click', () => {
+                // Animate envelope open
+                if (envelope) envelope.classList.add('opening');
+
+                setTimeout(() => {
+                    if (wrapper) wrapper.classList.add('hidden');
+                    if (opened) {
+                        opened.classList.remove('hidden');
+                        
+                        // Inject letter content
+                        opened.innerHTML = `
+                        <div class="letter-preview paper-${sanitizeHTML(letter.paperTheme)}" style="max-width:520px; margin: 0 auto;">
+                            <div class="letter-stamp">${sanitizeHTML(letter.stamp)}</div>
+                            <div style="font-family:${sanitizeHTML(letter.font)}; color:${sanitizeHTML(letter.inkColor)};">
+                                <div class="letter-salutation" style="font-family:${sanitizeHTML(letter.font)};color:${sanitizeHTML(letter.inkColor)}">${sanitizeHTML(letter.salutation)}</div>
+                                <div class="letter-body" style="font-family:${sanitizeHTML(letter.font)};color:${sanitizeHTML(letter.inkColor)}">${sanitizeHTML(letter.body).replace(/\n/g,'<br>')}</div>
+                                <div class="letter-closing" style="font-family:${sanitizeHTML(letter.font)};color:${sanitizeHTML(letter.inkColor)}">${sanitizeHTML(letter.closing)}</div>
+                                <div class="letter-signature" style="font-family:${sanitizeHTML(letter.font)};color:${sanitizeHTML(letter.inkColor)}">${sanitizeHTML(letter.signature)}</div>
+                            </div>
+                            ${getSealHTML(letter, 'letter-seal')}
+                        </div>`;
+                    }
+
+                    // Mark as read
+                    const l = state.letters.find(x => x.id === letter.id);
+                    if (l) { l.status = 'read'; saveLetters(); }
+                }, 650);
+            });
+        }
+    }
+
+    function closeLetterReader() {
+        const modal = qs('penpal-reading-modal');
+        if (modal) modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    // ── Render Bonds (Arkadaşlar Tabı) ─────────────────────
+    function renderBonds() {
+        const panel = qs('penpal-panel-penpal');
+        if (!panel) return;
+        loadBonds();
+
+        const bondsList = Object.values(state.bonds);
+
+        if (!bondsList.length) {
+            panel.innerHTML = `
+            <div class="bonds-container">
+                <h3 class="bonds-title">💌 Mektup Arkadaşlarım & Bağlarım</h3>
+                <p class="bonds-subtitle">Mektuplaştıkça anonim bağlarınız güçlenir. 5 mektup sonrası tanışabilirsiniz!</p>
+                <div class="bonds-empty">
+                    <span class="empty-icon">📜</span>
+                    <h4>Henüz bir mektup bağınız yok</h4>
+                    <p>Anonim havuza bir mektup yazın veya gelen mektuplara yanıt verin. Birileriyle sürekli mektuplaştıkça bağı burada göreceksiniz!</p>
+                </div>
+            </div>`;
+            return;
+        }
+
+        panel.innerHTML = `
+        <div class="bonds-container">
+            <h3 class="bonds-title">💌 Mektup Arkadaşlarım & Bağlarım</h3>
+            <p class="bonds-subtitle">Birbirinize yazıştıkça anonim bağınız büyür. 5 mektupta kimlikleri ortaya çıkarabilirsiniz.</p>
+            <div class="bonds-list">
+                ${bondsList.map(bond => {
+                    const count = Math.min(bond.letterCount || 1, 5);
+                    const canReveal = count >= 5 && bond.status !== 'revealed';
+                    const isRevealed = bond.status === 'revealed';
+
+                    const dotsHtml = Array.from({length: 5}, (_, i) => 
+                        `<div class="bond-dot ${i < count ? 'filled' : ''}"></div>`
+                    ).join('');
+
+                    return `
+                    <div class="bond-card ${canReveal ? 'bond-can-reveal' : ''}">
+                        <div class="bond-card-avatar">${isRevealed ? (bond.realName?.[0] || '💌') : '🎭'}</div>
+                        <div class="bond-card-info">
+                            <div class="bond-card-name">
+                                ${isRevealed ? `✨ ${sanitizeHTML(bond.realName)} (${sanitizeHTML(bond.senderHint)})` : sanitizeHTML(bond.senderHint)}
+                            </div>
+                            <div class="bond-card-progress">
+                                <div class="bond-dots">${dotsHtml}</div>
+                                <span class="bond-progress-label">${count}/5 Mektup</span>
+                            </div>
+                            ${canReveal ? `<div class="bond-reveal-notice">🎉 5 mektuba ulaştınız! Tanışma teklif edebilirsiniz.</div>` : ''}
+                            ${isRevealed ? `<div class="bond-revealed-notice">🤝 Kimlikler açık! Birbirinizi tanıyorsunuz.</div>` : ''}
+                        </div>
+                        <div class="bond-card-actions">
+                            <button class="bond-reply-btn" data-thread="${bond.threadId}" data-hint="${sanitizeHTML(bond.senderHint)}">✍️ Yaz</button>
+                            ${canReveal ? `<button class="bond-reveal-btn" data-thread="${bond.threadId}">✨ Tanışma Teklifi Et</button>` : ''}
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+
+        // Action bindings
+        panel.querySelectorAll('.bond-reply-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                startReply(btn.dataset.thread, btn.dataset.hint);
+            });
+        });
+
+        panel.querySelectorAll('.bond-reveal-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const threadId = btn.dataset.thread;
+                if (state.bonds[threadId]) {
+                    state.bonds[threadId].status = 'revealed';
+                    state.bonds[threadId].realName = 'Edebiyatsever Dost';
+                    saveBonds();
+                    showToast('🎉 Tanışma teklifiniz kabul edildi! Mektup arkadaşınızın ismi açıklandı.');
+                    renderBonds();
+                }
+            });
+        });
+    }
+
+    function renderPenpalMatches() {
+        renderBonds();
+    }
+
+    // ── Countdown helpers ───────────────────────────────────
+    function formatCountdown(deliverAt) {
+        const ms  = deliverAt - Date.now();
+        if (ms <= 0) return '✅ Teslim edildi';
+        const h   = Math.floor(ms / 3600000);
+        const m   = Math.floor((ms % 3600000) / 60000);
+        const s   = Math.floor((ms % 60000) / 1000);
+        if (h > 0)  return `⏳ ${h} saat ${m} dk kaldı`;
+        if (m > 0)  return `⏳ ${m} dk ${s} sn kaldı`;
+        return `⏳ ${s} sn kaldı`;
+    }
+
+    let _countdownInterval = null;
+    function clearCountdowns() {
+        if (_countdownInterval) { clearInterval(_countdownInterval); _countdownInterval = null; }
+    }
+    function startCountdowns(container) {
+        clearCountdowns();
+        _countdownInterval = setInterval(() => {
+            container.querySelectorAll('.penpal-countdown[data-deliver]').forEach(el => {
+                el.textContent = formatCountdown(parseInt(el.dataset.deliver));
+            });
+        }, 1000);
+    }
+
+    // ── Render all ──────────────────────────────────────────
+    function renderAll() {
+        switchTab(state.activeTab || 'studio');
+        updatePreview();
+    }
+
+    // ── Interest chips ──────────────────────────────────────
+    function bindInterestChips() {
+        qsa('#penpal-interest-grid .interest-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                chip.classList.toggle('selected');
+                renderPenpalMatches();
+            });
+        });
+    }
+
+
+
+    // ── Init ────────────────────────────────────────────────
+    function init() {
+        loadLetters();
+
+        // Nav button
+        const navBtn = qs('penpal-nav-btn');
+        if (navBtn) navBtn.addEventListener('click', openPenpal);
+
+        // Showcase Banner buttons
+        const bannerWrite = qs('mp-banner-write-btn');
+        if (bannerWrite) {
+            bannerWrite.addEventListener('click', () => {
+                openPenpal();
+                switchTab('studio');
+            });
+        }
+        const bannerInbox = qs('mp-banner-inbox-btn');
+        if (bannerInbox) {
+            bannerInbox.addEventListener('click', () => {
+                openPenpal();
+                switchTab('inbox');
+            });
+        }
+
+        // Close button
+        const closeBtn = qs('close-penpal');
+        if (closeBtn) closeBtn.addEventListener('click', closePenpal);
+
+        // Tab navigation
+        qsa('.penpal-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.penpalTab));
+        });
+
+        // Close letter reader
+        const closeReader = qs('close-penpal-reading');
+        if (closeReader) closeReader.addEventListener('click', closeLetterReader);
+
+        // Studio controls
+        bindStudioControls();
+
+        // Initial preview render
+        updatePreview();
+
+        console.log('[MürekkepliMektup] Modül başarıyla yüklendi.');
+    }
+
+    // Run after DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    // Expose minimal public API
+    window.MürekkepliMektup = { open: openPenpal, close: closePenpal };
+
+})();
