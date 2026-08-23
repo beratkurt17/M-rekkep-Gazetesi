@@ -5011,7 +5011,7 @@ function updateHeaderMeta() {
     }
     
     if (pageIndicator) {
-        pageIndicator.innerText = `SAYI: ${issueStr}`;
+        pageIndicator.innerText = `SAYI: ${issueStr} / SAYFA: ${String(currentPage).padStart(2, '0')}`;
     }
 }
 
@@ -5023,8 +5023,6 @@ function renderNewspaperGrid() {
 
     // Ensure all slots have unique IDs
     ensureLayoutSlotIds();
-
-    currentPage = 1;
 
     const chronological = getChronologicalArticles();
     const sorted = getSortedArticles();
@@ -5039,27 +5037,47 @@ function renderNewspaperGrid() {
         }
     });
 
-    // 2. Assign Category Slots with the newest article of each category
-    _slotArticleMap = {};
-    allCategorySlots.forEach(slot => {
-        const slotCat = (slot.value || "").toLowerCase().trim();
-        const matchingCategoryArticles = chronological.filter(art => {
-            const artCat = (art.category || "").toLowerCase().trim();
-            return artCat === slotCat || ((slotCat === "kose-yazilari" || slotCat === "kose") && (artCat === "kose-yazilari" || artCat === "kose_yazilari" || artCat === "kose"));
-        });
-
-        // Pick latest article of that category
-        _slotArticleMap[slot.id] = matchingCategoryArticles[0] || null;
-    });
-
-    // 3. Determine Headline:
-    // Priority 1: 'manset' category articles
-    // Priority 2: top featured / latest article
-    const mansetArticles = chronological.filter(a => (a.category || "").toLowerCase() === 'manset');
-    const headlines = [
-        mansetArticles[0] || sorted[0] || chronological[0] || null
+    const allLayoutSlots = [
+        ...(layoutConfig.col1 || []),
+        ...(layoutConfig.col2 || []),
+        ...(layoutConfig.col3 || [])
     ];
-    const currentHeadline = headlines[0] || null;
+    const categorySlotCount = Math.max(1, allLayoutSlots.filter(s => s.type === 'category').length);
+    const headlineSlotCount = allLayoutSlots.filter(s => s.type === 'system' && s.value === 'headline').length;
+    const pageCapacity = categorySlotCount + headlineSlotCount;
+
+    // Pages: only open page 2 when page 1 is completely full
+    const totalPages = Math.max(1, Math.ceil(chronological.length / pageCapacity));
+
+    if (currentPage > totalPages) {
+        currentPage = Math.max(1, totalPages);
+    }
+
+    // One headline per page = first article of each page's pool
+    const headlines = [];
+    for (let p = 0; p < totalPages; p++) {
+        const first = chronological[p * pageCapacity];
+        if (first) headlines.push(first);
+    }
+    const currentHeadline = headlines[currentPage - 1] || null;
+
+    _slotArticleMap = {};
+
+    // Sort slots by ID for stable assignment across renders
+    const sortedSlots = allCategorySlots.slice().sort((a, b) => a.id.localeCompare(b.id));
+    const totalCategorySlots = sortedSlots.length;
+
+    // Get all articles for this page (skip headlines of all pages)
+    const headlineIds = new Set(headlines.map(h => h && h.id).filter(Boolean));
+    const nonHeadlineArticles = chronological.filter(art => !headlineIds.has(art.id));
+
+    // Each page gets a fresh "window" of articles
+    const slotPageStartIdx = (currentPage - 1) * totalCategorySlots;
+    const pageArticles = nonHeadlineArticles.slice(slotPageStartIdx, slotPageStartIdx + totalCategorySlots);
+
+    sortedSlots.forEach((slot, idx) => {
+        _slotArticleMap[slot.id] = pageArticles[idx] || null;
+    });
 
     // Update Header page label
     updateHeaderMeta();
@@ -5200,11 +5218,49 @@ function renderNewspaperGrid() {
         <div class="news-column" style="display: grid; grid-template-columns: repeat(${col3W}, 1fr); gap: 16px; align-content: start;">${col3HTML}</div>
     `;
 
-    // Hide Bottom Pagination Controls (Single Page Newspaper)
+    // Render Bottom Pagination Controls
     const paginationEl = document.getElementById("newspaper-pagination");
     if (paginationEl) {
-        paginationEl.innerHTML = "";
-        paginationEl.classList.add("hidden");
+        if (totalPages > 1) {
+            paginationEl.classList.remove("hidden");
+            let pagesButtons = "";
+            for (let i = 1; i <= totalPages; i++) {
+                pagesButtons += `
+                    <button class="pagination-btn ${i === currentPage ? 'active' : ''}" data-page="${i}" style="${i === currentPage ? 'color: var(--accent-color); border-bottom: 2px solid var(--accent-color); font-weight: 900;' : ''}">
+                        SAYFA ${i}
+                    </button>
+                `;
+            }
+            paginationEl.innerHTML = `
+                <button class="pagination-btn" id="prev-page-btn" ${currentPage === 1 ? 'disabled' : ''}>◀ Önceki</button>
+                <div class="pagination-numbers" style="display: flex; gap: 8px;">${pagesButtons}</div>
+                <button class="pagination-btn" id="next-page-btn" ${currentPage === totalPages ? 'disabled' : ''}>Sonraki ▶</button>
+            `;
+            
+            // Add listeners to page numbers
+            paginationEl.querySelectorAll(".pagination-btn[data-page]").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const targetPage = parseInt(btn.getAttribute("data-page"));
+                    changePage(targetPage);
+                });
+            });
+            
+            const prevBtn = document.getElementById("prev-page-btn");
+            if (prevBtn) {
+                prevBtn.addEventListener("click", () => {
+                    if (currentPage > 1) changePage(currentPage - 1);
+                });
+            }
+            
+            const nextBtn = document.getElementById("next-page-btn");
+            if (nextBtn) {
+                nextBtn.addEventListener("click", () => {
+                    if (currentPage < totalPages) changePage(currentPage + 1);
+                });
+            }
+        } else {
+            paginationEl.classList.add("hidden");
+        }
     }
 
     // Add click listeners to all generated cards and popular item list items
