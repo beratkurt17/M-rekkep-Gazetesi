@@ -4076,28 +4076,26 @@ async function loadData() {
     }
 
     if (isSupabaseConnected) {
-        // Try to load from cache first
+        // Stale-While-Revalidate: Load from cache first for fast initial display if available
+        let loadedFromCache = false;
         try {
             const cachedDataStr = localStorage.getItem(CACHE_KEY);
             if (cachedDataStr) {
                 const cache = JSON.parse(cachedDataStr);
-                const age = Date.now() - cache.timestamp;
-                if (age < CACHE_TTL && !(currentUser && (currentUser.isAdmin || currentUser.isEditor))) {
+                if (cache && Array.isArray(cache.articles) && cache.articles.length > 0) {
                     articles = cache.articles;
-                    comments = cache.comments;
-                    console.log(`Loaded ${articles.length} articles and ${comments.length} comments from Local Cache (Age: ${Math.round(age/1000)}s).`);
+                    comments = cache.comments || [];
+                    loadedFromCache = true;
+                    console.log(`Loaded ${articles.length} articles from Local Cache (Stale-While-Revalidate).`);
                     
-                    // Refresh view
+                    // Refresh view immediately with cached articles
                     currentPage = 1;
                     if (currentCategoryFilter === "all") {
                         renderNewspaperGrid();
                     } else {
                         renderCategoryFeed(currentCategoryFilter);
                     }
-
-                    // Check for deep links on initial page load (cache hit)
                     checkDeepLink();
-                    return; // Cache hit, exit!
                 }
             }
         } catch (e) {
@@ -4106,13 +4104,13 @@ async function loadData() {
 
         try {
             const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error("Supabase request timeout")), 3000)
+                setTimeout(() => reject(new Error("Supabase request timeout")), 4000)
             );
 
-            // Fetch articles metadata with timeout
+            // Fetch articles including full content column from Supabase
             const fetchArticlesPromise = supabaseClient
                 .from('articles')
-                .select('id, title, subtitle, author, category, image, date, read_time, claps, corner_name')
+                .select('*')
                 .order('created_at', { ascending: true });
 
             const { data: dbArticles, error: artError } = await Promise.race([
@@ -4154,13 +4152,16 @@ async function loadData() {
                         title: art.title,
                         subtitle: art.subtitle,
                         author: art.author,
+                        author_email: art.author_email || (localMatch ? localMatch.author_email : null),
+                        user_id: art.user_id || (localMatch ? localMatch.user_id : null),
                         category: art.category,
                         image: art.image,
                         date: art.date,
+                        created_at: art.created_at || (localMatch ? localMatch.created_at : null) || new Date().toISOString(),
                         readTime: art.read_time,
-                        claps: art.claps,
+                        claps: art.claps || 0,
                         corner_name: art.corner_name || (localMatch ? localMatch.corner_name : null),
-                        content: localMatch && localMatch.content ? localMatch.content : null
+                        content: art.content || (localMatch ? localMatch.content : null)
                     };
                 });
 
@@ -4198,12 +4199,14 @@ async function loadData() {
                 localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
             } catch (e) {}
 
-            console.log(`Loaded ${articles.length} articles and ${comments.length} comments.`);
+            console.log(`Loaded ${articles.length} articles and ${comments.length} comments from Supabase.`);
         } catch (err) {
             console.error("Error loading data from Supabase. Falling back to local storage:", err);
-            isSupabaseConnected = false;
-            updateSupabaseUI();
-            loadLocalStorageFallback();
+            if (!loadedFromCache) {
+                isSupabaseConnected = false;
+                updateSupabaseUI();
+                loadLocalStorageFallback();
+            }
         }
     } else {
         loadLocalStorageFallback();
@@ -4539,7 +4542,17 @@ let _slotArticleMap = {};
 
 // Function to sort articles by claps descending
 function getSortedArticles() {
-    return articles.slice().sort((a, b) => b.claps - a.claps);
+    return articles.slice().sort((a, b) => (b.claps || 0) - (a.claps || 0));
+}
+
+// Function to sort articles chronologically (newest first)
+function getChronologicalArticles() {
+    return articles.slice().sort((a, b) => {
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        if (timeA && timeB && timeA !== timeB) return timeB - timeA;
+        return String(b.id || "").localeCompare(String(a.id || ""));
+    });
 }
 
 // Visitor and Page statistics tracking
@@ -5011,66 +5024,62 @@ function renderNewspaperGrid() {
     // Ensure all slots have unique IDs
     ensureLayoutSlotIds();
 
+    const chronological = getChronologicalArticles();
     const sorted = getSortedArticles();
 
-    // PAGE CAPACITY = total number of category-type slots across all columns
-    const allLayoutSlots = [
-        ...(layoutConfig.col1 || []),
-        ...(layoutConfig.col2 || []),
-        ...(layoutConfig.col3 || [])
-    ];
-    const categorySlotCount = Math.max(1, allLayoutSlots.filter(s => s.type === 'category').length);
-    const headlineSlotCount = allLayoutSlots.filter(s => s.type === 'system' && s.value === 'headline').length;
-    const pageCapacity = categorySlotCount + headlineSlotCount;
-
-    // Pages: only open page 2 when page 1 is completely full
-    const totalPages = Math.max(1, Math.ceil(sorted.length / pageCapacity));
-
-    if (currentPage > totalPages) {
-        currentPage = Math.max(1, totalPages);
-    }
-
-    // Slice articles for this page (sequential, clap-sorted)
-    
-    // One headline per page = first article of each page's pool
-    const headlines = [];
-    for (let p = 0; p < totalPages; p++) {
-        const first = sorted[p * pageCapacity];
-        if (first) headlines.push(first);
-    }
-    const slotHeadline = headlines[currentPage - 1];
-
-    _slotArticleMap = {};
-
-    // Count how many category slots there are total
+    // 1. Gather all category slots from layoutConfig
     const allCategorySlots = [];
     ['col1', 'col2', 'col3'].forEach(colKey => {
-        if (layoutConfig[colKey]) {
+        if (layoutConfig && layoutConfig[colKey]) {
             layoutConfig[colKey].forEach(s => {
                 if (s.type === 'category') allCategorySlots.push(s);
             });
         }
     });
 
-    // Sort slots by ID for stable assignment across renders
-    const sortedSlots = allCategorySlots.slice().sort((a, b) => a.id.localeCompare(b.id));
-    const totalCategorySlots = sortedSlots.length;
-
-    // Get all articles for this page (skip headlines of all pages)
-    const headlineIds = new Set(headlines.map(h => h && h.id).filter(Boolean));
-    const nonHeadlineArticles = sorted.filter(art => !headlineIds.has(art.id));
-
-    // Each page gets a fresh "window" of articles
-    const slotPageStartIdx = (currentPage - 1) * totalCategorySlots;
-    const pageArticles = nonHeadlineArticles.slice(slotPageStartIdx, slotPageStartIdx + totalCategorySlots);
-
-    sortedSlots.forEach((slot, idx) => {
-        _slotArticleMap[slot.id] = pageArticles[idx] || null;
+    // Calculate max pages across categories
+    let maxPagesFromCategories = 1;
+    allCategorySlots.forEach(slot => {
+        const slotCat = (slot.value || "").toLowerCase().trim();
+        const count = chronological.filter(art => {
+            const artCat = (art.category || "").toLowerCase().trim();
+            return artCat === slotCat || ((slotCat === "kose-yazilari" || slotCat === "kose") && (artCat === "kose-yazilari" || artCat === "kose_yazilari" || artCat === "kose"));
+        }).length;
+        if (count > maxPagesFromCategories) maxPagesFromCategories = count;
     });
 
-    _pageArticles = pageArticles;
+    const totalPages = Math.max(1, maxPagesFromCategories);
 
-    _slotArticleIdx = 0; // reset slot index before rendering
+    if (currentPage > totalPages) {
+        currentPage = Math.max(1, totalPages);
+    }
+
+    // 2. Assign Category Slots FIRST so each category gets its newest article!
+    _slotArticleMap = {};
+    allCategorySlots.forEach(slot => {
+        const slotCat = (slot.value || "").toLowerCase().trim();
+        const matchingCategoryArticles = chronological.filter(art => {
+            const artCat = (art.category || "").toLowerCase().trim();
+            return artCat === slotCat || ((slotCat === "kose-yazilari" || slotCat === "kose") && (artCat === "kose-yazilari" || artCat === "kose_yazilari" || artCat === "kose"));
+        });
+
+        // For current page, pick (currentPage - 1)-th matching article
+        _slotArticleMap[slot.id] = matchingCategoryArticles[currentPage - 1] || null;
+    });
+
+    // 3. Determine Headline for current page:
+    // Priority 1: 'manset' category articles
+    // Priority 2: top featured / latest article
+    const mansetArticles = chronological.filter(a => (a.category || "").toLowerCase() === 'manset');
+    const headlines = [];
+    for (let p = 0; p < totalPages; p++) {
+        if (p < mansetArticles.length) {
+            headlines.push(mansetArticles[p]);
+        } else {
+            headlines.push(sorted[p] || chronological[p] || null);
+        }
+    }
+    const currentHeadline = headlines[currentPage - 1] || null;
 
     // Update Header page label
     updateHeaderMeta();
@@ -5278,8 +5287,20 @@ function renderCategoryFeed(category) {
     if (category === "bookmarks") {
         filteredArticles = articles.filter(a => savedArticleIds.includes(a.id));
     } else {
-        filteredArticles = articles.filter(a => a.category === category || (category === 'kose-yazilari' && a.category === 'kose-yazilari'));
+        const catNorm = (category || "").toLowerCase().trim();
+        filteredArticles = articles.filter(a => {
+            const aCat = (a.category || "").toLowerCase().trim();
+            return aCat === catNorm || ((catNorm === "kose-yazilari" || catNorm === "kose") && (aCat === "kose-yazilari" || aCat === "kose_yazilari" || aCat === "kose"));
+        });
     }
+
+    // Sort newest first
+    filteredArticles.sort((a, b) => {
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        if (timeA && timeB && timeA !== timeB) return timeB - timeA;
+        return String(b.id || "").localeCompare(String(a.id || ""));
+    });
     
     if (filteredArticles.length === 0) {
         if (category === "bookmarks") {
@@ -6358,22 +6379,39 @@ publishForm.addEventListener("submit", async (e) => {
 
         if (isSupabaseConnected) {
             try {
+                const fullPayload = {
+                    title: article.title,
+                    subtitle: article.subtitle,
+                    author: article.author,
+                    author_email: article.author_email || null,
+                    user_id: article.user_id || null,
+                    category: article.category,
+                    image: article.image,
+                    content: article.content,
+                    corner_name: article.corner_name,
+                    read_time: article.readTime
+                };
                 const { error } = await supabaseClient
                     .from('articles')
-                    .update({
+                    .update(fullPayload)
+                    .eq('id', editingArticleId);
+                if (error) {
+                    console.warn("Supabase article update warning, trying core fields fallback:", error);
+                    const corePayload = {
                         title: article.title,
                         subtitle: article.subtitle,
                         author: article.author,
-                        author_email: article.author_email || null,
-                        user_id: article.user_id || null,
                         category: article.category,
                         image: article.image,
                         content: article.content,
-                        corner_name: article.corner_name,
                         read_time: article.readTime
-                    })
-                    .eq('id', editingArticleId);
-                if (error) console.warn("Supabase article update warning:", error);
+                    };
+                    const { error: coreErr } = await supabaseClient
+                        .from('articles')
+                        .update(corePayload)
+                        .eq('id', editingArticleId);
+                    if (coreErr) console.error("Supabase fallback article update error:", coreErr);
+                }
             } catch (err) {
                 console.error("Error updating article on Supabase:", err);
             }
@@ -6416,6 +6454,7 @@ publishForm.addEventListener("submit", async (e) => {
         category: category,
         image: image,
         date: formatDate(new Date()),
+        created_at: new Date().toISOString(),
         readTime: calculateReadTime(contentHTML),
         claps: 0,
         comments: [],
@@ -6423,12 +6462,7 @@ publishForm.addEventListener("submit", async (e) => {
         corner_name: cornerName || null
     };
 
-    // If publishing in 'manset' category, we override the previous main headlines
-    if (category === 'manset') {
-        // Change category to something else, or keep it, slot handles latest
-    }
-
-    articles.push(newArticle);
+    articles.unshift(newArticle);
 
     // Always save to LocalStorage immediately
     try {
@@ -6437,24 +6471,50 @@ publishForm.addEventListener("submit", async (e) => {
 
     if (isSupabaseConnected) {
         try {
+            const fullPayload = {
+                id: newArticle.id,
+                title: newArticle.title,
+                subtitle: newArticle.subtitle,
+                author: newArticle.author,
+                author_email: newArticle.author_email,
+                user_id: newArticle.user_id,
+                category: newArticle.category,
+                image: newArticle.image,
+                date: newArticle.date,
+                created_at: newArticle.created_at,
+                read_time: newArticle.readTime,
+                claps: newArticle.claps,
+                content: newArticle.content,
+                corner_name: newArticle.corner_name
+            };
             const { error } = await supabaseClient
                 .from('articles')
-                .insert({
+                .insert(fullPayload);
+            if (error) {
+                console.warn("Supabase article insert warning, trying core fields fallback:", error);
+                const corePayload = {
                     id: newArticle.id,
                     title: newArticle.title,
                     subtitle: newArticle.subtitle,
                     author: newArticle.author,
-                    author_email: newArticle.author_email,
-                    user_id: newArticle.user_id,
                     category: newArticle.category,
                     image: newArticle.image,
                     date: newArticle.date,
                     read_time: newArticle.readTime,
                     claps: newArticle.claps,
-                    content: newArticle.content,
-                    corner_name: newArticle.corner_name
-                });
-            if (error) console.warn("Supabase article insert warning:", error);
+                    content: newArticle.content
+                };
+                const { error: coreErr } = await supabaseClient
+                    .from('articles')
+                    .insert(corePayload);
+                if (coreErr) {
+                    console.error("Supabase fallback article insert error:", coreErr);
+                } else {
+                    console.log("Successfully inserted article to Supabase via core fields fallback.");
+                }
+            } else {
+                console.log("Successfully inserted article to Supabase.");
+            }
         } catch (err) {
             console.error("Error inserting article on Supabase:", err);
         }
@@ -6466,20 +6526,11 @@ publishForm.addEventListener("submit", async (e) => {
     editorOverlay.classList.add("hidden");
     unlockBodyScroll();
 
-    // Navigate to the page where the new article appears
-    // New model: position in overall clap-sorted list / slots per page = page number
+    currentPage = 1;
     if (currentCategoryFilter === "all") {
-        const sortedNow = getSortedArticles();
-        const allSlots = [
-            ...(layoutConfig.col1 || []),
-            ...(layoutConfig.col2 || []),
-            ...(layoutConfig.col3 || [])
-        ];
-        const slotCount = Math.max(1, allSlots.filter(s => s.type === 'category').length);
-        const artGlobalIdx = sortedNow.findIndex(a => a.id === newArticle.id);
-        const targetPage = artGlobalIdx >= 0 ? Math.floor(artGlobalIdx / slotCount) + 1 : 1;
-        currentPage = targetPage;
         renderNewspaperGrid();
+    } else {
+        renderCategoryFeed(currentCategoryFilter);
     }
 
     updateAuthUI();
@@ -8915,6 +8966,22 @@ function initDynamicViewport() {
     }
 
     // Listen for mobile/browser back button
+    window.addEventListener("storage", (e) => {
+        if (e.key === "murekkep_articles_v2" && e.newValue) {
+            try {
+                const freshArticles = JSON.parse(e.newValue);
+                if (Array.isArray(freshArticles)) {
+                    articles = freshArticles;
+                    if (currentCategoryFilter === "all") {
+                        renderNewspaperGrid();
+                    } else {
+                        renderCategoryFeed(currentCategoryFilter);
+                    }
+                }
+            } catch (err) {}
+        }
+    });
+
     window.addEventListener('popstate', (event) => {
         isHandlingPopstate = true;
         
