@@ -5195,9 +5195,9 @@ function renderNewspaperGrid() {
 
     // Assembly — three separate column containers
     mainGrid.innerHTML = `
-        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col1W}, 1fr); gap: 16px; align-content: start;">${col1HTML}</div>
-        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col2W}, 1fr); gap: 16px; align-content: start;">${col2HTML}</div>
-        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col3W}, 1fr); gap: 16px; align-content: start;">${col3HTML}</div>
+        <div class="news-column" data-col="col1" style="display: grid; grid-template-columns: repeat(${col1W}, 1fr); gap: 16px; align-content: start; order: 1;">${col1HTML}</div>
+        <div class="news-column" data-col="col2" style="display: grid; grid-template-columns: repeat(${col2W}, 1fr); gap: 16px; align-content: start; order: 0;">${col2HTML}</div>
+        <div class="news-column" data-col="col3" style="display: grid; grid-template-columns: repeat(${col3W}, 1fr); gap: 16px; align-content: start; order: 2;">${col3HTML}</div>
     `;
 
     // Render Bottom Pagination Controls

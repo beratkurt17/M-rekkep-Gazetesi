@@ -4227,7 +4227,8 @@ button, a, input, textarea, select {
     
     /* Stack main 3-column grid layout to single column */
     .newspaper-grid {
-        grid-template-columns: 1fr !important;
+        display: flex !important;
+        flex-direction: column !important;
         gap: 24px !important;
     }
     
