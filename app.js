@@ -1635,7 +1635,7 @@ function renderSlotHelper(slot, index, sorted, headlines, recentComments) {
             `;
         }
     } else if (slot.type === 'category') {
-        const art = _slotArticleMap[slot.id];
+        const art = _pageArticles[_slotArticleIdx++];
         if (!art) {
             if (isEditorModeActive) {
                 return `
@@ -5024,18 +5024,7 @@ function renderNewspaperGrid() {
     // Ensure all slots have unique IDs
     ensureLayoutSlotIds();
 
-    const chronological = getChronologicalArticles();
     const sorted = getSortedArticles();
-
-    // 1. Gather all category slots from layoutConfig
-    const allCategorySlots = [];
-    ['col1', 'col2', 'col3'].forEach(colKey => {
-        if (layoutConfig && layoutConfig[colKey]) {
-            layoutConfig[colKey].forEach(s => {
-                if (s.type === 'category') allCategorySlots.push(s);
-            });
-        }
-    });
 
     const allLayoutSlots = [
         ...(layoutConfig.col1 || []),
@@ -5047,37 +5036,30 @@ function renderNewspaperGrid() {
     const pageCapacity = categorySlotCount + headlineSlotCount;
 
     // Pages: only open page 2 when page 1 is completely full
-    const totalPages = Math.max(1, Math.ceil(chronological.length / pageCapacity));
+    const totalPages = Math.max(1, Math.ceil(sorted.length / pageCapacity));
 
     if (currentPage > totalPages) {
         currentPage = Math.max(1, totalPages);
     }
 
+    // Slice articles for this page (sequential, clap-sorted)
+    const pageStartIdx = (currentPage - 1) * pageCapacity;
+    
     // One headline per page = first article of each page's pool
     const headlines = [];
     for (let p = 0; p < totalPages; p++) {
-        const first = chronological[p * pageCapacity];
+        const first = sorted[p * pageCapacity];
         if (first) headlines.push(first);
     }
-    const currentHeadline = headlines[currentPage - 1] || null;
+    const slotHeadline = headlines[currentPage - 1];
 
-    _slotArticleMap = {};
-
-    // Sort slots by ID for stable assignment across renders
-    const sortedSlots = allCategorySlots.slice().sort((a, b) => a.id.localeCompare(b.id));
-    const totalCategorySlots = sortedSlots.length;
-
-    // Get all articles for this page (skip headlines of all pages)
-    const headlineIds = new Set(headlines.map(h => h && h.id).filter(Boolean));
-    const nonHeadlineArticles = chronological.filter(art => !headlineIds.has(art.id));
-
-    // Each page gets a fresh "window" of articles
-    const slotPageStartIdx = (currentPage - 1) * totalCategorySlots;
-    const pageArticles = nonHeadlineArticles.slice(slotPageStartIdx, slotPageStartIdx + totalCategorySlots);
-
-    sortedSlots.forEach((slot, idx) => {
-        _slotArticleMap[slot.id] = pageArticles[idx] || null;
-    });
+    const rawPageArticles = sorted.slice(pageStartIdx, pageStartIdx + pageCapacity);
+    // Filter out the headline article of this page so it is not duplicated in category slots
+    _pageArticles = rawPageArticles.filter(art => !slotHeadline || art.id !== slotHeadline.id);
+    if (_pageArticles.length > categorySlotCount) {
+        _pageArticles = _pageArticles.slice(0, categorySlotCount);
+    }
+    _slotArticleIdx = 0; // reset slot index before rendering
 
     // Update Header page label
     updateHeaderMeta();
@@ -5324,7 +5306,7 @@ function renderCategoryFeed(category) {
 
     // Build feed view in list layout (occupies center, simple list cards)
     let listHTML = "";
-    filteredArticles.slice().reverse().forEach(art => {
+    filteredArticles.forEach(art => {
         const reports = getArticleReports(art.id);
         if (reports >= 3 && !isEditorModeActive) {
             listHTML += `
