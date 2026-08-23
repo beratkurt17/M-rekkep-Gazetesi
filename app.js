@@ -152,23 +152,23 @@ let comments = [];
 // =============================================
 
 const DEFAULT_LAYOUT = {
-    colWidths: { col1: 1, col2: 2, col3: 1 },
+    colWidths: { col1: 1, col2: 3, col3: 1 },
     col1: [
-        { id: "slot_kitap_default", type: "category", value: "kitap", label: "Kitap İncelemesi", size: "normal", slotWidth: 1, style: "standard" },
-        { id: "slot_roportaj_default", type: "category", value: "roportaj", label: "Yazar Röportajı", size: "normal", slotWidth: 1, style: "standard" },
-        { id: "slot_haber_default", type: "category", value: "haber", label: "Edebiyat Haberleri", size: "normal", slotWidth: 1, style: "standard" }
+        { id: "slot_col1_popular", type: "system", value: "popular_posts", label: "Çok Okunanlar", size: "normal", slotWidth: 1, slotHeight: 1, style: "list" },
+        { id: "slot_col1_art1", type: "category", value: "oyku", label: "Öykü", size: "normal", slotWidth: 1, slotHeight: 1, style: "standard" }
     ],
     col2: [
-        { id: "slot_headline_default", type: "system", value: "headline", label: "Manşet", size: "large", slotWidth: 2, style: "headline" },
-        { id: "slot_editor_note_default", type: "system", value: "editor_note", label: "Editörün Notu", size: "normal", slotWidth: 2, style: "standard" },
-        { id: "slot_siir_default", type: "category", value: "siir", label: "Haftanın Şiiri", size: "normal", slotWidth: 2, style: "poem" },
-        { id: "slot_yarismalar_default", type: "category", value: "yarismalar", label: "Aylık Yarışma", size: "normal", slotWidth: 1, style: "standard" },
-        { id: "slot_kose_yazilari_default", type: "category", value: "kose-yazilari", label: "Köşe Yazısı", size: "normal", slotWidth: 1, style: "columnist" }
+        { id: "slot_col2_headline", type: "system", value: "headline", label: "Manşet", size: "large", slotWidth: 6, slotHeight: 2, style: "headline" },
+        { id: "slot_col2_row1_1", type: "category", value: "siir", label: "Şiir", size: "normal", slotWidth: 3, slotHeight: 1, style: "standard" },
+        { id: "slot_col2_row1_2", type: "category", value: "siir", label: "Şiir", size: "normal", slotWidth: 3, slotHeight: 1, style: "standard" },
+        { id: "slot_col2_row2_1", type: "category", value: "kitap", label: "Kitap İncelemesi", size: "normal", slotWidth: 2, slotHeight: 1, style: "standard" },
+        { id: "slot_col2_row2_2", type: "category", value: "siir", label: "Şiir", size: "normal", slotWidth: 2, slotHeight: 1, style: "standard" },
+        { id: "slot_col2_row2_3", type: "category", value: "oyku", label: "Öykü", size: "normal", slotWidth: 2, slotHeight: 1, style: "standard" }
     ],
     col3: [
-        { id: "slot_deneme_default", type: "category", value: "deneme", label: "Deneme", size: "normal", slotWidth: 1, style: "standard" },
-        { id: "slot_oyku_default", type: "category", value: "oyku", label: "Hikaye Köşesi", size: "normal", slotWidth: 1, style: "standard" },
-        { id: "slot_recent_comments_default", type: "system", value: "recent_comments", label: "Okur Yorumları", size: "normal", slotWidth: 1, style: "standard" }
+        { id: "slot_col3_art1", type: "category", value: "siir", label: "Şiir", size: "normal", slotWidth: 1, slotHeight: 1, style: "standard" },
+        { id: "slot_col3_comments", type: "system", value: "recent_comments", label: "Okur Yorumları", size: "normal", slotWidth: 1, slotHeight: 1, style: "standard" },
+        { id: "slot_col3_art2", type: "category", value: "kose-yazilari", label: "Köşe Yazısı", size: "normal", slotWidth: 1, slotHeight: 1, style: "columnist" }
     ]
 };
 
@@ -1056,34 +1056,21 @@ async function saveCategories() {
 
 // IO Functions for Layout Config
 async function loadLayoutConfig() {
+    layoutConfig = JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
+    try {
+        localStorage.setItem("murekkep_layout_config_v4", JSON.stringify(layoutConfig));
+    } catch (e) {}
+
     if (isSupabaseConnected && supabaseClient) {
         try {
-            const { data, error } = await supabaseClient
+            await supabaseClient
                 .from('site_settings')
-                .select('value')
-                .eq('key', 'layout_config_v4')
-                .maybeSingle();
-            if (data && data.value) {
-                layoutConfig = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
-                console.log("Loaded layout config from Supabase.");
-                return;
-            }
+                .upsert({ key: 'layout_config_v4', value: layoutConfig });
+            console.log("Synced clean DEFAULT_LAYOUT to Supabase.");
         } catch (e) {
-            console.warn("Failed to load layout config from Supabase:", e);
+            console.warn("Failed to sync layout config to Supabase:", e);
         }
     }
-    try {
-        const saved = localStorage.getItem("murekkep_layout_config_v4");
-        if (saved) {
-            layoutConfig = JSON.parse(saved);
-            console.log("Loaded layout config from localStorage.");
-            return;
-        }
-    } catch (e) {
-        console.warn("Failed to load layout config from localStorage:", e);
-    }
-    layoutConfig = JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
-    console.log("Using default layout config.");
 }
 
 async function saveLayoutConfig() {
@@ -1635,7 +1622,7 @@ function renderSlotHelper(slot, index, sorted, headlines, recentComments) {
             `;
         }
     } else if (slot.type === 'category') {
-        const art = _pageArticles[_slotArticleIdx++];
+        const art = _slotArticleMap[slot.id];
         if (!art) {
             if (isEditorModeActive) {
                 return `
@@ -1671,7 +1658,8 @@ function renderSlotHelper(slot, index, sorted, headlines, recentComments) {
         else if (slot.style === 'poem') styleType = 'siir';
         else if (slot.style === 'list') styleType = 'popular_list';
 
-        return renderSlotCard(art, index, styleType, slot.label.toUpperCase(), '');
+        const catBadge = (art.corner_name || (art.category ? art.category.replace("-", " ") : slot.label)).toUpperCase();
+        return renderSlotCard(art, index, styleType, catBadge, '');
     }
     
     return "";
@@ -4066,48 +4054,21 @@ async function loadData() {
         console.warn("Failed to clean up test articles from LocalStorage:", e);
     }
 
-    // Read local articles from LocalStorage first as baseline
-    let localArticles = [];
+    // Clear stale local articles cache to ensure pure Supabase sync
     try {
-        const saved = localStorage.getItem("murekkep_articles_v2");
-        if (saved) localArticles = JSON.parse(saved);
-    } catch (e) {
-        console.warn("Failed to read local articles from LocalStorage:", e);
-    }
+        localStorage.removeItem("murekkep_articles_v2");
+        localStorage.removeItem("murekkep_supabase_cache");
+    } catch (e) {}
+
+    let localArticles = [];
 
     if (isSupabaseConnected) {
-        // Stale-While-Revalidate: Load from cache first for fast initial display if available
-        let loadedFromCache = false;
-        try {
-            const cachedDataStr = localStorage.getItem(CACHE_KEY);
-            if (cachedDataStr) {
-                const cache = JSON.parse(cachedDataStr);
-                if (cache && Array.isArray(cache.articles) && cache.articles.length > 0) {
-                    articles = cache.articles;
-                    comments = cache.comments || [];
-                    loadedFromCache = true;
-                    console.log(`Loaded ${articles.length} articles from Local Cache (Stale-While-Revalidate).`);
-                    
-                    // Refresh view immediately with cached articles
-                    currentPage = 1;
-                    if (currentCategoryFilter === "all") {
-                        renderNewspaperGrid();
-                    } else {
-                        renderCategoryFeed(currentCategoryFilter);
-                    }
-                    checkDeepLink();
-                }
-            }
-        } catch (e) {
-            console.warn("Failed to read Supabase cache from LocalStorage:", e);
-        }
-
         try {
             const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error("Supabase request timeout")), 4000)
+                setTimeout(() => reject(new Error("Supabase request timeout")), 5000)
             );
 
-            // Fetch articles including full content column from Supabase
+            // Fetch all articles from Supabase
             const fetchArticlesPromise = supabaseClient
                 .from('articles')
                 .select('*')
@@ -4120,7 +4081,7 @@ async function loadData() {
             
             if (artError) throw artError;
 
-            // Fetch comments with timeout
+            // Fetch comments
             let dbComments = [];
             try {
                 const fetchCommentsPromise = supabaseClient
@@ -4145,50 +4106,27 @@ async function loadData() {
             }));
 
             if (dbArticles && dbArticles.length > 0) {
-                const fetchedArticles = dbArticles.map(art => {
-                    const localMatch = localArticles.find(la => la.id === art.id);
-                    return {
-                        id: art.id,
-                        title: art.title,
-                        subtitle: art.subtitle,
-                        author: art.author,
-                        author_email: art.author_email || (localMatch ? localMatch.author_email : null),
-                        user_id: art.user_id || (localMatch ? localMatch.user_id : null),
-                        category: art.category,
-                        image: art.image,
-                        date: art.date,
-                        created_at: art.created_at || (localMatch ? localMatch.created_at : null) || new Date().toISOString(),
-                        readTime: art.read_time,
-                        claps: art.claps || 0,
-                        corner_name: art.corner_name || (localMatch ? localMatch.corner_name : null),
-                        content: art.content || (localMatch ? localMatch.content : null)
-                    };
-                });
-
-                // Merge any locally added articles that haven't reached Supabase yet
-                localArticles.forEach(localArt => {
-                    if (!fetchedArticles.some(fa => fa.id === localArt.id)) {
-                        fetchedArticles.push(localArt);
-                    }
-                });
-
-                articles = fetchedArticles;
-            } else if (window.location.search.includes("seed_db=true")) {
-                if (!isSeeding) {
-                    isSeeding = true;
-                    console.log("Supabase articles table is empty, seeding database...");
-                    await seedSupabase();
-                    isSeeding = false;
-                    window.location.href = window.location.pathname;
-                    return;
-                }
-            } else if (localArticles.length > 0) {
-                articles = localArticles;
+                articles = dbArticles.map(art => ({
+                    id: art.id,
+                    title: art.title,
+                    subtitle: art.subtitle,
+                    author: art.author,
+                    author_email: art.author_email || null,
+                    user_id: art.user_id || null,
+                    category: art.category,
+                    image: art.image,
+                    date: art.date,
+                    created_at: art.created_at || new Date().toISOString(),
+                    readTime: art.read_time,
+                    claps: art.claps || 0,
+                    corner_name: art.corner_name || null,
+                    content: art.content || null
+                }));
             } else {
-                articles = JSON.parse(JSON.stringify(DEFAULT_ARTICLES));
+                articles = [];
             }
 
-            // Always write merged articles to LocalStorage and Cache
+            // Save fresh articles to LocalStorage and Cache
             try {
                 localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
                 const cachePayload = {
@@ -4199,14 +4137,12 @@ async function loadData() {
                 localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
             } catch (e) {}
 
-            console.log(`Loaded ${articles.length} articles and ${comments.length} comments from Supabase.`);
+            console.log(`Loaded ${articles.length} articles and ${comments.length} comments strictly from Supabase.`);
         } catch (err) {
-            console.error("Error loading data from Supabase. Falling back to local storage:", err);
-            if (!loadedFromCache) {
-                isSupabaseConnected = false;
-                updateSupabaseUI();
-                loadLocalStorageFallback();
-            }
+            console.error("Error loading data from Supabase:", err);
+            isSupabaseConnected = false;
+            updateSupabaseUI();
+            loadLocalStorageFallback();
         }
     } else {
         loadLocalStorageFallback();
@@ -4542,17 +4478,7 @@ let _slotArticleMap = {};
 
 // Function to sort articles by claps descending
 function getSortedArticles() {
-    return articles.slice().sort((a, b) => (b.claps || 0) - (a.claps || 0));
-}
-
-// Function to sort articles chronologically (newest first)
-function getChronologicalArticles() {
-    return articles.slice().sort((a, b) => {
-        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
-        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
-        if (timeA && timeB && timeA !== timeB) return timeB - timeA;
-        return String(b.id || "").localeCompare(String(a.id || ""));
-    });
+    return articles.slice().sort((a, b) => b.claps - a.claps);
 }
 
 // Visitor and Page statistics tracking
@@ -4791,7 +4717,7 @@ function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLab
         "haber": "EDEBİYAT HABERLERİ",
         "yarismalar": "YARIŞMA"
     };
-    const categoryLabel = art.corner_name ? art.corner_name.toUpperCase() : defaultCategoryLabel;
+    const categoryLabel = art.corner_name ? art.corner_name.toUpperCase() : (catMap[cleanCatName] || defaultCategoryLabel);
 
     let cardHTML = "";
 
@@ -5026,6 +4952,7 @@ function renderNewspaperGrid() {
 
     const sorted = getSortedArticles();
 
+    // PAGE CAPACITY = total number of category-type slots across all columns
     const allLayoutSlots = [
         ...(layoutConfig.col1 || []),
         ...(layoutConfig.col2 || []),
@@ -5043,7 +4970,6 @@ function renderNewspaperGrid() {
     }
 
     // Slice articles for this page (sequential, clap-sorted)
-    const pageStartIdx = (currentPage - 1) * pageCapacity;
     
     // One headline per page = first article of each page's pool
     const headlines = [];
@@ -5053,12 +4979,36 @@ function renderNewspaperGrid() {
     }
     const slotHeadline = headlines[currentPage - 1];
 
-    const rawPageArticles = sorted.slice(pageStartIdx, pageStartIdx + pageCapacity);
-    // Filter out the headline article of this page so it is not duplicated in category slots
-    _pageArticles = rawPageArticles.filter(art => !slotHeadline || art.id !== slotHeadline.id);
-    if (_pageArticles.length > categorySlotCount) {
-        _pageArticles = _pageArticles.slice(0, categorySlotCount);
-    }
+    _slotArticleMap = {};
+
+    // Count how many category slots there are total
+    const allCategorySlots = [];
+    ['col1', 'col2', 'col3'].forEach(colKey => {
+        if (layoutConfig[colKey]) {
+            layoutConfig[colKey].forEach(s => {
+                if (s.type === 'category') allCategorySlots.push(s);
+            });
+        }
+    });
+
+    // Sort slots by ID for stable assignment across renders
+    const sortedSlots = allCategorySlots.slice().sort((a, b) => a.id.localeCompare(b.id));
+    const totalCategorySlots = sortedSlots.length;
+
+    // Get all articles for this page (skip headlines of all pages)
+    const headlineIds = new Set(headlines.map(h => h && h.id).filter(Boolean));
+    const nonHeadlineArticles = sorted.filter(art => !headlineIds.has(art.id));
+
+    // Each page gets a fresh "window" of articles
+    const slotPageStartIdx = (currentPage - 1) * totalCategorySlots;
+    const pageArticles = nonHeadlineArticles.slice(slotPageStartIdx, slotPageStartIdx + totalCategorySlots);
+
+    sortedSlots.forEach((slot, idx) => {
+        _slotArticleMap[slot.id] = pageArticles[idx] || null;
+    });
+
+    _pageArticles = pageArticles;
+
     _slotArticleIdx = 0; // reset slot index before rendering
 
     // Update Header page label
@@ -5084,7 +5034,7 @@ function renderNewspaperGrid() {
     const col3W = Math.max(colWidths.col3 || 1, col3MaxSlotW);
 
     // Apply column template dynamically based on colWidths
-    mainGrid.style.gridTemplateColumns = `${col1W}fr ${col2W}fr ${col3W}fr`;
+    mainGrid.style.gridTemplateColumns = `${colWidths.col1 || 1}fr ${colWidths.col2 || 2.6}fr ${colWidths.col3 || 1}fr`;
 
     let col1HTML = "";
     let col2HTML = "";
@@ -5195,9 +5145,9 @@ function renderNewspaperGrid() {
 
     // Assembly — three separate column containers
     mainGrid.innerHTML = `
-        <div class="news-column" data-col="col1" style="display: grid; grid-template-columns: repeat(${col1W}, 1fr); gap: 16px; align-content: start; order: 1;">${col1HTML}</div>
-        <div class="news-column" data-col="col2" style="display: grid; grid-template-columns: repeat(${col2W}, 1fr); gap: 16px; align-content: start; order: 0;">${col2HTML}</div>
-        <div class="news-column" data-col="col3" style="display: grid; grid-template-columns: repeat(${col3W}, 1fr); gap: 16px; align-content: start; order: 2;">${col3HTML}</div>
+        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col1W}, 1fr); gap: 16px; align-content: start;">${col1HTML}</div>
+        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col2W}, 1fr); gap: 16px; align-content: start;">${col2HTML}</div>
+        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col3W}, 1fr); gap: 16px; align-content: start;">${col3HTML}</div>
     `;
 
     // Render Bottom Pagination Controls
@@ -5267,20 +5217,8 @@ function renderCategoryFeed(category) {
     if (category === "bookmarks") {
         filteredArticles = articles.filter(a => savedArticleIds.includes(a.id));
     } else {
-        const catNorm = (category || "").toLowerCase().trim();
-        filteredArticles = articles.filter(a => {
-            const aCat = (a.category || "").toLowerCase().trim();
-            return aCat === catNorm || ((catNorm === "kose-yazilari" || catNorm === "kose") && (aCat === "kose-yazilari" || aCat === "kose_yazilari" || aCat === "kose"));
-        });
+        filteredArticles = articles.filter(a => a.category === category || (category === 'kose-yazilari' && a.category === 'kose-yazilari'));
     }
-
-    // Sort newest first
-    filteredArticles.sort((a, b) => {
-        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
-        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
-        if (timeA && timeB && timeA !== timeB) return timeB - timeA;
-        return String(b.id || "").localeCompare(String(a.id || ""));
-    });
     
     if (filteredArticles.length === 0) {
         if (category === "bookmarks") {
@@ -5306,7 +5244,7 @@ function renderCategoryFeed(category) {
 
     // Build feed view in list layout (occupies center, simple list cards)
     let listHTML = "";
-    filteredArticles.forEach(art => {
+    filteredArticles.slice().reverse().forEach(art => {
         const reports = getArticleReports(art.id);
         if (reports >= 3 && !isEditorModeActive) {
             listHTML += `
@@ -6359,39 +6297,22 @@ publishForm.addEventListener("submit", async (e) => {
 
         if (isSupabaseConnected) {
             try {
-                const fullPayload = {
-                    title: article.title,
-                    subtitle: article.subtitle,
-                    author: article.author,
-                    author_email: article.author_email || null,
-                    user_id: article.user_id || null,
-                    category: article.category,
-                    image: article.image,
-                    content: article.content,
-                    corner_name: article.corner_name,
-                    read_time: article.readTime
-                };
                 const { error } = await supabaseClient
                     .from('articles')
-                    .update(fullPayload)
-                    .eq('id', editingArticleId);
-                if (error) {
-                    console.warn("Supabase article update warning, trying core fields fallback:", error);
-                    const corePayload = {
+                    .update({
                         title: article.title,
                         subtitle: article.subtitle,
                         author: article.author,
+                        author_email: article.author_email || null,
+                        user_id: article.user_id || null,
                         category: article.category,
                         image: article.image,
                         content: article.content,
+                        corner_name: article.corner_name,
                         read_time: article.readTime
-                    };
-                    const { error: coreErr } = await supabaseClient
-                        .from('articles')
-                        .update(corePayload)
-                        .eq('id', editingArticleId);
-                    if (coreErr) console.error("Supabase fallback article update error:", coreErr);
-                }
+                    })
+                    .eq('id', editingArticleId);
+                if (error) console.warn("Supabase article update warning:", error);
             } catch (err) {
                 console.error("Error updating article on Supabase:", err);
             }
@@ -6434,7 +6355,6 @@ publishForm.addEventListener("submit", async (e) => {
         category: category,
         image: image,
         date: formatDate(new Date()),
-        created_at: new Date().toISOString(),
         readTime: calculateReadTime(contentHTML),
         claps: 0,
         comments: [],
@@ -6442,7 +6362,12 @@ publishForm.addEventListener("submit", async (e) => {
         corner_name: cornerName || null
     };
 
-    articles.unshift(newArticle);
+    // If publishing in 'manset' category, we override the previous main headlines
+    if (category === 'manset') {
+        // Change category to something else, or keep it, slot handles latest
+    }
+
+    articles.push(newArticle);
 
     // Always save to LocalStorage immediately
     try {
@@ -6461,7 +6386,6 @@ publishForm.addEventListener("submit", async (e) => {
                 category: newArticle.category,
                 image: newArticle.image,
                 date: newArticle.date,
-                created_at: newArticle.created_at,
                 read_time: newArticle.readTime,
                 claps: newArticle.claps,
                 content: newArticle.content,
@@ -6484,16 +6408,9 @@ publishForm.addEventListener("submit", async (e) => {
                     claps: newArticle.claps,
                     content: newArticle.content
                 };
-                const { error: coreErr } = await supabaseClient
+                await supabaseClient
                     .from('articles')
                     .insert(corePayload);
-                if (coreErr) {
-                    console.error("Supabase fallback article insert error:", coreErr);
-                } else {
-                    console.log("Successfully inserted article to Supabase via core fields fallback.");
-                }
-            } else {
-                console.log("Successfully inserted article to Supabase.");
             }
         } catch (err) {
             console.error("Error inserting article on Supabase:", err);
@@ -6506,11 +6423,20 @@ publishForm.addEventListener("submit", async (e) => {
     editorOverlay.classList.add("hidden");
     unlockBodyScroll();
 
-    currentPage = 1;
+    // Navigate to the page where the new article appears
+    // New model: position in overall clap-sorted list / slots per page = page number
     if (currentCategoryFilter === "all") {
+        const sortedNow = getSortedArticles();
+        const allSlots = [
+            ...(layoutConfig.col1 || []),
+            ...(layoutConfig.col2 || []),
+            ...(layoutConfig.col3 || [])
+        ];
+        const slotCount = Math.max(1, allSlots.filter(s => s.type === 'category').length);
+        const artGlobalIdx = sortedNow.findIndex(a => a.id === newArticle.id);
+        const targetPage = artGlobalIdx >= 0 ? Math.floor(artGlobalIdx / slotCount) + 1 : 1;
+        currentPage = targetPage;
         renderNewspaperGrid();
-    } else {
-        renderCategoryFeed(currentCategoryFilter);
     }
 
     updateAuthUI();
@@ -8946,22 +8872,6 @@ function initDynamicViewport() {
     }
 
     // Listen for mobile/browser back button
-    window.addEventListener("storage", (e) => {
-        if (e.key === "murekkep_articles_v2" && e.newValue) {
-            try {
-                const freshArticles = JSON.parse(e.newValue);
-                if (Array.isArray(freshArticles)) {
-                    articles = freshArticles;
-                    if (currentCategoryFilter === "all") {
-                        renderNewspaperGrid();
-                    } else {
-                        renderCategoryFeed(currentCategoryFilter);
-                    }
-                }
-            } catch (err) {}
-        }
-    });
-
     window.addEventListener('popstate', (event) => {
         isHandlingPopstate = true;
         
