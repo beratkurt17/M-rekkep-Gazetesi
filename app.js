@@ -9123,35 +9123,54 @@ function initWysiwygEditor() {
     }
 
     // ── Current User Helpers ──────────────────────────────────
-    function getCurId()   { return currentUser?.id || ''; }
-    function getCurName() { return (currentUser?.username || currentUser?.email?.split('@')[0] || '').trim(); }
+    function getCurId() {
+        if (!currentUser) return '';
+        return String(currentUser.id || currentUser.uid || currentUser.email || currentUser.username || '').trim();
+    }
+    function getCurName() {
+        if (!currentUser) return '';
+        return String(currentUser.username || currentUser.email?.split('@')[0] || '').trim();
+    }
 
     // ── Fetch This User's Letters from Supabase ───────────────
     async function fetchMyLetters() {
         if (!currentUser) { myLetters = []; return; }
         const curId = getCurId();
-        const curName = getCurName().toLowerCase();
+        const curName = getCurName();
+        if (!curId && !curName) return;
 
         if (hasSupabase()) {
             try {
-                // Get letters I sent OR letters addressed to me (not soft-deleted by me)
-                const { data: sent } = await supabaseClient
-                    .from('letters').select('*')
-                    .eq('sender_id', curId);
-                const { data: recv } = await supabaseClient
-                    .from('letters').select('*')
-                    .eq('recipient_id', curId)
-                    .eq('is_pool', false);
+                // Fetch letters sent by user OR letters addressed to user
+                let query = supabaseClient.from('letters').select('*');
+                if (curId && curName) {
+                    query = query.or(`sender_id.eq.${curId},sender_username.ilike.${curName},recipient_id.eq.${curId},recipient_username.ilike.${curName}`);
+                } else if (curId) {
+                    query = query.or(`sender_id.eq.${curId},recipient_id.eq.${curId}`);
+                } else {
+                    query = query.or(`sender_username.ilike.${curName},recipient_username.ilike.${curName}`);
+                }
 
-                const all = [...(sent || []), ...(recv || [])];
-                // Deduplicate
+                const { data, error } = await query;
+                if (error) {
+                    console.warn('[MürekkepliMektup] Fetch warning:', error);
+                }
+
+                const all = data || [];
                 const seen = new Set();
+                const curIdLower = curId.toLowerCase();
+                const curNameLower = curName.toLowerCase();
+
                 myLetters = all.filter(l => {
                     if (seen.has(l.id)) return false;
                     seen.add(l.id);
-                    // Filter out letters soft-deleted by this user
-                    const deletedBy = Array.isArray(l.deleted_by) ? l.deleted_by : [];
-                    return !deletedBy.includes(curId);
+
+                    // Soft delete check
+                    const deletedBy = Array.isArray(l.deleted_by) ? l.deleted_by.map(x => String(x).toLowerCase()) : [];
+                    if (deletedBy.includes(curIdLower) || (curNameLower && deletedBy.includes(curNameLower))) {
+                        return false;
+                    }
+                    return true;
                 });
 
                 // Update transit → delivered
@@ -9169,6 +9188,7 @@ function initWysiwygEditor() {
                 console.error('[MürekkepliMektup] Supabase fetch error:', e);
             }
         }
+
         // Fallback: localStorage
         try {
             const saved = localStorage.getItem('mp_letters_mine_' + curId);
@@ -9189,11 +9209,15 @@ function initWysiwygEditor() {
     function buildThreads() {
         myThreads = {};
         if (!currentUser) return;
-        const curId = getCurId();
+        const curId = getCurId().toLowerCase();
+        const curName = getCurName().toLowerCase();
 
         myLetters.forEach(l => {
-            const isMe = l.sender_id === curId;
-            // Havuzdaki henüz eşleşmemiş veya tek taraflı bekleyen mektuplar thread değildir
+            const sId = String(l.sender_id || '').toLowerCase();
+            const sName = String(l.sender_username || '').toLowerCase();
+            const isMe = (curId && sId === curId) || (curName && sName === curName);
+
+            // Havuzdaki henüz eşleşmemiş mektuplar thread değildir
             if (l.is_pool) return;
             if (!l.thread_id) return;
 
@@ -9300,15 +9324,18 @@ function initWysiwygEditor() {
     async function findPoolLetter() {
         if (!hasSupabase()) return null;
         const curId = getCurId();
+        const curName = getCurName();
         try {
-            const { data } = await supabaseClient
+            let query = supabaseClient
                 .from('letters')
                 .select('*')
                 .eq('is_pool', true)
-                .is('recipient_id', null)
-                .neq('sender_id', curId)
-                .limit(1)
-                .single();
+                .is('recipient_id', null);
+
+            if (curId) query = query.neq('sender_id', curId);
+            if (curName) query = query.neq('sender_username', curName);
+
+            const { data } = await query.limit(1).maybeSingle();
             return data || null;
         } catch(e) { return null; }
     }
@@ -9670,17 +9697,26 @@ function initWysiwygEditor() {
     function renderInbox() {
         const list = qs('penpal-inbox-list');
         if (!list) return;
-        const curId = getCurId();
+        const curId = getCurId().toLowerCase();
+        const curName = getCurName().toLowerCase();
 
         const incoming = myLetters.filter(l => {
-            if (l.sender_id === curId) return false;
+            const sId = String(l.sender_id || '').toLowerCase();
+            const sUser = String(l.sender_username || '').toLowerCase();
+            const rId = String(l.recipient_id || '').toLowerCase();
+            const rUser = String(l.recipient_username || '').toLowerCase();
+
+            const isSender = (curId && sId === curId) || (curName && sUser === curName);
+            const isRecipient = (curId && rId === curId) || (curName && rUser === curName);
+
+            if (isSender) return false;
             if (l.is_pool) return false;
-            return l.recipient_id === curId;
+            return isRecipient;
         }).sort((a,b) => b.sent_at - a.sent_at);
 
         const unread = incoming.filter(l => {
-            const r = Array.isArray(l.read_by) ? l.read_by : [];
-            return l.status === 'delivered' && !r.includes(curId);
+            const r = Array.isArray(l.read_by) ? l.read_by.map(x => String(x).toLowerCase()) : [];
+            return l.status === 'delivered' && !r.includes(curId) && !r.includes(curName);
         }).length;
         const badge = qs('penpal-inbox-badge');
         if (badge) { badge.textContent = unread; unread > 0 ? badge.classList.remove('hidden') : badge.classList.add('hidden'); }
@@ -9692,7 +9728,8 @@ function initWysiwygEditor() {
 
         list.innerHTML = incoming.map(l => {
             const isTransit = l.status === 'transit';
-            const isRead    = Array.isArray(l.read_by) && l.read_by.includes(curId);
+            const r = Array.isArray(l.read_by) ? l.read_by.map(x => String(x).toLowerCase()) : [];
+            const isRead = r.includes(curId) || r.includes(curName);
             const statusBadge = isTransit
                 ? `<span class="letter-card-status-badge status-transit">🕊️ Yolda <span class="penpal-countdown" data-deliver="${l.deliver_at}">${formatCountdown(l.deliver_at)}</span></span>`
                 : (isRead ? `<span class="letter-card-status-badge status-delivered">✅ Okundu</span>` : `<span class="letter-card-status-badge" style="background:rgba(46,125,50,.12);color:#2e7d32;border:1px solid rgba(46,125,50,.3);">📬 Yeni Mektup</span>`);
@@ -9730,10 +9767,14 @@ function initWysiwygEditor() {
     function renderOutbox() {
         const list = qs('penpal-outbox-list');
         if (!list) return;
-        const curId = getCurId();
+        const curId = getCurId().toLowerCase();
+        const curName = getCurName().toLowerCase();
 
-        const outgoing = myLetters.filter(l => l.sender_id === curId)
-            .sort((a,b) => b.sent_at - a.sent_at);
+        const outgoing = myLetters.filter(l => {
+            const sId = String(l.sender_id || '').toLowerCase();
+            const sUser = String(l.sender_username || '').toLowerCase();
+            return (curId && sId === curId) || (curName && sUser === curName);
+        }).sort((a,b) => b.sent_at - a.sent_at);
 
         if (!outgoing.length) {
             list.innerHTML = `<div class="letter-list-empty"><span class="empty-icon">📪</span><p>Henüz mektup göndermediniz.<br>İlk mektubunuzu "Mektup Yaz" sekmesinden yazın!</p></div>`;
@@ -9742,7 +9783,7 @@ function initWysiwygEditor() {
 
         list.innerHTML = outgoing.map(l => {
             const isTransit = l.status === 'transit';
-            const isMatched = !l.is_pool && l.recipient_id;
+            const isMatched = !l.is_pool && (l.recipient_id || l.recipient_username);
             const recipientLabel = l.is_pool ? '🎭 Anonim Mektup Havuzu — ortak bekleniyor' : '🤝 Mektup Arkadaşı';
 
             const statusBadge = isTransit
