@@ -9096,8 +9096,8 @@ function initWysiwygEditor() {
     'use strict';
 
     // ── Constants & Storage Keys ─────────────────────────────
-    const STORAGE_KEY = 'murekkep_penpal_letters_v3';
-    const BONDS_KEY   = 'murekkep_penpal_bonds_v3';
+    const STORAGE_KEY = 'murekkep_penpal_letters_v4';
+    const BONDS_KEY   = 'murekkep_penpal_bonds_v4';
 
     // Wipe old test/mock keys if present
     try {
@@ -9107,6 +9107,8 @@ function initWysiwygEditor() {
         localStorage.removeItem('mml_pool_v2');
         localStorage.removeItem('mml_bonds_v1');
         localStorage.removeItem('mml_bonds_v2');
+        localStorage.removeItem('murekkep_penpal_letters_v3');
+        localStorage.removeItem('murekkep_penpal_bonds_v3');
     } catch(e){}
 
     // ── Global & User State ──────────────────────────────────
@@ -9136,7 +9138,7 @@ function initWysiwygEditor() {
                 const { data, error } = await supabaseClient
                     .from('site_settings')
                     .select('value')
-                    .eq('key', 'penpal_letters_v3')
+                    .eq('key', 'penpal_letters_v4')
                     .maybeSingle();
                 if (data && data.value) {
                     allLetters = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
@@ -9167,7 +9169,7 @@ function initWysiwygEditor() {
             try {
                 await supabaseClient
                     .from('site_settings')
-                    .upsert({ key: 'penpal_letters_v3', value: allLetters });
+                    .upsert({ key: 'penpal_letters_v4', value: allLetters });
             } catch(e) {
                 console.error("[MürekkepliMektup] Supabase letters save error:", e);
             }
@@ -9180,7 +9182,7 @@ function initWysiwygEditor() {
                 const { data, error } = await supabaseClient
                     .from('site_settings')
                     .select('value')
-                    .eq('key', 'penpal_bonds_v3')
+                    .eq('key', 'penpal_bonds_v4')
                     .maybeSingle();
                 if (data && data.value) {
                     allBonds = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
@@ -9211,14 +9213,14 @@ function initWysiwygEditor() {
             try {
                 await supabaseClient
                     .from('site_settings')
-                    .upsert({ key: 'penpal_bonds_v3', value: allBonds });
+                    .upsert({ key: 'penpal_bonds_v4', value: allBonds });
             } catch(e) {
                 console.error("[MürekkepliMektup] Supabase bonds save error:", e);
             }
         }
     }
 
-    // ── Filter Letters for Current User ──────────────────────
+    // ── Filter Letters for Current User (Strict 1-to-1 Matching) ──
     function filterUserLetters() {
         const now = Date.now();
         let changed = false;
@@ -9230,18 +9232,39 @@ function initWysiwygEditor() {
                 changed = true;
             }
         });
-        if (changed) saveGlobalLetters();
 
         if (typeof currentUser === 'undefined' || !currentUser) {
             state.letters = [];
             state.bonds = {};
+            if (changed) saveGlobalLetters();
             return;
         }
 
         const curId = currentUser.id || '';
         const curUser = (currentUser.username || currentUser.email?.split('@')[0] || '').toLowerCase().trim();
 
-        // Separate user's letters (both sent and received)
+        // ── 1-to-1 Matchmaker: If there are unassigned pool letters from other users,
+        // match exactly ONE unclaimed letter to the current user (if user doesn't have an unread pool match from them)
+        const unassignedPoolLetter = allLetters.find(l => {
+            const isUnclaimed = (l.isPool === true) || (!l.recipientId && !l.claimedBy);
+            const sId   = l.senderId || '';
+            const sUser = (l.senderUsername || '').toLowerCase().trim();
+            const isSelf = (curId && sId === curId) || (curUser && sUser === curUser);
+            return isUnclaimed && !isSelf;
+        });
+
+        if (unassignedPoolLetter) {
+            // Exclusively pair this 1 letter to the current user ONLY
+            unassignedPoolLetter.recipientId = curId;
+            unassignedPoolLetter.recipientUsername = curUser;
+            unassignedPoolLetter.claimedBy = curId;
+            unassignedPoolLetter.isPool = false; // Exclusively claimed, removed from pool!
+            changed = true;
+        }
+
+        if (changed) saveGlobalLetters();
+
+        // ── Strict 1-to-1 Filter (Only Sender and Single Assigned Recipient) ──
         state.letters = allLetters.filter(l => {
             const sId   = l.senderId || '';
             const sUser = (l.senderUsername || '').toLowerCase().trim();
@@ -9251,14 +9274,11 @@ function initWysiwygEditor() {
             const isSender    = (curId && sId === curId) || (curUser && sUser === curUser);
             const isRecipient = (curId && rId === curId) || (curUser && rUser === curUser);
 
-            // 1. Sent by current user (Outbox)
+            // Outbox: Only letters written by self
             if (isSender) return true;
 
-            // 2. Addressed directly to current user (Inbox Direct Reply)
-            if (isRecipient) return true;
-
-            // 3. Sent to pool by ANOTHER real user (Inbox Pool Match)
-            if (l.isPool && !isSender) return true;
+            // Inbox: ONLY letters directly and exclusively assigned to self
+            if (isRecipient && !isSender) return true;
 
             return false;
         });
