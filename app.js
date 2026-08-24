@@ -9398,7 +9398,8 @@ function initWysiwygEditor() {
 
     // ── Find an unclaimed pool letter from another user ───────
     async function findPoolLetter() {
-        if (!hasSupabase()) return null;
+        if (!hasSupabase() || !currentUser) return null;
+        const myIds = getMyIdentifiers();
         try {
             const { data, error } = await supabaseClient
                 .from('letters')
@@ -9409,8 +9410,23 @@ function initWysiwygEditor() {
             if (error || !data || !data.length) return null;
 
             const candidate = data.find(l => {
-                const isMine = isMyIdentity(l.sender_id, l.sender_username);
-                return !isMine;
+                // 1. isMyIdentity kontrolü
+                if (isMyIdentity(l.sender_id, l.sender_username)) return false;
+
+                // 2. Yerel hafızamdaki mektuplardan biri mi?
+                if (myLetters.some(ml => ml.id === l.id)) return false;
+
+                // 3. Tüm kimlik parçalarıyla birebir kıyaslama
+                const sId = String(l.sender_id || '').toLowerCase().trim();
+                const sName = String(l.sender_username || '').toLowerCase().trim();
+                for (const ident of myIds) {
+                    if (!ident) continue;
+                    if (sId === ident || sName === ident) return false;
+                    if (sId.includes(ident) || ident.includes(sId)) return false;
+                    if (sName.includes(ident) || ident.includes(sName)) return false;
+                }
+
+                return true;
             });
 
             return candidate || null;
@@ -9701,33 +9717,35 @@ function initWysiwygEditor() {
         let threadId, recipientId, recipientUsername, isPool;
 
         if (state.replyMode) {
-            // ── DIRECT REPLY: goes straight to the thread partner ──
+            // ── DIRECT REPLY (B -> A): goes straight to the thread partner ──
             threadId          = state.replyMode.threadId;
             recipientId       = state.replyMode.recipientId;
             recipientUsername = state.replyMode.recipientUsername;
             isPool            = false;
         } else {
-            // ── NEW POOL LETTER: asymmetric matching ──
+            // ── NEW POOL LETTER: Goes to public pool ──
             threadId          = 'th_' + now + '_' + Math.random().toString(36).slice(2,7);
             recipientId       = null;
             recipientUsername = null;
             isPool            = true;
 
+            // Biri başka bir kullanıcının havuzdaki mektubunu alacak mı?
+            // SADECE ve SADECE başkasına ait gerçek bir havuz mektubu varsa onu al
             const poolLetter = await findPoolLetter();
             if (poolLetter) {
+                // Başkasının mektubunu benim için claim et
                 await claimPoolLetter(poolLetter.id);
-                await updateLetter(poolLetter.id, { thread_id: threadId });
                 const claimedLetter = { ...poolLetter,
                     recipient_id: curId,
                     recipient_username: curName,
-                    is_pool: false,
-                    thread_id: threadId
+                    is_pool: false
                 };
+                // Bu mektup benim gelen kutuma eklenecek
                 myLetters.push(claimedLetter);
                 setLocalLetters(myLetters);
-                showToast('🤝 Bir mektup arkadaşı bulundu! Gelen kutunuzu kontrol edin.');
+                showToast('🤝 Havuzdan bir mektup teslim aldınız! Gelen kutunuza eklendi.');
             } else {
-                showToast('✉️ Mektubunuz havuza eklendi! Bir edebiyatsever mektup atınca size ulaşacak.');
+                showToast('✉️ Mektubunuz havuza eklendi! Başka bir edebiyatsever mektup gönderene kadar havuzda bekleyecek.');
             }
         }
 
