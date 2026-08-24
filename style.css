@@ -6550,6 +6550,65 @@ button, a, input, textarea, select {
 }
 .bond-reveal-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(245,197,24,0.4); }
 
+/* ── Mektup Stüdyosu Giriş Uyarısı & Okuyucu Yanıt Butonu ── */
+.penpal-login-notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 18px;
+    background: rgba(184, 134, 11, 0.1);
+    border: 1px dashed rgba(184, 134, 11, 0.4);
+    border-radius: 8px;
+    font-family: var(--font-ui);
+    font-size: 0.84rem;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+.penpal-login-inline-btn {
+    background: var(--accent-color);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 14px;
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.penpal-login-inline-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+}
+.penpal-reader-reply-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+.penpal-reader-reply-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: var(--accent-color);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 14px rgba(93,26,26,0.3);
+}
+.penpal-reader-reply-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(93,26,26,0.4);
+}
+
 /* ── Mürekkep Postası Vitrin Banner Widget ────────────── */
 .murekkep-postasi-banner {
     margin: 24px 0 32px 0;

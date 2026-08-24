@@ -3386,6 +3386,10 @@ function updateAuthUI() {
     if (typeof updateCommentFormUI === 'function') {
         updateCommentFormUI();
     }
+    // Refresh Mektup Arkadaşlığı state if open
+    if (window.MürekkepliMektup && typeof window.MürekkepliMektup.refresh === 'function') {
+        window.MürekkepliMektup.refresh();
+    }
     renderCategoriesDropdown();
 
     // Refresh active newspaper grid/feed with the new authentication state
@@ -9091,55 +9095,24 @@ function initWysiwygEditor() {
 (function MürekkepliMektupModule() {
     'use strict';
 
-    // ── Constants ──────────────────────────────────────────
-    const STORAGE_KEY  = 'mml_letters_v2';
-    const POOL_KEY     = 'mml_pool_v2';
-    const BONDS_KEY    = 'mml_bonds_v2';
+    // ── Constants & Storage Keys ─────────────────────────────
+    const STORAGE_KEY = 'murekkep_penpal_letters_v3';
+    const BONDS_KEY   = 'murekkep_penpal_bonds_v3';
 
-    // Wipe old test keys if present
+    // Wipe old test/mock keys if present
     try {
         localStorage.removeItem('mml_letters_v1');
+        localStorage.removeItem('mml_letters_v2');
         localStorage.removeItem('mml_pool_v1');
+        localStorage.removeItem('mml_pool_v2');
         localStorage.removeItem('mml_bonds_v1');
+        localStorage.removeItem('mml_bonds_v2');
     } catch(e){}
 
-    // Anonim havuz: gerçek kullanıcı olmadığında inbox'a düşecek demo mektuplar
-    const DEMO_POOL_LETTERS = [
-        {
-            senderHint: 'İmza: G.',
-            paperTheme: 'parchment', font: "'Caveat', cursive", inkColor: '#1a1008',
-            stamp: '🌙', sealType: 'image', sealImg: 'assets/seals/seal_murekkep_red.jpg', sealGradient: 'radial-gradient(circle at 35% 35%, #1565c0, #0a2a5e)',
-            salutation: 'Sizi tanımayan birine,',
-            body: 'Bu satırları yazarken pencereden yarım ay görüyorum.\n\nBilmiyorum size ulaşıp ulaşmayacağını. Belki postanın dibinde kalır, belki yıllar sonra bir kutu karıştırırken bulunurum. Ama şimdi bu anı, bu mürekkebi, bu kala yağışın sesini size bırakmak istedim.\n\nYazarın olduğu her gün güzel bir gündür.',
-            closing: 'Karanliktaki bir kalemden,', signature: 'G.'
-        },
-        {
-            senderHint: 'İmza: N. Ç.',
-            paperTheme: 'cream', font: "'Cormorant Garamond', serif", inkColor: '#1c3a5e',
-            stamp: '☕', sealType: 'image', sealImg: 'assets/seals/seal_murekkep_gold.jpg', sealGradient: 'radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)',
-            salutation: 'Sevgili Yabancı,',
-            body: 'Sabah kahvemi içerken düşündüm: kaç kişi bu şehirde tam bu anda aynı şeyi hissediyordur?\n\nO yaşlı adam, kaldırımda bükülmüş oturuyor. Elinde gazete. Gözleri okumakta değil, bir yerde. Belki sizi düşünüyor. Belki beni. Belki hiç birini.\n\nŞehirler büyeyceç kadar yalnızlaştırır insanı.',
-            closing: 'Bu kalabalığtan,', signature: 'N. Ç.'
-        },
-        {
-            senderHint: 'İmza: H.',
-            paperTheme: 'straw', font: "'Dancing Script', cursive", inkColor: '#5c3a1e',
-            stamp: '🌿', sealType: 'image', sealImg: 'assets/seals/seal_traditional_emerald.jpg', sealGradient: 'radial-gradient(circle at 35% 35%, #2e7d32, #1a3d1c)',
-            salutation: 'Merhaba,',
-            body: 'Burada her şey yavaş işler. Bakücı dükkanı sabah 8\'de açılır, akşam 6\'da kapanır. Herkes birbirini bilir.\n\nBazen sormak istiyorum: büyük şehirde hiç görmediğin komşularla nasıl yaşanır? Tanıdıklık mı daha güzel, anonimlik mi?\n\nBen cevabı bilmiyorum. Ama her ikisinin de güzel bir tarafı olduğunu sanıyorum.',
-            closing: 'Yemyeşil bir yerden,', signature: 'H.'
-        },
-        {
-            senderHint: 'İmza: A. K.',
-            paperTheme: 'night', font: "'Lora', Georgia, serif", inkColor: '#a0c4e8',
-            stamp: '📖', sealType: 'image', sealImg: 'assets/seals/seal_traditional_sepia.jpg', sealGradient: 'radial-gradient(circle at 35% 35%, #f5c518, #a67c00)',
-            salutation: 'Kitap okuyan birine,',
-            body: 'Son okuduğunuz kitapta altını çizdiğiniz bir cümle var mı?\n\nBende var. Bir romanın tam ortasında. "Ve birdenbire anladı ki, beklediği şey geldiğinde onu tanıyamayacak." Bu kadar. Bundan sonrasını okuyamadım.Üç gün bekliyor kitap. Ben hazır değilim.\n\nUmarım sizin altı çizili cümleniz daha yumuşaktır.',
-            closing: 'Sayfalarda kaybolmuş biri,', signature: 'A. K.'
-        },
-    ];
+    // ── Global & User State ──────────────────────────────────
+    let allLetters = []; // Global real letters array (synced with Supabase)
+    let allBonds   = {}; // Global bonds map { [threadId]: BondObj }
 
-    // ── State ───────────────────────────────────────────────
     let state = {
         paperTheme:     'parchment',
         font:           "'Caveat', cursive",
@@ -9149,37 +9122,159 @@ function initWysiwygEditor() {
         sealImg:        'assets/seals/seal_murekkep_red.jpg',
         sealGradient:   'radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)',
         deliveryDelay:  43200000, // 12h ms (Standart)
-        letters:        [],
-        bonds:          {},    // { [threadId]: BondObj }
-        replyMode:      null,  // { threadId, senderHint } | null
+        letters:        [],       // User's active view letters
+        bonds:          {},       // User's active view bonds
+        replyMode:      null,     // { threadId, senderHint, recipientUsername, recipientId } | null
         activeTab:      'studio',
         countdownTimers: [],
     };
 
-    // ── Storage helpers ─────────────────────────────────────
-    function saveLetters() {
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.letters)); } catch(e){}
+    // ── Supabase & LocalStorage IO Functions ─────────────────
+    async function syncGlobalLetters() {
+        if (typeof isSupabaseConnected !== 'undefined' && isSupabaseConnected && typeof supabaseClient !== 'undefined' && supabaseClient) {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('site_settings')
+                    .select('value')
+                    .eq('key', 'penpal_letters_v3')
+                    .maybeSingle();
+                if (data && data.value) {
+                    allLetters = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+                    if (!Array.isArray(allLetters)) allLetters = [];
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(allLetters));
+                    filterUserLetters();
+                    return;
+                }
+            } catch(e) {
+                console.warn("[MürekkepliMektup] Supabase letters sync warning:", e);
+            }
+        }
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            allLetters = saved ? JSON.parse(saved) : [];
+            if (!Array.isArray(allLetters)) allLetters = [];
+        } catch(e) {
+            allLetters = [];
+        }
+        filterUserLetters();
     }
-    function loadLetters() {
-        try { state.letters = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e){ state.letters = []; }
-        // Promote pending letters whose delivery time has passed
+
+    async function saveGlobalLetters() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(allLetters));
+        } catch(e){}
+        if (typeof isSupabaseConnected !== 'undefined' && isSupabaseConnected && typeof supabaseClient !== 'undefined' && supabaseClient) {
+            try {
+                await supabaseClient
+                    .from('site_settings')
+                    .upsert({ key: 'penpal_letters_v3', value: allLetters });
+            } catch(e) {
+                console.error("[MürekkepliMektup] Supabase letters save error:", e);
+            }
+        }
+    }
+
+    async function syncGlobalBonds() {
+        if (typeof isSupabaseConnected !== 'undefined' && isSupabaseConnected && typeof supabaseClient !== 'undefined' && supabaseClient) {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('site_settings')
+                    .select('value')
+                    .eq('key', 'penpal_bonds_v3')
+                    .maybeSingle();
+                if (data && data.value) {
+                    allBonds = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+                    if (typeof allBonds !== 'object' || allBonds === null) allBonds = {};
+                    localStorage.setItem(BONDS_KEY, JSON.stringify(allBonds));
+                    filterUserLetters();
+                    return;
+                }
+            } catch(e) {
+                console.warn("[MürekkepliMektup] Supabase bonds sync warning:", e);
+            }
+        }
+        try {
+            const saved = localStorage.getItem(BONDS_KEY);
+            allBonds = saved ? JSON.parse(saved) : {};
+            if (typeof allBonds !== 'object' || allBonds === null) allBonds = {};
+        } catch(e) {
+            allBonds = {};
+        }
+        filterUserLetters();
+    }
+
+    async function saveGlobalBonds() {
+        try {
+            localStorage.setItem(BONDS_KEY, JSON.stringify(allBonds));
+        } catch(e){}
+        if (typeof isSupabaseConnected !== 'undefined' && isSupabaseConnected && typeof supabaseClient !== 'undefined' && supabaseClient) {
+            try {
+                await supabaseClient
+                    .from('site_settings')
+                    .upsert({ key: 'penpal_bonds_v3', value: allBonds });
+            } catch(e) {
+                console.error("[MürekkepliMektup] Supabase bonds save error:", e);
+            }
+        }
+    }
+
+    // ── Filter Letters for Current User ──────────────────────
+    function filterUserLetters() {
         const now = Date.now();
         let changed = false;
-        state.letters.forEach(l => {
+
+        // Update transit -> delivered status
+        allLetters.forEach(l => {
             if (l.status === 'transit' && l.deliverAt <= now) {
                 l.status = 'delivered';
                 changed = true;
             }
         });
-        if (changed) saveLetters();
-    }
+        if (changed) saveGlobalLetters();
 
-    // ── Bond storage ─────────────────────────────────────────
-    function saveBonds() {
-        try { localStorage.setItem(BONDS_KEY, JSON.stringify(state.bonds)); } catch(e){}
-    }
-    function loadBonds() {
-        try { state.bonds = JSON.parse(localStorage.getItem(BONDS_KEY)) || {}; } catch(e){ state.bonds = {}; }
+        if (typeof currentUser === 'undefined' || !currentUser) {
+            state.letters = [];
+            state.bonds = {};
+            return;
+        }
+
+        const curId = currentUser.id || '';
+        const curUser = (currentUser.username || currentUser.email?.split('@')[0] || '').toLowerCase().trim();
+
+        // Separate user's letters (both sent and received)
+        state.letters = allLetters.filter(l => {
+            const sId   = l.senderId || '';
+            const sUser = (l.senderUsername || '').toLowerCase().trim();
+            const rId   = l.recipientId || '';
+            const rUser = (l.recipientUsername || '').toLowerCase().trim();
+
+            const isSender    = (curId && sId === curId) || (curUser && sUser === curUser);
+            const isRecipient = (curId && rId === curId) || (curUser && rUser === curUser);
+
+            // 1. Sent by current user (Outbox)
+            if (isSender) return true;
+
+            // 2. Addressed directly to current user (Inbox Direct Reply)
+            if (isRecipient) return true;
+
+            // 3. Sent to pool by ANOTHER real user (Inbox Pool Match)
+            if (l.isPool && !isSender) return true;
+
+            return false;
+        });
+
+        // Filter bonds relevant to current user
+        state.bonds = {};
+        Object.entries(allBonds).forEach(([tId, bond]) => {
+            const u1 = (bond.user1 || '').toLowerCase().trim();
+            const u2 = (bond.user2 || '').toLowerCase().trim();
+            const id1 = bond.user1Id || '';
+            const id2 = bond.user2Id || '';
+
+            if ((curId && (id1 === curId || id2 === curId)) || (curUser && (u1 === curUser || u2 === curUser))) {
+                state.bonds[tId] = bond;
+            }
+        });
     }
 
     // ── Universal Seal Renderer Helper ─────────────────────
@@ -9195,13 +9290,13 @@ function initWysiwygEditor() {
         return `<div class="seal-avatar-wrapper ${extraClass}" style="background:${bg}">M</div>`;
     }
 
-    // ── DOM helpers ─────────────────────────────────────────
+    // ── DOM Helpers ─────────────────────────────────────────
     function qs(id)     { return document.getElementById(id); }
     function qsa(sel)   { return document.querySelectorAll(sel); }
     function show(el)   { if(el) el.classList.remove('hidden'); }
     function hide(el)   { if(el) el.classList.add('hidden'); }
 
-    // ── Toast ───────────────────────────────────────────────
+    // ── Toast Notification ──────────────────────────────────
     function showToast(msg) {
         let t = document.querySelector('.penpal-toast');
         if (!t) {
@@ -9211,19 +9306,21 @@ function initWysiwygEditor() {
         }
         t.textContent = msg;
         t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 3200);
+        setTimeout(() => t.classList.remove('show'), 3400);
     }
 
-    // ── Open / Close overlay ────────────────────────────────
-    function openPenpal() {
+    // ── Open / Close Overlay ────────────────────────────────
+    async function openPenpal() {
         const overlay = qs('penpal-overlay');
         if (!overlay) return;
         overlay.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
-        loadLetters();
-        loadBonds();
+
+        await syncGlobalLetters();
+        await syncGlobalBonds();
         renderAll();
     }
+
     function closePenpal() {
         const overlay = qs('penpal-overlay');
         if (!overlay) return;
@@ -9232,91 +9329,7 @@ function initWysiwygEditor() {
         clearCountdowns();
     }
 
-    // ── Render Bonds (Arkadaşlar Tabı) ─────────────────────
-    function renderBonds() {
-        const panel = qs('penpal-panel-penpal');
-        if (!panel) return;
-        loadBonds();
-
-        const bondsList = Object.values(state.bonds);
-
-        if (!bondsList.length) {
-            panel.innerHTML = `
-            <div class="bonds-container">
-                <h3 class="bonds-title">💌 Mektup Arkadaşlarım & Bağlarım</h3>
-                <p class="bonds-subtitle">Mektuplaştıkça anonim bağlarınız güçlenir. 5 mektup sonrası tanışabilirsiniz!</p>
-                <div class="bonds-empty">
-                    <span class="empty-icon">📜</span>
-                    <h4>Henüz bir mektup bağınız yok</h4>
-                    <p>Anonim havuza bir mektup yazın veya gelen mektuplara yanıt verin. Birileriyle sürekli mektuplaştıkça bağı burada göreceksiniz!</p>
-                </div>
-            </div>`;
-            return;
-        }
-
-        panel.innerHTML = `
-        <div class="bonds-container">
-            <h3 class="bonds-title">💌 Mektup Arkadaşlarım & Bağlarım</h3>
-            <p class="bonds-subtitle">Birbirinize yazıştıkça anonim bağınız büyür. 5 mektupta kimlikleri ortaya çıkarabilirsiniz.</p>
-            <div class="bonds-list">
-                ${bondsList.map(bond => {
-                    const count = Math.min(bond.letterCount || 1, 5);
-                    const canReveal = count >= 5 && bond.status !== 'revealed';
-                    const isRevealed = bond.status === 'revealed';
-
-                    const dotsHtml = Array.from({length: 5}, (_, i) => 
-                        `<div class="bond-dot ${i < count ? 'filled' : ''}"></div>`
-                    ).join('');
-
-                    return `
-                    <div class="bond-card ${canReveal ? 'bond-can-reveal' : ''}">
-                        <div class="bond-card-avatar">${isRevealed ? (bond.realName?.[0] || '💌') : '🎭'}</div>
-                        <div class="bond-card-info">
-                            <div class="bond-card-name">
-                                ${isRevealed ? `✨ ${sanitizeHTML(bond.realName)} (${sanitizeHTML(bond.senderHint)})` : sanitizeHTML(bond.senderHint)}
-                            </div>
-                            <div class="bond-card-progress">
-                                <div class="bond-dots">${dotsHtml}</div>
-                                <span class="bond-progress-label">${count}/5 Mektup</span>
-                            </div>
-                            ${canReveal ? `<div class="bond-reveal-notice">🎉 5 mektuba ulaştınız! Tanışma teklif edebilirsiniz.</div>` : ''}
-                            ${isRevealed ? `<div class="bond-revealed-notice">🤝 Kimlikler açık! Birbirinizi tanıyorsunuz.</div>` : ''}
-                        </div>
-                        <div class="bond-card-actions">
-                            <button class="bond-reply-btn" data-thread="${bond.threadId}" data-hint="${sanitizeHTML(bond.senderHint)}">✍️ Yaz</button>
-                            ${canReveal ? `<button class="bond-reveal-btn" data-thread="${bond.threadId}">✨ Tanışma Teklifi Et</button>` : ''}
-                        </div>
-                    </div>`;
-                }).join('')}
-            </div>
-        </div>`;
-
-        // Action bindings
-        panel.querySelectorAll('.bond-reply-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                startReply(btn.dataset.thread, btn.dataset.hint);
-            });
-        });
-
-        panel.querySelectorAll('.bond-reveal-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const threadId = btn.dataset.thread;
-                if (state.bonds[threadId]) {
-                    state.bonds[threadId].status = 'revealed';
-                    state.bonds[threadId].realName = 'Edebiyatsever Dost';
-                    saveBonds();
-                    showToast('🎉 Tanışma teklifiniz kabul edildi! Mektup arkadaşınızın ismi açıklandı.');
-                    renderBonds();
-                }
-            });
-        });
-    }
-
-    function renderPenpalMatches() {
-        renderBonds();
-    }
-
-    // ── Tab switching ───────────────────────────────────────
+    // ── Tab Switching ───────────────────────────────────────
     function switchTab(tabName) {
         state.activeTab = tabName;
         qsa('.penpal-tab-btn').forEach(btn => {
@@ -9328,29 +9341,66 @@ function initWysiwygEditor() {
         const panel = qs(`penpal-panel-${tabName}`);
         if (panel) panel.classList.remove('hidden');
 
+        filterUserLetters();
+
+        if (tabName === 'studio') updateStudioAuthNotice();
         if (tabName === 'inbox')  renderInbox();
         if (tabName === 'outbox') renderOutbox();
         if (tabName === 'penpal') renderBonds();
     }
 
-    // ── Letter preview update ───────────────────────────────
+    // ── Studio Auth Notice ──────────────────────────────────
+    function updateStudioAuthNotice() {
+        const previewArea = qs('penpal-panel-studio')?.querySelector('.studio-preview-area');
+        if (!previewArea) return;
+
+        let noticeEl = qs('penpal-studio-auth-notice');
+        const isLoggedIn = (typeof currentUser !== 'undefined' && !!currentUser);
+
+        if (!isLoggedIn) {
+            if (!noticeEl) {
+                noticeEl = document.createElement('div');
+                noticeEl.id = 'penpal-studio-auth-notice';
+                noticeEl.className = 'penpal-login-notice';
+                noticeEl.innerHTML = `
+                    <span>🔒 Mektup mühürleyip gönderebilmek için <strong>giriş yapmalısınız</strong>.</span>
+                    <button type="button" class="penpal-login-inline-btn" id="penpal-studio-login-btn">Giriş Yap</button>
+                `;
+                const actions = previewArea.querySelector('.studio-actions');
+                if (actions) previewArea.insertBefore(noticeEl, actions);
+                else previewArea.appendChild(noticeEl);
+
+                const btn = qs('penpal-studio-login-btn');
+                if (btn) btn.addEventListener('click', () => {
+                    if (typeof openAuthModal === 'function') openAuthModal();
+                });
+            } else {
+                noticeEl.classList.remove('hidden');
+            }
+        } else {
+            if (noticeEl) noticeEl.classList.add('hidden');
+        }
+    }
+
+    // ── Letter Preview Update ───────────────────────────────
     function updatePreview() {
         const preview   = qs('penpal-letter-preview');
+        if (!preview) return;
         const sealEl    = qs('preview-seal');
         const stampEl   = qs('preview-stamp');
 
-        // Paper class
+        // Paper theme
         ['paper-parchment','paper-cream','paper-night','paper-straw'].forEach(c => preview.classList.remove(c));
         preview.classList.add(`paper-${state.paperTheme}`);
 
-        // Font & color on all editable zones
+        // Editable typography
         const editables = preview.querySelectorAll('[contenteditable]');
         editables.forEach(el => {
             el.style.fontFamily = state.font;
             el.style.color      = state.inkColor;
         });
 
-        // Night mode: white ink default
+        // Night mode white ink fallback
         if (state.paperTheme === 'night') {
             editables.forEach(el => {
                 if (el.style.color === state.inkColor || el.style.color === '') {
@@ -9359,7 +9409,7 @@ function initWysiwygEditor() {
             });
         }
 
-        // Seal & stamp
+        // Seal & Stamp
         if (sealEl) {
             const isImg = (state.sealType === 'image' || state.sealImg) && state.sealImg;
             if (isImg) {
@@ -9375,7 +9425,7 @@ function initWysiwygEditor() {
         if (stampEl) stampEl.textContent = state.stamp;
     }
 
-    // ── Studio control binding ──────────────────────────────
+    // ── Studio Control Binding ──────────────────────────────
     function bindStudioControls() {
         // Paper themes
         qsa('#paper-theme-grid .paper-btn').forEach(btn => {
@@ -9436,17 +9486,9 @@ function initWysiwygEditor() {
             btn.addEventListener('click', () => {
                 qsa('#delivery-grid .delivery-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                state.deliveryDelay = parseInt(btn.dataset.delay);
+                state.deliveryDelay = parseInt(btn.dataset.delay) || 43200000;
             });
         });
-
-        // Pick recipient button (artık yok ama güvenlik için kontrol)
-        const pickBtn = qs('penpal-pick-recipient-btn');
-        if (pickBtn) pickBtn.addEventListener('click', () => switchTab('penpal'));
-
-        // Bottle mode (artık yok ama güvenlik için)
-        const bottleBtn = qs('penpal-bottle-btn');
-        if (bottleBtn) bottleBtn.addEventListener('click', () => showToast('Mektup anonim havuza gönderilecek.'));
 
         // Send button
         const sendBtn = qs('penpal-send-btn');
@@ -9461,7 +9503,7 @@ function initWysiwygEditor() {
         if (state.replyMode) {
             badgeText.innerHTML = `
                 <strong style="color:#1565c0;">↩️ Yanıt Yazılıyor: ${sanitizeHTML(state.replyMode.senderHint)}</strong>
-                <span>Bu mektup doğrudan aynı anonim kaleme ulaşacaktır. 
+                <span>Bu mektup doğrudan mektup arkadaşınıza ulaştırılacaktır. 
                 <button id="cancel-reply-btn" style="background:none;border:none;color:#e53935;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;margin-left:6px;">İptal Et</button></span>
             `;
             const cancelBtn = qs('cancel-reply-btn');
@@ -9469,16 +9511,27 @@ function initWysiwygEditor() {
         } else {
             badgeText.innerHTML = `
                 <strong>Anonim Mektup Havuzu</strong>
-                <span>Mektubunuz rastgele bir edebiyatsevere gider. Siz de havuzdan birinin mektubunu alırsınız. Kimse kimseyi bilmez — sadece kelimeler konuşur.</span>
+                <span>Mektubunuz havuza eklenir ve diğer edebiyatseverlere ulaştırılır. 5 mektup boyunca anonim yazışarak bağ kurabilirsiniz.</span>
             `;
         }
     }
 
-    function startReply(threadId, senderHint) {
-        state.replyMode = { threadId, senderHint };
+    function startReply(threadId, senderHint, recipientUsername, recipientId) {
+        if (typeof currentUser === 'undefined' || !currentUser) {
+            showToast('⚠️ Yanıt yazabilmek için lütfen önce giriş yapın.');
+            if (typeof openAuthModal === 'function') openAuthModal();
+            return;
+        }
+
+        state.replyMode = {
+            threadId,
+            senderHint: senderHint || 'Mektup Arkadaşı',
+            recipientUsername: recipientUsername || null,
+            recipientId: recipientId || null
+        };
         updateStudioReplyBanner();
         switchTab('studio');
-        showToast(`✍️ ${senderHint} kaleme yanıt yazıyorsunuz.`);
+        showToast(`✍️ ${state.replyMode.senderHint} için yanıt yazıyorsunuz.`);
     }
 
     function cancelReply() {
@@ -9487,8 +9540,15 @@ function initWysiwygEditor() {
         showToast('Yanıt modu iptal edildi.');
     }
 
-    // ── Send letter (Thread & Bond Destekli) ────────────────
-    function sendLetter() {
+    // ── Send Letter (Auth Enforced & Pure Real Multi-User) ───
+    async function sendLetter() {
+        // 1. Check Authentication
+        if (typeof currentUser === 'undefined' || !currentUser) {
+            showToast('⚠️ Mektup gönderebilmek için giriş yapmalısınız!');
+            if (typeof openAuthModal === 'function') openAuthModal();
+            return;
+        }
+
         const salutation = qs('preview-salutation')?.innerText?.trim() || '';
         const body       = qs('preview-body')?.innerText?.trim()       || '';
         const closing    = qs('preview-closing')?.innerText?.trim()    || '';
@@ -9501,98 +9561,85 @@ function initWysiwygEditor() {
 
         const now = Date.now();
         const deliverAt = now + state.deliveryDelay;
-        let threadId, recipientName;
+        const curName = currentUser.username || currentUser.email?.split('@')[0] || 'Kullanıcı';
+        const curId   = currentUser.id || ('usr_' + now);
+        const senderHint = signature || curName;
+
+        let threadId, recipientUsername, recipientId, recipientName, isPool;
 
         if (state.replyMode) {
-            // Var olan bir ipliğe yanıt
-            threadId = state.replyMode.threadId;
-            recipientName = state.replyMode.senderHint;
+            // Direct reply to an existing correspondent
+            threadId          = state.replyMode.threadId;
+            recipientUsername = state.replyMode.recipientUsername || null;
+            recipientId       = state.replyMode.recipientId || null;
+            recipientName     = state.replyMode.senderHint || 'Mektup Arkadaşı';
+            isPool            = false;
 
-            if (!state.bonds[threadId]) {
-                state.bonds[threadId] = {
+            // Update or initialize bond between real users
+            if (!allBonds[threadId]) {
+                allBonds[threadId] = {
                     threadId,
+                    user1: curName,
+                    user1Id: curId,
+                    user2: recipientUsername,
+                    user2Id: recipientId,
                     senderHint: recipientName,
                     letterCount: 1,
                     status: 'active'
                 };
             }
-            state.bonds[threadId].letterCount += 1;
-            saveBonds();
+            allBonds[threadId].letterCount = (allBonds[threadId].letterCount || 1) + 1;
+            saveGlobalBonds();
         } else {
-            // Rastgele yeni bir thread
-            threadId = 'th_' + now + '_' + Math.random().toString(36).slice(2, 7);
-            recipientName = 'Mektup Arkadaşı';
+            // New anonymous pool letter
+            threadId          = 'th_' + now + '_' + Math.random().toString(36).slice(2, 7);
+            recipientUsername = null;
+            recipientId       = null;
+            recipientName     = 'Anonim Mektup Havuzu';
+            isPool            = true;
         }
 
-        // 1. Outbox mektubu
         const outLetter = {
-            id:         'ltr_out_' + now + '_' + Math.random().toString(36).slice(2),
+            id:                'ltr_' + now + '_' + Math.random().toString(36).slice(2, 8),
             threadId,
-            sentAt:     now,
-            deliverAt,
-            status:     'transit',
-            direction:  'outbox',
-            recipient:  { name: recipientName, isPool: !state.replyMode },
-            paperTheme: state.paperTheme,
-            font:       state.font,
-            inkColor:   state.inkColor,
-            stamp:      state.stamp,
-            sealType:   state.sealType,
-            sealImg:    state.sealImg,
-            sealGradient: state.sealGradient,
+            senderId:          curId,
+            senderUsername:    curName,
+            senderHint:        senderHint,
+            recipientUsername: recipientUsername,
+            recipientId:       recipientId,
+            recipientName:     recipientName,
+            isPool:            isPool,
+            direction:         'outbox',
+            sentAt:            now,
+            deliverAt:         deliverAt,
+            status:            'transit',
+            paperTheme:        state.paperTheme,
+            font:              state.font,
+            inkColor:          state.inkColor,
+            stamp:             state.stamp,
+            sealType:          state.sealType,
+            sealImg:           state.sealImg,
+            sealGradient:      state.sealGradient,
             salutation, body, closing, signature,
+            readBy:            []
         };
 
-        // 2. Yanıt veya yeni rastgele havuz mektubu (inbox)
-        const poolSource = DEMO_POOL_LETTERS[Math.floor(Math.random() * DEMO_POOL_LETTERS.length)];
-        const senderHint = state.replyMode ? state.replyMode.senderHint : (poolSource.senderHint || ('İmza: ' + (poolSource.signature || 'Anonim')));
+        // Add ONLY the real sent letter to the shared database
+        allLetters.push(outLetter);
+        await saveGlobalLetters();
 
-        const inboxLetter = {
-            id:         'ltr_in_' + now + '_' + Math.random().toString(36).slice(2),
-            threadId,
-            sentAt:     now,
-            deliverAt,
-            status:     'transit',
-            direction:  'inbox',
-            sender:     { name: senderHint },
-            paperTheme: poolSource.paperTheme,
-            font:       poolSource.font,
-            inkColor:   poolSource.inkColor,
-            stamp:      poolSource.stamp,
-            sealType:   poolSource.sealType || 'image',
-            sealImg:    poolSource.sealImg || 'assets/seals/seal_murekkep_red.jpg',
-            sealGradient: poolSource.sealGradient,
-            salutation: state.replyMode ? 'Yazarıma yanıt olarak,' : poolSource.salutation,
-            body:       state.replyMode ? 'Mektubunuzu aldım ve derinden hissettim.\n\n' + poolSource.body : poolSource.body,
-            closing:    poolSource.closing,
-            signature:  poolSource.signature,
-        };
+        // Refresh user-specific views
+        filterUserLetters();
 
-        // Eğer yeni thread ise ve yanıt değilse bond kaydını ilk mektupla başlat
-        if (!state.bonds[threadId]) {
-            state.bonds[threadId] = {
-                threadId,
-                senderHint,
-                letterCount: 1,
-                status: 'active'
-            };
-            saveBonds();
-        }
-
-        state.letters.push(outLetter);
-        state.letters.push(inboxLetter);
-        saveLetters();
-
-        // Yanıt modunu sıfırla
         state.replyMode = null;
         updateStudioReplyBanner();
         resetCompose();
 
         const delay = state.deliveryDelay;
         const timeStr = delay <= 1000 ? '1 saniye' : delay < 3600001 ? '1 saat' : delay < 86400001 ? '12 saat' : '3 gün';
-        showToast(`✉️ Mektubunuz yola çıktı! ${timeStr} içinde cevap ulaşacak.`);
+        showToast(`✉️ Mektubunuz mühürlendi ve yola çıktı! (${timeStr})`);
 
-        setTimeout(() => switchTab('outbox'), 800);
+        setTimeout(() => switchTab('outbox'), 600);
     }
 
     function resetCompose() {
@@ -9606,14 +9653,22 @@ function initWysiwygEditor() {
         if (signature)  signature.innerText  = 'İmzanız';
     }
 
-    // ── Render outbox ───────────────────────────────────────
+    // ── Render Outbox ───────────────────────────────────────
     function renderOutbox() {
         const list = qs('penpal-outbox-list');
         if (!list) return;
-        const outLetters = state.letters.filter(l => l.direction === 'outbox').sort((a,b)=>b.sentAt-a.sentAt);
+
+        const curId = currentUser?.id || '';
+        const curUser = (currentUser?.username || currentUser?.email?.split('@')[0] || '').toLowerCase().trim();
+
+        const outLetters = state.letters.filter(l => {
+            const sId   = l.senderId || '';
+            const sUser = (l.senderUsername || '').toLowerCase().trim();
+            return (curId && sId === curId) || (curUser && sUser === curUser);
+        }).sort((a,b) => b.sentAt - a.sentAt);
 
         if (!outLetters.length) {
-            list.innerHTML = `<div class="letter-list-empty"><span class="empty-icon">📪</span><p>Henüz mektup göndermediniz.<br>İlk mektubunuzu "Mektup Yaz" sekmesinden yazın!</p></div>`;
+            list.innerHTML = `<div class="letter-list-empty"><span class="empty-icon">📪</span><p>Henüz gönderdiğiniz bir mektup yok.<br>İlk mektubunuzu "Mektup Yaz" sekmesinden mühürleyin!</p></div>`;
             return;
         }
 
@@ -9626,11 +9681,13 @@ function initWysiwygEditor() {
                 ? `<span class="letter-card-time penpal-countdown" data-deliver="${l.deliverAt}">${formatCountdown(l.deliverAt)}</span>`
                 : '';
 
+            const recipientLabel = l.recipientName || (l.isPool ? 'Anonim Mektup Havuzu' : 'Mektup Arkadaşı');
+
             return `
             <div class="penpal-letter-card" data-letter-id="${l.id}">
                 ${getSealHTML(l, 'letter-card-seal')}
                 <div class="letter-card-info">
-                    <div class="letter-card-sender">✉️ ${sanitizeHTML(l.recipient?.name || 'Bilinmiyor')}</div>
+                    <div class="letter-card-sender">✉️ ${sanitizeHTML(recipientLabel)}</div>
                     <div class="letter-card-preview">${sanitizeHTML(l.body?.slice(0,80) || '')}…</div>
                     <div class="letter-card-time">
                         ${new Date(l.sentAt).toLocaleDateString('tr-TR')}
@@ -9644,12 +9701,23 @@ function initWysiwygEditor() {
         startCountdowns(list);
     }
 
-    // ── Render inbox ────────────────────────────────────────
+    // ── Render Inbox (Real Incoming Letters Only) ───────────
     function renderInbox() {
         const list = qs('penpal-inbox-list');
         if (!list) return;
-        loadLetters();
-        const inLetters = state.letters.filter(l => l.direction === 'inbox').sort((a,b)=>b.sentAt-a.sentAt);
+
+        filterUserLetters();
+
+        const curId = currentUser?.id || '';
+        const curUser = (currentUser?.username || currentUser?.email?.split('@')[0] || '').toLowerCase().trim();
+
+        // Letters incoming to this user (not authored by self)
+        const inLetters = state.letters.filter(l => {
+            const sId   = l.senderId || '';
+            const sUser = (l.senderUsername || '').toLowerCase().trim();
+            const isSender = (curId && sId === curId) || (curUser && sUser === curUser);
+            return !isSender;
+        }).sort((a,b) => b.sentAt - a.sentAt);
 
         // Update badge
         const unread = inLetters.filter(l => l.status === 'delivered').length;
@@ -9660,7 +9728,7 @@ function initWysiwygEditor() {
         }
 
         if (!inLetters.length) {
-            list.innerHTML = `<div class="letter-list-empty"><span class="empty-icon">📭</span><p>Henüz mektup almadınız.<br>Bir mektup arkadaşı edinin ve mektuplara başlayın!</p></div>`;
+            list.innerHTML = `<div class="letter-list-empty"><span class="empty-icon">📭</span><p>Henüz gelen bir mektubunuz yok.<br>Diğer edebiyatseverler mektup yazdıkça veya yanıtladıkça burada belirecektir!</p></div>`;
             return;
         }
 
@@ -9677,13 +9745,14 @@ function initWysiwygEditor() {
                 : '';
 
             const bond = l.threadId ? state.bonds[l.threadId] : null;
-            const threadBadge = bond ? `<span class="thread-badge">💬 ${bond.letterCount}/5 Mektup</span>` : '';
+            const threadBadge = bond ? `<span class="thread-badge">💬 ${bond.letterCount || 1}/5 Mektup</span>` : '';
+            const senderDisplayName = l.senderHint || 'Anonim Kalem';
 
             return `
             <div class="penpal-letter-card ${isUnread ? 'unread' : ''}" data-letter-id="${l.id}" data-direction="inbox">
                 ${getSealHTML(l, 'letter-card-seal')}
                 <div class="letter-card-info">
-                    <div class="letter-card-sender">📜 ${sanitizeHTML(l.sender?.name || 'Anonim Kalem')} ${threadBadge}</div>
+                    <div class="letter-card-sender">📜 ${sanitizeHTML(senderDisplayName)} ${threadBadge}</div>
                     <div class="letter-card-preview">${isTransit ? '🔒 Mektup henüz yolda...' : sanitizeHTML(l.body?.slice(0,80) || '') + '…'}</div>
                     <div class="letter-card-time">
                         ${new Date(l.sentAt).toLocaleDateString('tr-TR')}
@@ -9700,9 +9769,9 @@ function initWysiwygEditor() {
         list.querySelectorAll('.penpal-letter-card[data-direction="inbox"]').forEach(card => {
             card.addEventListener('click', () => {
                 const letterId = card.dataset.letterId;
-                const letter   = state.letters.find(l => l.id === letterId);
+                const letter   = inLetters.find(l => l.id === letterId);
                 if (!letter || letter.status === 'transit') {
-                    showToast('📮 Mektup henüz yolda, sabirlı olun!');
+                    showToast('📮 Mektup henüz yolda, teslim süresini bekleyin!');
                     return;
                 }
                 openLetterReader(letter);
@@ -9710,7 +9779,7 @@ function initWysiwygEditor() {
         });
     }
 
-    // ── Letter reader modal ──────────────────────────────
+    // ── Letter Reader Modal ─────────────────────────────────
     function openLetterReader(letter) {
         const modal = qs('penpal-reading-modal');
         if (!modal) return;
@@ -9733,11 +9802,9 @@ function initWysiwygEditor() {
         // Break seal button
         const breakBtn = qs('break-seal-btn');
         if (breakBtn) {
-            // Remove old listener by cloning
             const newBreakBtn = breakBtn.cloneNode(true);
             breakBtn.parentNode.replaceChild(newBreakBtn, breakBtn);
             newBreakBtn.addEventListener('click', () => {
-                // Animate envelope open
                 if (envelope) envelope.classList.add('opening');
 
                 setTimeout(() => {
@@ -9745,23 +9812,43 @@ function initWysiwygEditor() {
                     if (opened) {
                         opened.classList.remove('hidden');
                         
-                        // Inject letter content
                         opened.innerHTML = `
-                        <div class="letter-preview paper-${sanitizeHTML(letter.paperTheme)}" style="max-width:520px; margin: 0 auto;">
-                            <div class="letter-stamp">${sanitizeHTML(letter.stamp)}</div>
-                            <div style="font-family:${sanitizeHTML(letter.font)}; color:${sanitizeHTML(letter.inkColor)};">
-                                <div class="letter-salutation" style="font-family:${sanitizeHTML(letter.font)};color:${sanitizeHTML(letter.inkColor)}">${sanitizeHTML(letter.salutation)}</div>
-                                <div class="letter-body" style="font-family:${sanitizeHTML(letter.font)};color:${sanitizeHTML(letter.inkColor)}">${sanitizeHTML(letter.body).replace(/\n/g,'<br>')}</div>
-                                <div class="letter-closing" style="font-family:${sanitizeHTML(letter.font)};color:${sanitizeHTML(letter.inkColor)}">${sanitizeHTML(letter.closing)}</div>
-                                <div class="letter-signature" style="font-family:${sanitizeHTML(letter.font)};color:${sanitizeHTML(letter.inkColor)}">${sanitizeHTML(letter.signature)}</div>
+                        <div class="letter-preview paper-${sanitizeHTML(letter.paperTheme || 'parchment')}" style="max-width:520px; margin: 0 auto;">
+                            <div class="letter-stamp">${sanitizeHTML(letter.stamp || '🪶')}</div>
+                            <div style="font-family:${sanitizeHTML(letter.font || "'Caveat', cursive")}; color:${sanitizeHTML(letter.inkColor || '#1a1008')};">
+                                <div class="letter-salutation" style="font-family:${sanitizeHTML(letter.font || "'Caveat', cursive")};color:${sanitizeHTML(letter.inkColor || '#1a1008')}">${sanitizeHTML(letter.salutation || '')}</div>
+                                <div class="letter-body" style="font-family:${sanitizeHTML(letter.font || "'Caveat', cursive")};color:${sanitizeHTML(letter.inkColor || '#1a1008')}">${sanitizeHTML(letter.body || '').replace(/\n/g,'<br>')}</div>
+                                <div class="letter-closing" style="font-family:${sanitizeHTML(letter.font || "'Caveat', cursive")};color:${sanitizeHTML(letter.inkColor || '#1a1008')}">${sanitizeHTML(letter.closing || '')}</div>
+                                <div class="letter-signature" style="font-family:${sanitizeHTML(letter.font || "'Caveat', cursive")};color:${sanitizeHTML(letter.inkColor || '#1a1008')}">${sanitizeHTML(letter.signature || '')}</div>
                             </div>
                             ${getSealHTML(letter, 'letter-seal')}
+                        </div>
+                        <div class="penpal-reader-reply-wrapper">
+                            <button type="button" class="penpal-reader-reply-btn" id="reader-reply-action-btn">
+                                ✍️ Bu Mektuba Yanıt Yaz
+                            </button>
                         </div>`;
+
+                        const replyBtn = qs('reader-reply-action-btn');
+                        if (replyBtn) {
+                            replyBtn.addEventListener('click', () => {
+                                closeLetterReader();
+                                startReply(
+                                    letter.threadId,
+                                    letter.senderHint || letter.signature || 'Mektup Arkadaşı',
+                                    letter.senderUsername || null,
+                                    letter.senderId || null
+                                );
+                            });
+                        }
                     }
 
-                    // Mark as read
-                    const l = state.letters.find(x => x.id === letter.id);
-                    if (l) { l.status = 'read'; saveLetters(); }
+                    // Mark as read in allLetters
+                    const target = allLetters.find(x => x.id === letter.id);
+                    if (target) {
+                        target.status = 'read';
+                        saveGlobalLetters();
+                    }
                 }, 650);
             });
         }
@@ -9771,25 +9858,26 @@ function initWysiwygEditor() {
         const modal = qs('penpal-reading-modal');
         if (modal) modal.classList.add('hidden');
         document.body.style.overflow = '';
+        renderInbox();
     }
 
-    // ── Render Bonds (Arkadaşlar Tabı) ─────────────────────
+    // ── Render Bonds (Arkadaşlar Tabı) ──────────────────────
     function renderBonds() {
         const panel = qs('penpal-panel-penpal');
         if (!panel) return;
-        loadBonds();
 
+        filterUserLetters();
         const bondsList = Object.values(state.bonds);
 
         if (!bondsList.length) {
             panel.innerHTML = `
             <div class="bonds-container">
                 <h3 class="bonds-title">💌 Mektup Arkadaşlarım & Bağlarım</h3>
-                <p class="bonds-subtitle">Mektuplaştıkça anonim bağlarınız güçlenir. 5 mektup sonrası tanışabilirsiniz!</p>
+                <p class="bonds-subtitle">Mektuplaştıkça anonim bağlarınız güçlenir. 5 mektup sonrası kimliklerinizi açığa çıkarabilirsiniz!</p>
                 <div class="bonds-empty">
                     <span class="empty-icon">📜</span>
                     <h4>Henüz bir mektup bağınız yok</h4>
-                    <p>Anonim havuza bir mektup yazın veya gelen mektuplara yanıt verin. Birileriyle sürekli mektuplaştıkça bağı burada göreceksiniz!</p>
+                    <p>Anonim havuza bir mektup mühürleyin veya gelen mektuplara yanıt verin. Bir edebiyatseverle sürekli mektuplaştıkça bağınızı burada göreceksiniz!</p>
                 </div>
             </div>`;
             return;
@@ -9809,13 +9897,15 @@ function initWysiwygEditor() {
                         `<div class="bond-dot ${i < count ? 'filled' : ''}"></div>`
                     ).join('');
 
+                    const displayName = isRevealed
+                        ? `✨ ${sanitizeHTML(bond.realName || bond.senderHint)} (${sanitizeHTML(bond.senderHint)})`
+                        : sanitizeHTML(bond.senderHint);
+
                     return `
                     <div class="bond-card ${canReveal ? 'bond-can-reveal' : ''}">
-                        <div class="bond-card-avatar">${isRevealed ? (bond.realName?.[0] || '💌') : '🎭'}</div>
+                        <div class="bond-card-avatar">${isRevealed ? '💌' : '🎭'}</div>
                         <div class="bond-card-info">
-                            <div class="bond-card-name">
-                                ${isRevealed ? `✨ ${sanitizeHTML(bond.realName)} (${sanitizeHTML(bond.senderHint)})` : sanitizeHTML(bond.senderHint)}
-                            </div>
+                            <div class="bond-card-name">${displayName}</div>
                             <div class="bond-card-progress">
                                 <div class="bond-dots">${dotsHtml}</div>
                                 <span class="bond-progress-label">${count}/5 Mektup</span>
@@ -9824,7 +9914,7 @@ function initWysiwygEditor() {
                             ${isRevealed ? `<div class="bond-revealed-notice">🤝 Kimlikler açık! Birbirinizi tanıyorsunuz.</div>` : ''}
                         </div>
                         <div class="bond-card-actions">
-                            <button class="bond-reply-btn" data-thread="${bond.threadId}" data-hint="${sanitizeHTML(bond.senderHint)}">✍️ Yaz</button>
+                            <button class="bond-reply-btn" data-thread="${bond.threadId}" data-hint="${sanitizeHTML(bond.senderHint)}" data-u2="${sanitizeHTML(bond.user2 || '')}" data-id2="${sanitizeHTML(bond.user2Id || '')}">✍️ Yaz</button>
                             ${canReveal ? `<button class="bond-reveal-btn" data-thread="${bond.threadId}">✨ Tanışma Teklifi Et</button>` : ''}
                         </div>
                     </div>`;
@@ -9832,20 +9922,19 @@ function initWysiwygEditor() {
             </div>
         </div>`;
 
-        // Action bindings
         panel.querySelectorAll('.bond-reply-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                startReply(btn.dataset.thread, btn.dataset.hint);
+                startReply(btn.dataset.thread, btn.dataset.hint, btn.dataset.u2, btn.dataset.id2);
             });
         });
 
         panel.querySelectorAll('.bond-reveal-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const threadId = btn.dataset.thread;
-                if (state.bonds[threadId]) {
-                    state.bonds[threadId].status = 'revealed';
-                    state.bonds[threadId].realName = 'Edebiyatsever Dost';
-                    saveBonds();
+                if (allBonds[threadId]) {
+                    allBonds[threadId].status = 'revealed';
+                    allBonds[threadId].realName = allBonds[threadId].user2 || 'Edebiyatsever Dost';
+                    saveGlobalBonds();
                     showToast('🎉 Tanışma teklifiniz kabul edildi! Mektup arkadaşınızın ismi açıklandı.');
                     renderBonds();
                 }
@@ -9853,11 +9942,7 @@ function initWysiwygEditor() {
         });
     }
 
-    function renderPenpalMatches() {
-        renderBonds();
-    }
-
-    // ── Countdown helpers ───────────────────────────────────
+    // ── Countdown Helpers ───────────────────────────────────
     function formatCountdown(deliverAt) {
         const ms  = deliverAt - Date.now();
         if (ms <= 0) return '✅ Teslim edildi';
@@ -9882,27 +9967,16 @@ function initWysiwygEditor() {
         }, 1000);
     }
 
-    // ── Render all ──────────────────────────────────────────
+    // ── Render All ──────────────────────────────────────────
     function renderAll() {
         switchTab(state.activeTab || 'studio');
         updatePreview();
     }
 
-    // ── Interest chips ──────────────────────────────────────
-    function bindInterestChips() {
-        qsa('#penpal-interest-grid .interest-chip').forEach(chip => {
-            chip.addEventListener('click', () => {
-                chip.classList.toggle('selected');
-                renderPenpalMatches();
-            });
-        });
-    }
-
-
-
-    // ── Init ────────────────────────────────────────────────
+    // ── Initialization ──────────────────────────────────────
     function init() {
-        loadLetters();
+        syncGlobalLetters();
+        syncGlobalBonds();
 
         // Nav button
         const navBtn = qs('penpal-nav-btn');
@@ -9943,7 +10017,7 @@ function initWysiwygEditor() {
         // Initial preview render
         updatePreview();
 
-        console.log('[MürekkepliMektup] Modül başarıyla yüklendi.');
+        console.log('[MürekkepliMektup] Gerçek kullanıcı mektuplaşma modülü başarıyla yüklendi.');
     }
 
     // Run after DOM is ready
@@ -9954,6 +10028,14 @@ function initWysiwygEditor() {
     }
 
     // Expose minimal public API
-    window.MürekkepliMektup = { open: openPenpal, close: closePenpal };
+    window.MürekkepliMektup = {
+        open: openPenpal,
+        close: closePenpal,
+        refresh: () => {
+            syncGlobalLetters();
+            syncGlobalBonds();
+            renderAll();
+        }
+    };
 
 })();
