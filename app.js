@@ -9122,7 +9122,39 @@ function initWysiwygEditor() {
             && typeof supabaseClient !== 'undefined' && supabaseClient;
     }
 
-    // ── Current User Helpers ──────────────────────────────────
+    // ── Current User Identifiers & Matching Helper ────────────
+    function getMyIdentifiers() {
+        if (!currentUser) return [];
+        const ids = [
+            currentUser.id,
+            currentUser.uid,
+            currentUser.email,
+            currentUser.username,
+            currentUser.user_metadata?.username,
+            currentUser.user_metadata?.full_name,
+            currentUser.email ? currentUser.email.split('@')[0] : null
+        ];
+        return ids.filter(Boolean).map(x => String(x).toLowerCase().trim());
+    }
+
+    function isMyIdentity(id, username) {
+        if (!currentUser) return false;
+        const myIds = getMyIdentifiers();
+        if (!myIds.length) return false;
+
+        const targetId = String(id || '').toLowerCase().trim();
+        const targetName = String(username || '').toLowerCase().trim();
+
+        if (targetId && myIds.includes(targetId)) return true;
+        if (targetName && myIds.includes(targetName)) return true;
+
+        // Prefix / partial match for email prefixes vs display names
+        if (targetName && myIds.some(x => x && (x === targetName || x.startsWith(targetName) || targetName.startsWith(x)))) {
+            return true;
+        }
+        return false;
+    }
+
     function getCurId() {
         if (!currentUser) return '';
         return String(currentUser.id || currentUser.uid || currentUser.email || currentUser.username || '').trim();
@@ -9134,26 +9166,33 @@ function initWysiwygEditor() {
 
     // ── Local Storage Cache Helper ────────────────────────────
     function getLocalLetters() {
-        const curId = getCurId();
-        if (!curId) return [];
-        try {
-            return JSON.parse(localStorage.getItem('mp_letters_cache_' + curId) || '[]');
-        } catch(e) { return []; }
+        const myIds = getMyIdentifiers();
+        if (!myIds.length) return [];
+        for (const k of myIds) {
+            try {
+                const saved = localStorage.getItem('mp_letters_cache_' + k);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+                }
+            } catch(e) {}
+        }
+        return [];
     }
     function setLocalLetters(arr) {
-        const curId = getCurId();
-        if (!curId) return;
+        const myIds = getMyIdentifiers();
+        if (!myIds.length) return;
         try {
-            localStorage.setItem('mp_letters_cache_' + curId, JSON.stringify(arr));
+            const str = JSON.stringify(arr);
+            myIds.forEach(k => localStorage.setItem('mp_letters_cache_' + k, str));
         } catch(e) {}
     }
 
     // ── Fetch This User's Letters from Supabase ───────────────
     async function fetchMyLetters() {
         if (!currentUser) { myLetters = []; return; }
-        const curId = getCurId();
-        const curName = getCurName();
-        if (!curId && !curName) return;
+        const myIds = getMyIdentifiers();
+        if (!myIds.length) return;
 
         // Start with cached local letters
         const local = getLocalLetters();
@@ -9166,24 +9205,19 @@ function initWysiwygEditor() {
                 let sentList = [];
                 let recvList = [];
 
-                // 1. Fetch Sent Letters
-                if (curId) {
-                    const { data: s1, error: e1 } = await supabaseClient.from('letters').select('*').eq('sender_id', curId);
-                    if (s1 && !e1) sentList.push(...s1);
-                }
-                if (curName && curName !== curId) {
-                    const { data: s2, error: e2 } = await supabaseClient.from('letters').select('*').eq('sender_username', curName);
-                    if (s2 && !e2) sentList.push(...s2);
-                }
+                // Fetch by all identifier variations
+                for (const ident of myIds) {
+                    const { data: s } = await supabaseClient.from('letters').select('*').eq('sender_id', ident);
+                    if (s && s.length) sentList.push(...s);
 
-                // 2. Fetch Received Letters
-                if (curId) {
-                    const { data: r1, error: er1 } = await supabaseClient.from('letters').select('*').eq('recipient_id', curId);
-                    if (r1 && !er1) recvList.push(...r1);
-                }
-                if (curName && curName !== curId) {
-                    const { data: r2, error: er2 } = await supabaseClient.from('letters').select('*').eq('recipient_username', curName);
-                    if (r2 && !er2) recvList.push(...r2);
+                    const { data: sUser } = await supabaseClient.from('letters').select('*').eq('sender_username', ident);
+                    if (sUser && sUser.length) sentList.push(...sUser);
+
+                    const { data: r } = await supabaseClient.from('letters').select('*').eq('recipient_id', ident);
+                    if (r && r.length) recvList.push(...r);
+
+                    const { data: rUser } = await supabaseClient.from('letters').select('*').eq('recipient_username', ident);
+                    if (rUser && rUser.length) recvList.push(...rUser);
                 }
 
                 // Combine remote letters
@@ -9207,16 +9241,10 @@ function initWysiwygEditor() {
                     }
                 });
 
-                const curIdLower = curId.toLowerCase();
-                const curNameLower = curName.toLowerCase();
-
                 // Filter soft deleted
                 myLetters = merged.filter(l => {
-                    const deletedBy = Array.isArray(l.deleted_by) ? l.deleted_by.map(x => String(x).toLowerCase()) : [];
-                    if (deletedBy.includes(curIdLower) || (curNameLower && deletedBy.includes(curNameLower))) {
-                        return false;
-                    }
-                    return true;
+                    const deletedBy = Array.isArray(l.deleted_by) ? l.deleted_by.map(x => String(x).toLowerCase().trim()) : [];
+                    return !myIds.some(ident => deletedBy.includes(ident));
                 });
 
                 // Update transit → delivered in Supabase
@@ -9251,13 +9279,9 @@ function initWysiwygEditor() {
     function buildThreads() {
         myThreads = {};
         if (!currentUser) return;
-        const curId = getCurId().toLowerCase();
-        const curName = getCurName().toLowerCase();
 
         myLetters.forEach(l => {
-            const sId = String(l.sender_id || '').toLowerCase();
-            const sName = String(l.sender_username || '').toLowerCase();
-            const isMe = (curId && sId === curId) || (curName && sName === curName);
+            const isMe = isMyIdentity(l.sender_id, l.sender_username);
 
             // Havuzdaki henüz eşleşmemiş mektuplar thread değildir
             if (l.is_pool) return;
@@ -9375,8 +9399,6 @@ function initWysiwygEditor() {
     // ── Find an unclaimed pool letter from another user ───────
     async function findPoolLetter() {
         if (!hasSupabase()) return null;
-        const curId = getCurId();
-        const curName = getCurName();
         try {
             const { data, error } = await supabaseClient
                 .from('letters')
@@ -9387,9 +9409,7 @@ function initWysiwygEditor() {
             if (error || !data || !data.length) return null;
 
             const candidate = data.find(l => {
-                const sId = String(l.sender_id || '').toLowerCase();
-                const sName = String(l.sender_username || '').toLowerCase();
-                const isMine = (curId && sId === curId.toLowerCase()) || (curName && sName === curName.toLowerCase());
+                const isMine = isMyIdentity(l.sender_id, l.sender_username);
                 return !isMine;
             });
 
@@ -9761,11 +9781,8 @@ function initWysiwygEditor() {
     function renderInbox() {
         const list = qs('penpal-inbox-list');
         if (!list) return;
-        const curId = getCurId().toLowerCase();
-        const curName = getCurName().toLowerCase();
 
         const incoming = myLetters.filter(l => {
-            const sId = String(l.sender_id || '').toLowerCase();
             const sUser = String(l.sender_username || '').toLowerCase();
             const rId = String(l.recipient_id || '').toLowerCase();
             const rUser = String(l.recipient_username || '').toLowerCase();
