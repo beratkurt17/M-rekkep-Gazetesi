@@ -9220,14 +9220,13 @@ function initWysiwygEditor() {
                     if (rUser && rUser.length) recvList.push(...rUser);
                 }
 
-                // Combine remote letters
-                const remoteAll = [...sentList, ...recvList];
-                const seen = new Set();
-                const merged = [];
+                // Filter out purged/deleted letters
+                let purgedIds = [];
+                try { purgedIds = JSON.parse(localStorage.getItem('murekkep_purged_letters') || '[]'); } catch(e){}
 
                 // Add remote letters first
                 remoteAll.forEach(l => {
-                    if (l && l.id && !seen.has(l.id)) {
+                    if (l && l.id && !seen.has(l.id) && !purgedIds.includes(l.id)) {
                         seen.add(l.id);
                         merged.push(l);
                     }
@@ -9235,7 +9234,7 @@ function initWysiwygEditor() {
 
                 // Keep local letters that may not have synced yet
                 myLetters.forEach(l => {
-                    if (l && l.id && !seen.has(l.id)) {
+                    if (l && l.id && !seen.has(l.id) && !purgedIds.includes(l.id)) {
                         seen.add(l.id);
                         merged.push(l);
                     }
@@ -9243,6 +9242,7 @@ function initWysiwygEditor() {
 
                 // Filter soft deleted
                 myLetters = merged.filter(l => {
+                    if (purgedIds.includes(l.id)) return false;
                     const deletedBy = Array.isArray(l.deleted_by) ? l.deleted_by.map(x => String(x).toLowerCase().trim()) : [];
                     return !myIds.some(ident => deletedBy.includes(ident));
                 });
@@ -9454,7 +9454,16 @@ function initWysiwygEditor() {
 
     async function deleteLetter(letterId) {
         if (!letterId) return;
-        // 1. Immediately remove from local memory and all localStorage keys
+        // 1. Add to permanent purge blacklist
+        try {
+            const purged = JSON.parse(localStorage.getItem('murekkep_purged_letters') || '[]');
+            if (!purged.includes(letterId)) {
+                purged.push(letterId);
+                localStorage.setItem('murekkep_purged_letters', JSON.stringify(purged));
+            }
+        } catch(e){}
+
+        // 2. Immediately remove from local memory and all localStorage keys
         myLetters = myLetters.filter(l => l.id !== letterId);
         removeLetterFromAllStorage(letterId);
         setLocalLetters(myLetters);
@@ -9464,7 +9473,7 @@ function initWysiwygEditor() {
         renderThreads();
         showToast('🗑️ Mektup kalıcı olarak silindi.');
 
-        // 2. Delete permanently from Supabase
+        // 3. Delete permanently from Supabase
         if (hasSupabase()) {
             try {
                 const { error } = await supabaseClient.from('letters').delete().eq('id', letterId);
