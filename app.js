@@ -9141,22 +9141,23 @@ function initWysiwygEditor() {
 
         if (hasSupabase()) {
             try {
-                // Fetch letters sent by user OR letters addressed to user
-                let query = supabaseClient.from('letters').select('*');
-                if (curId && curName) {
-                    query = query.or(`sender_id.eq.${curId},sender_username.ilike.${curName},recipient_id.eq.${curId},recipient_username.ilike.${curName}`);
-                } else if (curId) {
-                    query = query.or(`sender_id.eq.${curId},recipient_id.eq.${curId}`);
-                } else {
-                    query = query.or(`sender_username.ilike.${curName},recipient_username.ilike.${curName}`);
+                let sentList = [];
+                let recvList = [];
+
+                if (curId) {
+                    const { data: s1 } = await supabaseClient.from('letters').select('*').eq('sender_id', curId);
+                    if (s1) sentList.push(...s1);
+                    const { data: r1 } = await supabaseClient.from('letters').select('*').eq('recipient_id', curId);
+                    if (r1) recvList.push(...r1);
+                }
+                if (curName && curName !== curId) {
+                    const { data: s2 } = await supabaseClient.from('letters').select('*').eq('sender_username', curName);
+                    if (s2) sentList.push(...s2);
+                    const { data: r2 } = await supabaseClient.from('letters').select('*').eq('recipient_username', curName);
+                    if (r2) recvList.push(...r2);
                 }
 
-                const { data, error } = await query;
-                if (error) {
-                    console.warn('[MürekkepliMektup] Fetch warning:', error);
-                }
-
-                const all = data || [];
+                const all = [...sentList, ...recvList];
                 const seen = new Set();
                 const curIdLower = curId.toLowerCase();
                 const curNameLower = curName.toLowerCase();
@@ -9312,8 +9313,7 @@ function initWysiwygEditor() {
                         recipient_username: curName,
                         is_pool: false
                     })
-                    .eq('id', poolLetterId)
-                    .is('recipient_id', null);
+                    .eq('id', poolLetterId);
             } catch(e) {
                 console.error('[MürekkepliMektup] Claim error:', e);
             }
@@ -9326,18 +9326,26 @@ function initWysiwygEditor() {
         const curId = getCurId();
         const curName = getCurName();
         try {
-            let query = supabaseClient
+            const { data } = await supabaseClient
                 .from('letters')
                 .select('*')
                 .eq('is_pool', true)
                 .is('recipient_id', null);
 
-            if (curId) query = query.neq('sender_id', curId);
-            if (curName) query = query.neq('sender_username', curName);
+            if (!data || !data.length) return null;
 
-            const { data } = await query.limit(1).maybeSingle();
-            return data || null;
-        } catch(e) { return null; }
+            const candidate = data.find(l => {
+                const sId = String(l.sender_id || '').toLowerCase();
+                const sName = String(l.sender_username || '').toLowerCase();
+                const isMine = (curId && sId === curId.toLowerCase()) || (curName && sName === curName.toLowerCase());
+                return !isMine;
+            });
+
+            return candidate || null;
+        } catch(e) {
+            console.error('[MürekkepliMektup] findPoolLetter error:', e);
+            return null;
+        }
     }
 
     // ── Soft-delete a letter (only for sender) ────────────────
