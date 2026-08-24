@@ -9437,16 +9437,32 @@ function initWysiwygEditor() {
     }
 
     // ── Direct Delete a letter (from DB and local) ────────────
+    function removeLetterFromAllStorage(letterId) {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('mp_letters_') || key.startsWith('mml_') || key.startsWith('murekkep_penpal_'))) {
+                try {
+                    const val = JSON.parse(localStorage.getItem(key) || '[]');
+                    if (Array.isArray(val)) {
+                        const filtered = val.filter(l => l && l.id !== letterId);
+                        localStorage.setItem(key, JSON.stringify(filtered));
+                    }
+                } catch(e){}
+            }
+        }
+    }
+
     async function deleteLetter(letterId) {
         if (!letterId) return;
-        // 1. Immediately remove from local arrays
+        // 1. Immediately remove from local memory and all localStorage keys
         myLetters = myLetters.filter(l => l.id !== letterId);
+        removeLetterFromAllStorage(letterId);
         setLocalLetters(myLetters);
         buildThreads();
         renderOutbox();
         renderInbox();
         renderThreads();
-        showToast('🗑️ Mektup silindi.');
+        showToast('🗑️ Mektup kalıcı olarak silindi.');
 
         // 2. Delete permanently from Supabase
         if (hasSupabase()) {
