@@ -9578,10 +9578,16 @@ function initWysiwygEditor() {
             // 2. Find a pool letter from someone else → claim it for me
             const poolLetter = await findPoolLetter();
             if (poolLetter) {
-                // Give that letter to me (async, doesn't block my send)
                 await claimPoolLetter(poolLetter.id);
-                // Update the pool letter's thread_id to link our exchange
                 await updateLetter(poolLetter.id, { thread_id: threadId });
+                // Add the claimed letter to local state immediately so inbox updates
+                const claimedLetter = { ...poolLetter,
+                    recipient_id: curId,
+                    recipient_username: curName,
+                    is_pool: false,
+                    thread_id: threadId
+                };
+                myLetters.push(claimedLetter);
                 showToast('🤝 Bir mektup arkadaşı bulundu! Gelen kutunuzu kontrol edin.');
             } else {
                 showToast('✉️ Mektubunuz havuza eklendi! Bir edebiyatsever mektup atınca size ulaşacak.');
@@ -9639,10 +9645,13 @@ function initWysiwygEditor() {
     }
 
     // ── Render Inbox ──────────────────────────────────────────
-    function renderInbox() {
+    async function renderInbox() {
         const list = qs('penpal-inbox-list');
         if (!list) return;
         const curId = getCurId();
+
+        // Always fetch fresh from Supabase so we catch newly matched letters
+        await fetchMyLetters();
 
         const incoming = myLetters.filter(l => {
             if (l.sender_id === curId) return false; // not my own
