@@ -6836,4 +6836,235 @@ button, a, input, textarea, select {
 }
 
 
+/* ── Konuşmalar (Thread) Tabı ────────────────────────── */
+.threads-container {
+    padding: 24px 0;
+}
+.threads-header {
+    margin-bottom: 20px;
+}
+.threads-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+.threads-subtitle {
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+}
+.threads-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.thread-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 18px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+.thread-card:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+.thread-card-avatar {
+    font-size: 2rem;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-primary);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.thread-card-info {
+    flex: 1;
+    min-width: 0;
+}
+.thread-card-partner {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    font-family: var(--font-ui);
+}
+.thread-card-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+.thread-card-date {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+}
+.thread-card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.thread-reply-btn {
+    background: var(--accent-color);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.thread-reply-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+}
+.thread-reveal-btn {
+    background: rgba(245,197,24,0.15);
+    color: #a67c00;
+    border: 1px solid rgba(245,197,24,0.4);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.thread-reveal-btn:hover {
+    background: rgba(245,197,24,0.25);
+    transform: translateY(-1px);
+}
 
+/* ── Açık Mektup İçerik Stilleri ─────────────────────── */
+.letter-paper {
+    max-width: 520px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 40px 36px;
+    border-radius: 4px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    line-height: 1.8;
+}
+.letter-stamp-display {
+    font-size: 2rem;
+    text-align: right;
+    margin-bottom: 20px;
+}
+.letter-salutation-display {
+    font-size: 1.05rem;
+    margin-bottom: 20px;
+    font-style: italic;
+}
+.letter-body-display {
+    font-size: 1.05rem;
+    margin-bottom: 28px;
+    white-space: pre-wrap;
+}
+.letter-closing-display {
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+}
+.letter-signature-display {
+    font-size: 1rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+.letter-seal-display {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}
+
+/* ── Giriş Uyarısı & Reply Butonları ─────────────────── */
+.penpal-login-notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 18px;
+    background: rgba(184,134,11,.1);
+    border: 1px dashed rgba(184,134,11,.4);
+    border-radius: 8px;
+    font-family: var(--font-ui);
+    font-size: 0.84rem;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+.penpal-login-inline-btn {
+    background: var(--accent-color);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 14px;
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.penpal-login-inline-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.penpal-reader-reply-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+.penpal-reader-reply-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: var(--accent-color);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 14px rgba(93,26,26,0.3);
+}
+.penpal-reader-reply-btn:hover { background: var(--accent-hover); transform: translateY(-2px); }
+
+/* ── Mektup Silme Butonu ─────────────────────────────── */
+.penpal-letter-card { position: relative; }
+.penpal-delete-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+    padding: 4px 6px;
+    border-radius: 4px;
+}
+.penpal-letter-card:hover .penpal-delete-btn { opacity: 1; }
+.penpal-delete-btn:hover { background: rgba(229,57,53,.12); }
+
+/* ── Durum Rozetleri ─────────────────────────────────── */
+.letter-card-status-badge.status-matched {
+    background: rgba(21,101,192,.12);
+    color: #1565c0;
+    border: 1px solid rgba(21,101,192,.3);
+}
+.letter-card-status-badge.status-pool {
+    background: rgba(245,124,0,.12);
+    color: #e65100;
+    border: 1px solid rgba(245,124,0,.3);
+}
+.letter-in-transit { opacity: 0.7; }

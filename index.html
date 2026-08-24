@@ -1479,7 +1479,9 @@
                     <span id="penpal-inbox-badge" class="penpal-badge hidden">0</span>
                 </button>
                 <button class="penpal-tab-btn" data-penpal-tab="outbox" id="penpal-tab-outbox">📮 Gönderilmiş</button>
-                <button class="penpal-tab-btn" data-penpal-tab="penpal" id="penpal-tab-penpal">💌 Arkadaşlar</button>
+                <button class="penpal-tab-btn" data-penpal-tab="threads" id="penpal-tab-threads">💬 Konuşmalar
+                    <span id="penpal-threads-badge" class="penpal-badge hidden">0</span>
+                </button>
             </nav>
 
             <!-- ==================== TAB: LETTER STUDIO ==================== -->
@@ -1638,52 +1640,18 @@
                 </div>
             </div>
 
-            <!-- ==================== TAB: NASIL ÇALIŞIR ==================== -->
-            <div id="penpal-panel-penpal" class="penpal-panel hidden">
-                <div class="how-it-works-container">
-                    <h3 class="how-title">🎭 Anonim Mektup Havuzu Nasıl Çalışır?</h3>
-                    <p class="how-subtitle">Kimseyi tanımak zorunda değilsiniz. Sadece yazın — sistem gerisini halleder.</p>
-
-                    <div class="how-steps">
-                        <div class="how-step">
-                            <div class="how-step-num">1</div>
-                            <div class="how-step-body">
-                                <strong>Mektubunuzu Yazın</strong>
-                                <span>Kağıt, font, mürekkep ve mühürünüzü seçin. Kaleminizi serbest bırakın — alıcıyı düşünmeyin.</span>
-                            </div>
-                        </div>
-                        <div class="how-step-arrow">↓</div>
-
-                        <div class="how-step">
-                            <div class="how-step-num">2</div>
-                            <div class="how-step-body">
-                                <strong>Havuza Girer</strong>
-                                <span>Gönderdiğiniz mektup anonim havuza eklenir. Adınız, bilgileriniz görünmez — sadece imzanız kalır.</span>
-                            </div>
-                        </div>
-                        <div class="how-step-arrow">↓</div>
-
-                        <div class="how-step">
-                            <div class="how-step-num">3</div>
-                            <div class="how-step-body">
-                                <strong>Havuzdan Bir Mektup Size Gelir</strong>
-                                <span>Sistem, havuzdaki başka birinin mektubunu seçtiğiniz teslimat süresi kadar "yolda" tutar. Sayaç sıfırlanınca gelen kutunuza düşer.</span>
-                            </div>
-                        </div>
-                        <div class="how-step-arrow">↓</div>
-
-                        <div class="how-step">
-                            <div class="how-step-num">4</div>
-                            <div class="how-step-body">
-                                <strong>Mühürü Kırın, Okuyun</strong>
-                                <span>Balmumu mühürü kırarak mektubu açın. Tanımadığınız birinin içtenlikle yazdığı satırları okuyun.</span>
-                            </div>
-                        </div>
+            <!-- ==================== TAB: KONUŞMALAR ==================== -->
+            <div id="penpal-panel-threads" class="penpal-panel hidden">
+                <div class="threads-container">
+                    <div class="threads-header">
+                        <h3 class="threads-title">💬 Aktif Konuşmalar</h3>
+                        <p class="threads-subtitle">Mektup alışverişi yaptığın edebiyatseverler. 5 mektupta kimlikleri açabilirsiniz.</p>
                     </div>
-
-                    <div class="how-note">
-                        <span>💡</span>
-                        <p>Mürekkep Postası tamamen gerçek edebiyatseverler arasında çalışır. Mektubunuzu yazıp mühürlediğinizde anonim havuza veya seçtiğiniz mektup arkadaşınıza ulaştırılır. 5 mektup boyunca anonim yazışıp bağ kurduktan sonra kimliklerinizi açığa çıkarabilirsiniz.</p>
+                    <div id="penpal-threads-list" class="threads-list">
+                        <div class="letter-list-empty">
+                            <span class="empty-icon">💬</span>
+                            <p>Henüz aktif bir konuşman yok.<br>Biri mektubuna yanıt verdiğinde veya sen yanıt yazdığında konuşma başlar.</p>
+                        </div>
                     </div>
                 </div>
             </div>

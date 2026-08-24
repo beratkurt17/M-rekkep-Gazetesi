@@ -9086,7 +9086,854 @@ function initWysiwygEditor() {
 
 
 // ===========================================================
-// MÜREKKEPLİ MEKTUP MODULE
+// MÜREKKEPLİ MEKTUP MODULE v5.0
+// Supabase `letters` tablosu ile tam gerçek kullanıcı sistemi.
+// Asimetrik havuz eşleşmesi + thread konuşmaları.
+// ===========================================================
+(function MürekkepliMektupModule() {
+    'use strict';
+
+    // ── State ─────────────────────────────────────────────────
+    let myLetters  = [];  // Bu kullanıcıya ait (gönderilen + gelen)
+    let myThreads  = {};  // { threadId: { ...bondInfo, messages: [] } }
+
+    let state = {
+        paperTheme:    'parchment',
+        font:          "'Caveat', cursive",
+        inkColor:      '#1a1008',
+        stamp:         '🪶',
+        sealType:      'image',
+        sealImg:       'assets/seals/seal_murekkep_red.jpg',
+        sealGradient:  'radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)',
+        deliveryDelay: 43200000, // 12h
+        replyMode:     null,     // { threadId, recipientId, recipientUsername, hint }
+        activeTab:     'studio',
+    };
+
+    // Wipe legacy localStorage keys
+    ['mml_letters_v1','mml_letters_v2','mml_pool_v1','mml_pool_v2',
+     'mml_bonds_v1','mml_bonds_v2','murekkep_penpal_letters_v3',
+     'murekkep_penpal_bonds_v3','murekkep_penpal_letters_v4',
+     'murekkep_penpal_bonds_v4'].forEach(k => { try { localStorage.removeItem(k); } catch(e){} });
+
+    // ── Supabase Helpers ──────────────────────────────────────
+    function hasSupabase() {
+        return typeof isSupabaseConnected !== 'undefined' && isSupabaseConnected
+            && typeof supabaseClient !== 'undefined' && supabaseClient;
+    }
+
+    // ── Current User Helpers ──────────────────────────────────
+    function getCurId()   { return currentUser?.id || ''; }
+    function getCurName() { return (currentUser?.username || currentUser?.email?.split('@')[0] || '').trim(); }
+
+    // ── Fetch This User's Letters from Supabase ───────────────
+    async function fetchMyLetters() {
+        if (!currentUser) { myLetters = []; return; }
+        const curId = getCurId();
+        const curName = getCurName().toLowerCase();
+
+        if (hasSupabase()) {
+            try {
+                // Get letters I sent OR letters addressed to me (not soft-deleted by me)
+                const { data: sent } = await supabaseClient
+                    .from('letters').select('*')
+                    .eq('sender_id', curId);
+                const { data: recv } = await supabaseClient
+                    .from('letters').select('*')
+                    .eq('recipient_id', curId)
+                    .eq('is_pool', false);
+
+                const all = [...(sent || []), ...(recv || [])];
+                // Deduplicate
+                const seen = new Set();
+                myLetters = all.filter(l => {
+                    if (seen.has(l.id)) return false;
+                    seen.add(l.id);
+                    // Filter out letters soft-deleted by this user
+                    const deletedBy = Array.isArray(l.deleted_by) ? l.deleted_by : [];
+                    return !deletedBy.includes(curId);
+                });
+
+                // Update transit → delivered
+                const now = Date.now();
+                for (const l of myLetters) {
+                    if (l.status === 'transit' && l.deliver_at <= now) {
+                        l.status = 'delivered';
+                        await supabaseClient.from('letters').update({ status: 'delivered' }).eq('id', l.id);
+                    }
+                }
+
+                buildThreads();
+                return;
+            } catch(e) {
+                console.error('[MürekkepliMektup] Supabase fetch error:', e);
+            }
+        }
+        // Fallback: localStorage
+        try {
+            const saved = localStorage.getItem('mp_letters_mine_' + curId);
+            myLetters = saved ? JSON.parse(saved) : [];
+        } catch(e) { myLetters = []; }
+        buildThreads();
+    }
+
+    // ── Build Thread Map from myLetters ──────────────────────
+    function buildThreads() {
+        myThreads = {};
+        if (!currentUser) return;
+        const curId = getCurId();
+        const curName = getCurName().toLowerCase();
+
+        myLetters.forEach(l => {
+            const isMe = l.sender_id === curId;
+            // Only thread-worthy letters (not solo pool letters still waiting)
+            if (l.is_pool && isMe) return; // still in pool, no thread yet
+            if (!l.thread_id) return;
+
+            if (!myThreads[l.thread_id]) {
+                myThreads[l.thread_id] = {
+                    threadId: l.thread_id,
+                    partnerId: isMe ? l.recipient_id : l.sender_id,
+                    partnerHint: isMe ? (l.recipient_username || '?') : (l.sender_hint || l.sender_username || '?'),
+                    letterCount: 0,
+                    lastAt: 0,
+                    revealed: false,
+                    letters: []
+                };
+            }
+            myThreads[l.thread_id].letters.push(l);
+            myThreads[l.thread_id].letterCount++;
+            if (l.sent_at > myThreads[l.thread_id].lastAt) {
+                myThreads[l.thread_id].lastAt = l.sent_at;
+            }
+        });
+    }
+
+    // ── Save a new letter to Supabase ────────────────────────
+    async function saveLetter(letterObj) {
+        if (hasSupabase()) {
+            try {
+                // Map JS camelCase → Supabase snake_case
+                const row = {
+                    id:               letterObj.id,
+                    thread_id:        letterObj.thread_id,
+                    sender_id:        letterObj.sender_id,
+                    sender_username:  letterObj.sender_username,
+                    sender_hint:      letterObj.sender_hint,
+                    recipient_id:     letterObj.recipient_id || null,
+                    recipient_username: letterObj.recipient_username || null,
+                    is_pool:          letterObj.is_pool ?? true,
+                    sent_at:          letterObj.sent_at,
+                    deliver_at:       letterObj.deliver_at,
+                    status:           letterObj.status || 'transit',
+                    paper_theme:      letterObj.paper_theme,
+                    font:             letterObj.font,
+                    ink_color:        letterObj.ink_color,
+                    stamp:            letterObj.stamp,
+                    seal_type:        letterObj.seal_type,
+                    seal_img:         letterObj.seal_img,
+                    seal_gradient:    letterObj.seal_gradient,
+                    salutation:       letterObj.salutation,
+                    body:             letterObj.body,
+                    closing:          letterObj.closing,
+                    signature:        letterObj.signature,
+                    read_by:          [],
+                    deleted_by:       []
+                };
+                await supabaseClient.from('letters').insert(row);
+            } catch(e) {
+                console.error('[MürekkepliMektup] Save error:', e);
+            }
+        } else {
+            // Fallback: localStorage
+            const curId = getCurId();
+            const key = 'mp_letters_mine_' + curId;
+            try {
+                const saved = JSON.parse(localStorage.getItem(key) || '[]');
+                saved.push(letterObj);
+                localStorage.setItem(key, JSON.stringify(saved));
+            } catch(e){}
+        }
+    }
+
+    // ── Update an existing letter row ─────────────────────────
+    async function updateLetter(letterId, fields) {
+        if (hasSupabase()) {
+            try {
+                await supabaseClient.from('letters').update(fields).eq('id', letterId);
+            } catch(e) {
+                console.error('[MürekkepliMektup] Update error:', e);
+            }
+        }
+    }
+
+    // ── Claim a pool letter for the current user ──────────────
+    async function claimPoolLetter(poolLetterId) {
+        const curId = getCurId();
+        const curName = getCurName();
+        if (hasSupabase()) {
+            try {
+                await supabaseClient.from('letters')
+                    .update({
+                        recipient_id: curId,
+                        recipient_username: curName,
+                        is_pool: false
+                    })
+                    .eq('id', poolLetterId)
+                    .is('recipient_id', null); // safety: only claim if truly unclaimed
+            } catch(e) {
+                console.error('[MürekkepliMektup] Claim error:', e);
+            }
+        }
+    }
+
+    // ── Find an unclaimed pool letter from another user ───────
+    async function findPoolLetter() {
+        if (!hasSupabase()) return null;
+        const curId = getCurId();
+        try {
+            const { data } = await supabaseClient
+                .from('letters')
+                .select('*')
+                .eq('is_pool', true)
+                .is('recipient_id', null)
+                .neq('sender_id', curId)
+                .limit(1)
+                .single();
+            return data || null;
+        } catch(e) { return null; }
+    }
+
+    // ── Soft-delete a letter (only for sender) ────────────────
+    async function deleteLetter(letterId) {
+        const curId = getCurId();
+        if (hasSupabase()) {
+            try {
+                // Add curId to deleted_by array
+                const { data: current } = await supabaseClient
+                    .from('letters').select('deleted_by').eq('id', letterId).single();
+                const deletedBy = Array.isArray(current?.deleted_by) ? current.deleted_by : [];
+                if (!deletedBy.includes(curId)) deletedBy.push(curId);
+                await supabaseClient.from('letters')
+                    .update({ deleted_by: deletedBy })
+                    .eq('id', letterId);
+            } catch(e) {
+                console.error('[MürekkepliMektup] Delete error:', e);
+            }
+        }
+        // Remove from local state
+        myLetters = myLetters.filter(l => l.id !== letterId);
+        buildThreads();
+        renderOutbox();
+        showToast('🗑️ Mektup silindi.');
+    }
+
+    // ── DOM Helpers ──────────────────────────────────────────
+    function qs(id)   { return document.getElementById(id); }
+    function qsa(sel) { return document.querySelectorAll(sel); }
+    function sanitize(str) {
+        const d = document.createElement('div');
+        d.textContent = str || '';
+        return d.innerHTML;
+    }
+
+    // ── Toast ─────────────────────────────────────────────────
+    function showToast(msg) {
+        let t = document.querySelector('.penpal-toast');
+        if (!t) { t = document.createElement('div'); t.className = 'penpal-toast'; document.body.appendChild(t); }
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3400);
+    }
+
+    // ── Seal HTML Helper ──────────────────────────────────────
+    function getSealHTML(obj, extraClass = '') {
+        if (!obj) obj = {};
+        const isImg = (obj.seal_type === 'image' || obj.sealType === 'image') && (obj.seal_img || obj.sealImg);
+        const imgSrc = obj.seal_img || obj.sealImg;
+        if (isImg && imgSrc) {
+            return `<div class="seal-avatar-wrapper ${extraClass} has-img">
+                <img src="${sanitize(imgSrc)}" alt="Mühür" onerror="this.style.display='none';this.parentNode.classList.remove('has-img');this.parentNode.innerHTML='M';">
+            </div>`;
+        }
+        const bg = obj.seal_gradient || obj.sealGradient || 'radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)';
+        return `<div class="seal-avatar-wrapper ${extraClass}" style="background:${bg}">M</div>`;
+    }
+
+    // ── Countdown ─────────────────────────────────────────────
+    function formatCountdown(deliverAt) {
+        const ms = deliverAt - Date.now();
+        if (ms <= 0) return '✅ Teslim edildi';
+        const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000), s = Math.floor((ms % 60000) / 1000);
+        if (h > 0) return `⏳ ${h}s ${m}dk`;
+        if (m > 0) return `⏳ ${m}dk ${s}sn`;
+        return `⏳ ${s}sn`;
+    }
+
+    let _cdInterval = null;
+    function startCountdowns(container) {
+        if (_cdInterval) clearInterval(_cdInterval);
+        _cdInterval = setInterval(() => {
+            if (!container || !container.isConnected) { clearInterval(_cdInterval); return; }
+            container.querySelectorAll('.penpal-countdown[data-deliver]').forEach(el => {
+                el.textContent = formatCountdown(parseInt(el.dataset.deliver));
+            });
+        }, 1000);
+    }
+
+    // ── Open / Close ──────────────────────────────────────────
+    async function openPenpal() {
+        const overlay = qs('penpal-overlay');
+        if (!overlay) return;
+        overlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        await fetchMyLetters();
+        renderAll();
+    }
+
+    function closePenpal() {
+        const overlay = qs('penpal-overlay');
+        if (overlay) overlay.classList.add('hidden');
+        document.body.style.overflow = '';
+        if (_cdInterval) { clearInterval(_cdInterval); _cdInterval = null; }
+    }
+
+    // ── Tab Switching ─────────────────────────────────────────
+    function switchTab(tabName) {
+        state.activeTab = tabName;
+        qsa('.penpal-tab-btn').forEach(b => b.classList.remove('active'));
+        qsa('.penpal-panel').forEach(p => p.classList.add('hidden'));
+        const btn = qs(`penpal-tab-${tabName}`);
+        const panel = qs(`penpal-panel-${tabName}`);
+        if (btn) btn.classList.add('active');
+        if (panel) panel.classList.remove('hidden');
+
+        if (tabName === 'inbox')   renderInbox();
+        if (tabName === 'outbox')  renderOutbox();
+        if (tabName === 'threads') renderThreads();
+        updateStudioReplyBanner();
+        updateStudioAuthNotice();
+    }
+
+    // ── Auth Notice in Studio ─────────────────────────────────
+    function updateStudioAuthNotice() {
+        const previewArea = document.querySelector('.studio-preview-area');
+        if (!previewArea) return;
+        let noticeEl = qs('penpal-studio-auth-notice');
+        if (currentUser) {
+            if (noticeEl) noticeEl.classList.add('hidden');
+        } else {
+            if (!noticeEl) {
+                noticeEl = document.createElement('div');
+                noticeEl.id = 'penpal-studio-auth-notice';
+                noticeEl.className = 'penpal-login-notice';
+                noticeEl.innerHTML = `<span>🔒 Mektup gönderebilmek için <strong>giriş yapmalısınız</strong>.</span>
+                    <button type="button" class="penpal-login-inline-btn" id="penpal-studio-login-btn">Giriş Yap</button>`;
+                const actions = previewArea.querySelector('.studio-actions');
+                if (actions) previewArea.insertBefore(noticeEl, actions);
+                else previewArea.appendChild(noticeEl);
+                qs('penpal-studio-login-btn')?.addEventListener('click', () => { if (typeof openAuthModal === 'function') openAuthModal(); });
+            } else {
+                noticeEl.classList.remove('hidden');
+            }
+        }
+    }
+
+    // ── Reply Banner ──────────────────────────────────────────
+    function updateStudioReplyBanner() {
+        const badgeText = document.querySelector('.anon-dispatch-text');
+        if (!badgeText) return;
+        if (state.replyMode) {
+            badgeText.innerHTML = `
+                <strong style="color:#1565c0;">↩️ Yanıt Yazılıyor: ${sanitize(state.replyMode.hint)}</strong>
+                <span>Bu mektup doğrudan mektup arkadaşınıza iletilecek.
+                <button id="cancel-reply-btn" style="background:none;border:none;color:#e53935;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;margin-left:6px;">İptal Et</button></span>`;
+            qs('cancel-reply-btn')?.addEventListener('click', cancelReply);
+        } else {
+            badgeText.innerHTML = `
+                <strong>Anonim Mektup Havuzu</strong>
+                <span>Mektubunuz rastgele bir edebiyatsevere gider. Siz de havuzdan birinin mektubunu alırsınız. Kimse kimseyi bilmez — sadece kelimeler konuşur.</span>`;
+        }
+    }
+
+    function startReply(threadId, recipientId, recipientUsername, hint) {
+        if (!currentUser) {
+            showToast('⚠️ Yanıt yazabilmek için giriş yapın.');
+            if (typeof openAuthModal === 'function') openAuthModal();
+            return;
+        }
+        state.replyMode = { threadId, recipientId, recipientUsername, hint: hint || 'Mektup Arkadaşı' };
+        updateStudioReplyBanner();
+        switchTab('studio');
+        showToast(`✍️ ${state.replyMode.hint} için yanıt yazıyorsunuz.`);
+    }
+
+    function cancelReply() {
+        state.replyMode = null;
+        updateStudioReplyBanner();
+        showToast('Yanıt modu iptal edildi.');
+    }
+
+    // ── Live Preview ──────────────────────────────────────────
+    function updatePreview() {
+        const preview = qs('penpal-letter-preview');
+        if (!preview) return;
+        ['paper-parchment','paper-cream','paper-night','paper-straw'].forEach(c => preview.classList.remove(c));
+        preview.classList.add(`paper-${state.paperTheme}`);
+        preview.querySelectorAll('[contenteditable]').forEach(el => {
+            el.style.fontFamily = state.font;
+            el.style.color = state.inkColor;
+        });
+        const sealEl = qs('preview-seal');
+        if (sealEl) {
+            const isImg = state.sealType === 'image' && state.sealImg;
+            if (isImg) {
+                sealEl.className = 'letter-seal preview-seal has-img';
+                sealEl.style.background = 'transparent';
+                sealEl.innerHTML = `<img src="${sanitize(state.sealImg)}" alt="Mühür" onerror="this.style.display='none';this.parentNode.classList.remove('has-img');this.parentNode.style.background='${state.sealGradient}';this.parentNode.innerHTML='M';">`;
+            } else {
+                sealEl.className = 'letter-seal preview-seal';
+                sealEl.style.background = state.sealGradient || 'radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)';
+                sealEl.innerHTML = 'M';
+            }
+        }
+        const stampEl = qs('preview-stamp');
+        if (stampEl) stampEl.textContent = state.stamp;
+    }
+
+    // ── Studio Control Binding ────────────────────────────────
+    function bindStudioControls() {
+        qsa('#paper-theme-grid .paper-btn').forEach(btn => btn.addEventListener('click', () => {
+            qsa('#paper-theme-grid .paper-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active'); state.paperTheme = btn.dataset.paper; updatePreview();
+        }));
+        qsa('#font-choice-grid .font-btn').forEach(btn => btn.addEventListener('click', () => {
+            qsa('#font-choice-grid .font-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active'); state.font = btn.dataset.font; updatePreview();
+        }));
+        qsa('#ink-color-grid .ink-btn').forEach(btn => btn.addEventListener('click', () => {
+            qsa('#ink-color-grid .ink-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active'); state.inkColor = btn.dataset.ink; updatePreview();
+        }));
+        qsa('#stamp-grid .stamp-btn').forEach(btn => btn.addEventListener('click', () => {
+            qsa('#stamp-grid .stamp-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active'); state.stamp = btn.textContent.trim(); updatePreview();
+        }));
+        qsa('#seal-grid .seal-btn').forEach(btn => btn.addEventListener('click', () => {
+            qsa('#seal-grid .seal-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.sealType = btn.dataset.sealType || 'color';
+            if (state.sealType === 'image') state.sealImg = btn.dataset.sealImg || '';
+            state.sealGradient = btn.dataset.seal || btn.style.background;
+            updatePreview();
+        }));
+        qsa('#delivery-grid .delivery-btn').forEach(btn => btn.addEventListener('click', () => {
+            qsa('#delivery-grid .delivery-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active'); state.deliveryDelay = parseInt(btn.dataset.delay) || 43200000;
+        }));
+        const sendBtn = qs('penpal-send-btn');
+        if (sendBtn) sendBtn.addEventListener('click', sendLetter);
+    }
+
+    // ── Send Letter ───────────────────────────────────────────
+    async function sendLetter() {
+        if (!currentUser) {
+            showToast('⚠️ Mektup gönderebilmek için giriş yapmalısınız!');
+            if (typeof openAuthModal === 'function') openAuthModal();
+            return;
+        }
+
+        const salutation = qs('preview-salutation')?.innerText?.trim() || '';
+        const body       = qs('preview-body')?.innerText?.trim()       || '';
+        const closing    = qs('preview-closing')?.innerText?.trim()    || '';
+        const signature  = qs('preview-signature')?.innerText?.trim()  || '';
+
+        if (!body || body === 'Mektubunuzu buraya yazın...') {
+            showToast('⚠️ Mektup içeriği boş olamaz!'); return;
+        }
+
+        const now = Date.now();
+        const curId   = getCurId();
+        const curName = getCurName();
+        const hint    = signature || curName;
+        const deliverAt = now + state.deliveryDelay;
+
+        let letterId   = 'ltr_' + now + '_' + Math.random().toString(36).slice(2,8);
+        let threadId, recipientId, recipientUsername, isPool;
+
+        if (state.replyMode) {
+            // ── DIRECT REPLY: goes straight to the thread partner ──
+            threadId          = state.replyMode.threadId;
+            recipientId       = state.replyMode.recipientId;
+            recipientUsername = state.replyMode.recipientUsername;
+            isPool            = false;
+        } else {
+            // ── NEW POOL LETTER: asymmetric matching ──
+            // 1. Save MY letter to pool first
+            threadId          = 'th_' + now + '_' + Math.random().toString(36).slice(2,7);
+            recipientId       = null;
+            recipientUsername = null;
+            isPool            = true;
+
+            // 2. Find a pool letter from someone else → claim it for me
+            const poolLetter = await findPoolLetter();
+            if (poolLetter) {
+                // Give that letter to me (async, doesn't block my send)
+                await claimPoolLetter(poolLetter.id);
+                // Update the pool letter's thread_id to link our exchange
+                await updateLetter(poolLetter.id, { thread_id: threadId });
+                showToast('🤝 Bir mektup arkadaşı bulundu! Gelen kutunuzu kontrol edin.');
+            } else {
+                showToast('✉️ Mektubunuz havuza eklendi! Bir edebiyatsever mektup atınca size ulaşacak.');
+            }
+        }
+
+        const letterObj = {
+            id: letterId,
+            thread_id: threadId,
+            sender_id: curId,
+            sender_username: curName,
+            sender_hint: hint,
+            recipient_id: recipientId,
+            recipient_username: recipientUsername,
+            is_pool: isPool,
+            sent_at: now,
+            deliver_at: deliverAt,
+            status: 'transit',
+            paper_theme: state.paperTheme,
+            font: state.font,
+            ink_color: state.inkColor,
+            stamp: state.stamp,
+            seal_type: state.sealType,
+            seal_img: state.sealImg,
+            seal_gradient: state.sealGradient,
+            salutation, body, closing, signature,
+            read_by: [],
+            deleted_by: []
+        };
+
+        await saveLetter(letterObj);
+        myLetters.push(letterObj);
+        buildThreads();
+
+        state.replyMode = null;
+        updateStudioReplyBanner();
+        resetCompose();
+
+        const delay = state.deliveryDelay;
+        const timeStr = delay <= 1000 ? '1 saniye' : delay < 3600001 ? '1 saat' : delay < 86400001 ? '12 saat' : '3 gün';
+        if (state.replyMode === null) {
+            // toast already shown above for pool/reply cases
+        }
+        showToast(`📮 Mektup yola çıktı! (${timeStr})`);
+        setTimeout(() => switchTab('outbox'), 600);
+    }
+
+    function resetCompose() {
+        const sal = qs('preview-salutation'), body = qs('preview-body');
+        const cls = qs('preview-closing'),   sig  = qs('preview-signature');
+        if (sal)  sal.innerText  = 'Sevgili Mektup Arkadaşım,';
+        if (body) body.innerText = 'Mektubunuzu buraya yazın...';
+        if (cls)  cls.innerText  = 'Sevgiyle,';
+        if (sig)  sig.innerText  = 'İmzanız';
+    }
+
+    // ── Render Inbox ──────────────────────────────────────────
+    function renderInbox() {
+        const list = qs('penpal-inbox-list');
+        if (!list) return;
+        const curId = getCurId();
+
+        const incoming = myLetters.filter(l => {
+            if (l.sender_id === curId) return false; // not my own
+            if (l.is_pool) return false;             // not yet matched
+            return l.recipient_id === curId;
+        }).sort((a,b) => b.sent_at - a.sent_at);
+
+        const unread = incoming.filter(l => {
+            const r = Array.isArray(l.read_by) ? l.read_by : [];
+            return l.status === 'delivered' && !r.includes(curId);
+        }).length;
+        const badge = qs('penpal-inbox-badge');
+        if (badge) { badge.textContent = unread; unread > 0 ? badge.classList.remove('hidden') : badge.classList.add('hidden'); }
+
+        if (!incoming.length) {
+            list.innerHTML = `<div class="letter-list-empty"><span class="empty-icon">📭</span><p>Henüz gelen mektubunuz yok.<br>Havuza bir mektup atın — sistem size bir edebiyatseverin mektubunu getirecek.</p></div>`;
+            return;
+        }
+
+        list.innerHTML = incoming.map(l => {
+            const isTransit = l.status === 'transit';
+            const isRead    = Array.isArray(l.read_by) && l.read_by.includes(curId);
+            const statusBadge = isTransit
+                ? `<span class="letter-card-status-badge status-transit">🕊️ Yolda <span class="penpal-countdown" data-deliver="${l.deliver_at}">${formatCountdown(l.deliver_at)}</span></span>`
+                : (isRead ? '' : `<span class="letter-card-status-badge" style="background:rgba(46,125,50,.12);color:#2e7d32;border:1px solid rgba(46,125,50,.3);">📬 Yeni</span>`);
+
+            return `<div class="penpal-letter-card ${isTransit ? 'letter-in-transit' : ''}" data-letter-id="${l.id}" data-open-letter="1" style="cursor:${isTransit ? 'default' : 'pointer'}">
+                ${getSealHTML(l, 'letter-card-seal')}
+                <div class="letter-card-info">
+                    <div class="letter-card-sender">✉️ ${sanitize(l.sender_hint || l.sender_username || 'Anonim')}</div>
+                    <div class="letter-card-preview">${isTransit ? '📦 Mektup yolda...' : sanitize((l.body || '').slice(0,80)) + '…'}</div>
+                    <div class="letter-card-time">${new Date(l.sent_at).toLocaleDateString('tr-TR')} ${statusBadge}</div>
+                </div>
+            </div>`;
+        }).join('');
+
+        list.querySelectorAll('[data-open-letter]').forEach(card => {
+            card.addEventListener('click', () => {
+                const letterId = card.dataset.letterId;
+                const letter = myLetters.find(l => l.id === letterId);
+                if (letter && letter.status !== 'transit') openLetterReader(letter);
+            });
+        });
+
+        startCountdowns(list);
+    }
+
+    // ── Render Outbox ─────────────────────────────────────────
+    function renderOutbox() {
+        const list = qs('penpal-outbox-list');
+        if (!list) return;
+        const curId = getCurId();
+
+        const outgoing = myLetters.filter(l => l.sender_id === curId)
+            .sort((a,b) => b.sent_at - a.sent_at);
+
+        if (!outgoing.length) {
+            list.innerHTML = `<div class="letter-list-empty"><span class="empty-icon">📪</span><p>Henüz mektup göndermediniz.<br>İlk mektubunuzu "Mektup Yaz" sekmesinden yazın!</p></div>`;
+            return;
+        }
+
+        list.innerHTML = outgoing.map(l => {
+            const isTransit = l.status === 'transit';
+            const isMatched = !l.is_pool && l.recipient_id;
+            const recipientLabel = l.is_pool ? 'Anonim Mektup Havuzu — ortak bekleniyor' : (l.recipient_username || 'Mektup Arkadaşı');
+
+            const statusBadge = isTransit
+                ? `<span class="letter-card-status-badge status-transit">🕊️ Yolda</span>`
+                : `<span class="letter-card-status-badge status-delivered">✅ Ulaştı</span>`;
+            const matchBadge = isMatched
+                ? `<span class="letter-card-status-badge status-matched">🤝 Eşleşti</span>`
+                : (l.is_pool ? `<span class="letter-card-status-badge status-pool">⏳ Ortak Bekleniyor</span>` : '');
+            const countdown = isTransit
+                ? `<span class="penpal-countdown" data-deliver="${l.deliver_at}">${formatCountdown(l.deliver_at)}</span>`
+                : '';
+
+            return `<div class="penpal-letter-card" data-letter-id="${l.id}">
+                ${getSealHTML(l, 'letter-card-seal')}
+                <div class="letter-card-info">
+                    <div class="letter-card-sender">📤 ${sanitize(recipientLabel)}</div>
+                    <div class="letter-card-preview">${sanitize((l.body || '').slice(0,80))}…</div>
+                    <div class="letter-card-time">
+                        ${new Date(l.sent_at).toLocaleDateString('tr-TR')}
+                        ${statusBadge} ${matchBadge} ${countdown}
+                    </div>
+                </div>
+                <button class="penpal-delete-btn" data-delete-id="${l.id}" title="Mektubu Sil">🗑️</button>
+            </div>`;
+        }).join('');
+
+        list.querySelectorAll('.penpal-delete-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                if (confirm('Bu mektubu silmek istediğinize emin misiniz?')) {
+                    deleteLetter(btn.dataset.deleteId);
+                }
+            });
+        });
+
+        startCountdowns(list);
+    }
+
+    // ── Render Threads (Konuşmalar) ───────────────────────────
+    function renderThreads() {
+        const list = qs('penpal-threads-list');
+        if (!list) return;
+
+        const threads = Object.values(myThreads).sort((a,b) => b.lastAt - a.lastAt);
+        const badge = qs('penpal-threads-badge');
+        if (badge) { badge.textContent = threads.length; threads.length > 0 ? badge.classList.remove('hidden') : badge.classList.add('hidden'); }
+
+        if (!threads.length) {
+            list.innerHTML = `<div class="letter-list-empty"><span class="empty-icon">💬</span><p>Henüz aktif bir konuşman yok.<br>Biri mektubuna yanıt verdiğinde konuşma başlar.</p></div>`;
+            return;
+        }
+
+        list.innerHTML = threads.map(t => {
+            const count = t.letterCount || 0;
+            const canReveal = count >= 5;
+            const dotsHtml = Array.from({length: 5}, (_,i) =>
+                `<div class="bond-dot ${i < Math.min(count,5) ? 'filled' : ''}"></div>`
+            ).join('');
+
+            return `<div class="thread-card">
+                <div class="thread-card-avatar">🎭</div>
+                <div class="thread-card-info">
+                    <div class="thread-card-partner">${sanitize(t.partnerHint)}</div>
+                    <div class="thread-card-progress">
+                        <div class="bond-dots">${dotsHtml}</div>
+                        <span class="bond-progress-label">${Math.min(count,5)}/5 Mektup</span>
+                    </div>
+                    <div class="thread-card-date">${t.lastAt ? new Date(t.lastAt).toLocaleDateString('tr-TR') : ''}</div>
+                    ${canReveal ? `<div class="bond-reveal-notice">🎉 5 mektuba ulaştınız! Kimliğinizi açabilirsiniz.</div>` : ''}
+                </div>
+                <div class="thread-card-actions">
+                    <button class="thread-reply-btn" data-thread="${t.threadId}" data-partner-id="${t.partnerId || ''}" data-partner="${sanitize(t.partnerHint)}">✍️ Yanıt Yaz</button>
+                    ${canReveal ? `<button class="thread-reveal-btn" data-thread="${t.threadId}">✨ Tanış</button>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+
+        list.querySelectorAll('.thread-reply-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                startReply(btn.dataset.thread, btn.dataset.partnerId, btn.dataset.partner, btn.dataset.partner);
+            });
+        });
+    }
+
+    // ── Letter Reader Modal ───────────────────────────────────
+    function openLetterReader(letter) {
+        const modal   = qs('penpal-reading-modal');
+        const envWrap = qs('penpal-envelope-wrapper');
+        const opened  = qs('penpal-letter-opened');
+        if (!modal || !envWrap || !opened) return;
+
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+
+        // Show envelope animation
+        envWrap.classList.remove('hidden');
+        opened.classList.add('hidden');
+
+        // Set seal on envelope
+        const sealDisplay = qs('envelope-seal-display');
+        if (sealDisplay) {
+            const isImg = (letter.seal_type === 'image') && letter.seal_img;
+            if (isImg) {
+                sealDisplay.style.background = 'transparent';
+                sealDisplay.innerHTML = `<img src="${sanitize(letter.seal_img)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none';">`;
+            } else {
+                sealDisplay.style.background = letter.seal_gradient || 'radial-gradient(circle at 35% 35%, #e53935, #7b1a1a)';
+                sealDisplay.textContent = 'M';
+            }
+        }
+
+        const breakBtn = qs('break-seal-btn');
+        if (breakBtn) {
+            const newBreakBtn = breakBtn.cloneNode(true);
+            breakBtn.parentNode.replaceChild(newBreakBtn, breakBtn);
+            newBreakBtn.addEventListener('click', () => {
+                // Animate envelope opening
+                const env = qs('penpal-envelope');
+                if (env) env.classList.add('opening');
+                setTimeout(() => {
+                    envWrap.classList.add('hidden');
+                    opened.classList.remove('hidden');
+                    renderLetterContent(opened, letter);
+                    markAsRead(letter);
+                }, 800);
+            });
+        }
+    }
+
+    function renderLetterContent(container, letter) {
+        const curId = getCurId();
+        const isSelf = letter.sender_id === curId;
+        const threadInfo = myThreads[letter.thread_id];
+
+        container.innerHTML = `
+        <div class="letter-paper paper-${letter.paper_theme || 'parchment'}" style="font-family:${letter.font || "'Caveat', cursive"};color:${letter.ink_color || '#1a1008'};">
+            <div class="letter-stamp-display">${letter.stamp || '🪶'}</div>
+            <div class="letter-salutation-display">${sanitize(letter.salutation || '')}</div>
+            <div class="letter-body-display">${sanitize(letter.body || '').replace(/\n/g,'<br>')}</div>
+            <div class="letter-closing-display">${sanitize(letter.closing || '')}</div>
+            <div class="letter-signature-display">${sanitize(letter.signature || letter.sender_hint || '')}</div>
+            ${getSealHTML(letter, 'letter-seal-display')}
+        </div>
+        ${!isSelf ? `<div class="penpal-reader-reply-wrapper">
+            <button class="penpal-reader-reply-btn" id="reader-reply-btn">✍️ Bu Mektuba Yanıt Yaz</button>
+        </div>` : ''}`;
+
+        if (!isSelf) {
+            container.querySelector('#reader-reply-btn')?.addEventListener('click', () => {
+                closeLetterReader();
+                startReply(
+                    letter.thread_id,
+                    letter.sender_id,
+                    letter.sender_username,
+                    letter.sender_hint || letter.sender_username || 'Mektup Arkadaşı'
+                );
+            });
+        }
+    }
+
+    async function markAsRead(letter) {
+        const curId = getCurId();
+        if (!letter || letter.sender_id === curId) return;
+        const readBy = Array.isArray(letter.read_by) ? letter.read_by : [];
+        if (readBy.includes(curId)) return;
+        readBy.push(curId);
+        letter.read_by = readBy;
+        await updateLetter(letter.id, { read_by: readBy });
+        renderInbox(); // refresh badge
+    }
+
+    function closeLetterReader() {
+        const modal = qs('penpal-reading-modal');
+        if (modal) modal.classList.add('hidden');
+        document.body.style.overflow = '';
+        const env = qs('penpal-envelope');
+        if (env) env.classList.remove('opening');
+        renderInbox();
+    }
+
+    // ── Render All ────────────────────────────────────────────
+    function renderAll() {
+        updatePreview();
+        updateStudioAuthNotice();
+        updateStudioReplyBanner();
+        switchTab(state.activeTab || 'studio');
+    }
+
+    // ── Init ──────────────────────────────────────────────────
+    function init() {
+        // Nav button
+        qs('penpal-nav-btn')?.addEventListener('click', openPenpal);
+
+        // Showcase Banner
+        qs('mp-banner-write-btn')?.addEventListener('click', () => { openPenpal(); setTimeout(() => switchTab('studio'), 300); });
+        qs('mp-banner-inbox-btn')?.addEventListener('click', () => { openPenpal(); setTimeout(() => switchTab('inbox'), 300); });
+
+        // Close
+        qs('close-penpal')?.addEventListener('click', closePenpal);
+        qs('close-penpal-reading')?.addEventListener('click', closeLetterReader);
+
+        // Tabs
+        qsa('.penpal-tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.penpalTab)));
+
+        bindStudioControls();
+        updatePreview();
+        updateStudioAuthNotice();
+        console.log('[MürekkepliMektup v5] Supabase letters tablosu ile yüklendi.');
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    window.MürekkepliMektup = {
+        open: openPenpal,
+        close: closePenpal,
+        refresh: async () => {
+            await fetchMyLetters();
+            renderAll();
+        }
+    };
+
+})();
+
 // Tamamen izole, kendi kendine yeten IIFE.
 // Mevcut app.js koduna DOKUNMAZ — yalnızca kendi
 // ID/class'larını kullanır ve window.MürekkepliMektup
@@ -9220,7 +10067,7 @@ function initWysiwygEditor() {
         }
     }
 
-    // ── Filter Letters for Current User (Strict 1-to-1 Matching) ──
+    // ── Filter Letters for Current User (View Only, No Side Effects) ──
     function filterUserLetters() {
         const now = Date.now();
         let changed = false;
@@ -9232,39 +10079,19 @@ function initWysiwygEditor() {
                 changed = true;
             }
         });
+        if (changed) saveGlobalLetters();
 
         if (typeof currentUser === 'undefined' || !currentUser) {
             state.letters = [];
             state.bonds = {};
-            if (changed) saveGlobalLetters();
             return;
         }
 
         const curId = currentUser.id || '';
         const curUser = (currentUser.username || currentUser.email?.split('@')[0] || '').toLowerCase().trim();
 
-        // ── 1-to-1 Matchmaker: If there are unassigned pool letters from other users,
-        // match exactly ONE unclaimed letter to the current user (if user doesn't have an unread pool match from them)
-        const unassignedPoolLetter = allLetters.find(l => {
-            const isUnclaimed = (l.isPool === true) || (!l.recipientId && !l.claimedBy);
-            const sId   = l.senderId || '';
-            const sUser = (l.senderUsername || '').toLowerCase().trim();
-            const isSelf = (curId && sId === curId) || (curUser && sUser === curUser);
-            return isUnclaimed && !isSelf;
-        });
-
-        if (unassignedPoolLetter) {
-            // Exclusively pair this 1 letter to the current user ONLY
-            unassignedPoolLetter.recipientId = curId;
-            unassignedPoolLetter.recipientUsername = curUser;
-            unassignedPoolLetter.claimedBy = curId;
-            unassignedPoolLetter.isPool = false; // Exclusively claimed, removed from pool!
-            changed = true;
-        }
-
-        if (changed) saveGlobalLetters();
-
-        // ── Strict 1-to-1 Filter (Only Sender and Single Assigned Recipient) ──
+        // Show only letters the current user sent OR letters specifically addressed to current user.
+        // Pool letters (isPool=true, no recipientId) are NEVER shown until they are matched.
         state.letters = allLetters.filter(l => {
             const sId   = l.senderId || '';
             const sUser = (l.senderUsername || '').toLowerCase().trim();
@@ -9274,11 +10101,12 @@ function initWysiwygEditor() {
             const isSender    = (curId && sId === curId) || (curUser && sUser === curUser);
             const isRecipient = (curId && rId === curId) || (curUser && rUser === curUser);
 
-            // Outbox: Only letters written by self
+            // Outbox: letters written by self
             if (isSender) return true;
 
-            // Inbox: ONLY letters directly and exclusively assigned to self
-            if (isRecipient && !isSender) return true;
+            // Inbox: ONLY letters with an explicit recipientId matching this user (matched/direct)
+            // isPool=true means still waiting in pool — never show to anyone as inbox until matched
+            if (isRecipient && !isSender && !l.isPool) return true;
 
             return false;
         });
@@ -9560,7 +10388,7 @@ function initWysiwygEditor() {
         showToast('Yanıt modu iptal edildi.');
     }
 
-    // ── Send Letter (Auth Enforced & Pure Real Multi-User) ───
+    // ── Send Letter (Auth Enforced & Real 1-to-1 Matching on Send) ───
     async function sendLetter() {
         // 1. Check Authentication
         if (typeof currentUser === 'undefined' || !currentUser) {
@@ -9611,12 +10439,48 @@ function initWysiwygEditor() {
             allBonds[threadId].letterCount = (allBonds[threadId].letterCount || 1) + 1;
             saveGlobalBonds();
         } else {
-            // New anonymous pool letter
-            threadId          = 'th_' + now + '_' + Math.random().toString(36).slice(2, 7);
-            recipientUsername = null;
-            recipientId       = null;
-            recipientName     = 'Anonim Mektup Havuzu';
-            isPool            = true;
+            // ── NEW POOL LETTER: Attempt 1-to-1 reciprocal matching ──
+            // Look for an unmatched pool letter from a DIFFERENT user (not self)
+            const existingPoolLetter = allLetters.find(l => {
+                if (!l.isPool) return false;
+                const sId   = l.senderId || '';
+                const sUser = (l.senderUsername || '').toLowerCase().trim();
+                const isSelf = (curId && sId === curId) || (curName.toLowerCase().trim() && sUser === curName.toLowerCase().trim());
+                return !isSelf;
+            });
+
+            if (existingPoolLetter) {
+                // Reciprocal match: pair them with each other
+                threadId          = 'th_' + now + '_' + Math.random().toString(36).slice(2, 7);
+                recipientUsername = existingPoolLetter.senderUsername;
+                recipientId       = existingPoolLetter.senderId;
+                recipientName     = existingPoolLetter.senderHint || existingPoolLetter.senderUsername;
+                isPool            = false;
+
+                // Also assign the existing pool letter to ME (current user) — complete the swap
+                existingPoolLetter.recipientId       = curId;
+                existingPoolLetter.recipientUsername  = curName;
+                existingPoolLetter.isPool            = false;
+                existingPoolLetter.threadId          = threadId; // same thread
+
+                // Create bond
+                allBonds[threadId] = {
+                    threadId,
+                    user1: curName, user1Id: curId,
+                    user2: recipientUsername, user2Id: recipientId,
+                    senderHint: recipientName,
+                    letterCount: 1, status: 'active'
+                };
+                saveGlobalBonds();
+
+            } else {
+                // No one in pool yet — add to pool, wait for a partner
+                threadId          = 'th_' + now + '_' + Math.random().toString(36).slice(2, 7);
+                recipientUsername = null;
+                recipientId       = null;
+                recipientName     = 'Anonim Mektup Havuzu';
+                isPool            = true;
+            }
         }
 
         const outLetter = {
@@ -9644,11 +10508,8 @@ function initWysiwygEditor() {
             readBy:            []
         };
 
-        // Add ONLY the real sent letter to the shared database
         allLetters.push(outLetter);
         await saveGlobalLetters();
-
-        // Refresh user-specific views
         filterUserLetters();
 
         state.replyMode = null;
@@ -9656,8 +10517,9 @@ function initWysiwygEditor() {
         resetCompose();
 
         const delay = state.deliveryDelay;
+        const matchInfo = (!isPool && recipientId) ? ' Bir mektup arkadaşıyla eşleştirildiniz!' : ' Bir mektup arkadaşı çıktığında size özel eşleştirilecek.';
         const timeStr = delay <= 1000 ? '1 saniye' : delay < 3600001 ? '1 saat' : delay < 86400001 ? '12 saat' : '3 gün';
-        showToast(`✉️ Mektubunuz mühürlendi ve yola çıktı! (${timeStr})`);
+        showToast(`✉️ Mektubunuz mühürlendi! (${timeStr})${matchInfo}`);
 
         setTimeout(() => switchTab('outbox'), 600);
     }
@@ -9671,6 +10533,17 @@ function initWysiwygEditor() {
         if (body)       body.innerText       = 'Mektubunuzu buraya yazın...';
         if (closing)    closing.innerText    = 'Sevgiyle,';
         if (signature)  signature.innerText  = 'İmzanız';
+    }
+
+    // ── Delete Letter ────────────────────────────────────────
+    async function deleteLetter(letterId) {
+        const idx = allLetters.findIndex(l => l.id === letterId);
+        if (idx === -1) return;
+        allLetters.splice(idx, 1);
+        await saveGlobalLetters();
+        filterUserLetters();
+        renderOutbox();
+        showToast('🗑️ Mektup silindi.');
     }
 
     // ── Render Outbox ───────────────────────────────────────
@@ -9694,14 +10567,18 @@ function initWysiwygEditor() {
 
         list.innerHTML = outLetters.map(l => {
             const isTransit  = l.status === 'transit';
+            const isMatched  = !l.isPool && l.recipientId;
             const statusHtml = isTransit
                 ? `<span class="letter-card-status-badge status-transit">🕊️ Yolda</span>`
                 : `<span class="letter-card-status-badge status-delivered">✅ Ulaştı</span>`;
             const countdownHtml = isTransit
                 ? `<span class="letter-card-time penpal-countdown" data-deliver="${l.deliverAt}">${formatCountdown(l.deliverAt)}</span>`
                 : '';
+            const matchedHtml = isMatched
+                ? `<span class="letter-card-status-badge status-matched">🤝 Eşleşti</span>`
+                : (l.isPool ? `<span class="letter-card-status-badge status-pool">⏳ Ortak Bekleniyor</span>` : '');
 
-            const recipientLabel = l.recipientName || (l.isPool ? 'Anonim Mektup Havuzu' : 'Mektup Arkadaşı');
+            const recipientLabel = l.isPool ? 'Anonim Mektup Havuzu' : (l.recipientName || 'Mektup Arkadaşı');
 
             return `
             <div class="penpal-letter-card" data-letter-id="${l.id}">
@@ -9712,11 +10589,22 @@ function initWysiwygEditor() {
                     <div class="letter-card-time">
                         ${new Date(l.sentAt).toLocaleDateString('tr-TR')}
                         ${statusHtml}
+                        ${matchedHtml}
                         ${countdownHtml}
                     </div>
                 </div>
+                <button class="penpal-delete-btn" data-delete-id="${l.id}" title="Mektubu Sil">🗑️</button>
             </div>`;
         }).join('');
+
+        list.querySelectorAll('.penpal-delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (confirm('Bu mektubu silmek istediğinize emin misiniz?')) {
+                    deleteLetter(btn.dataset.deleteId);
+                }
+            });
+        });
 
         startCountdowns(list);
     }
