@@ -9400,31 +9400,31 @@ function initWysiwygEditor() {
         }
     }
 
-    // ── Soft-delete a letter (only for sender) ────────────────
+    // ── Direct Delete a letter (from DB and local) ────────────
     async function deleteLetter(letterId) {
-        const curId = getCurId();
-        const curName = getCurName();
-        if (hasSupabase()) {
-            try {
-                const { data: current } = await supabaseClient
-                    .from('letters').select('deleted_by').eq('id', letterId).single();
-                const deletedBy = Array.isArray(current?.deleted_by) ? current.deleted_by : [];
-                if (curId && !deletedBy.includes(curId)) deletedBy.push(curId);
-                if (curName && !deletedBy.includes(curName)) deletedBy.push(curName);
-
-                await supabaseClient.from('letters')
-                    .update({ deleted_by: deletedBy })
-                    .eq('id', letterId);
-            } catch(e) {
-                console.error('[MürekkepliMektup] Delete error:', e);
-            }
-        }
+        if (!letterId) return;
+        // 1. Immediately remove from local arrays
         myLetters = myLetters.filter(l => l.id !== letterId);
         setLocalLetters(myLetters);
         buildThreads();
         renderOutbox();
+        renderInbox();
         renderThreads();
         showToast('🗑️ Mektup silindi.');
+
+        // 2. Delete permanently from Supabase
+        if (hasSupabase()) {
+            try {
+                const { error } = await supabaseClient.from('letters').delete().eq('id', letterId);
+                if (error) {
+                    console.error('[MürekkepliMektup] Supabase delete error:', error);
+                } else {
+                    console.log('[MürekkepliMektup] Mektup Supabase\'den silindi:', letterId);
+                }
+            } catch(e) {
+                console.error('[MürekkepliMektup] Delete exception:', e);
+            }
+        }
     }
 
     // ── DOM Helpers ──────────────────────────────────────────
@@ -9571,7 +9571,7 @@ function initWysiwygEditor() {
         } else {
             badgeText.innerHTML = `
                 <strong>Anonim Mektup Havuzu</strong>
-                <span>Mektubunuz rastgele bir edebiyatsevere gider. Siz de havuzdan birinin mektubunu alırsınız. Kimse kimseyi bilmez — sadece kelimeler konuşur.</span>`;
+                <span>Mektubunuz rastgele bir edebiyatseverin havuzuna gider. Siz de havuzdan birinin mektubunu alırsınız. Kimse kimseyi bilmez — sadece kelimeler konuşur.</span>`;
         }
     }
 
@@ -9704,6 +9704,7 @@ function initWysiwygEditor() {
                     thread_id: threadId
                 };
                 myLetters.push(claimedLetter);
+                setLocalLetters(myLetters);
                 showToast('🤝 Bir mektup arkadaşı bulundu! Gelen kutunuzu kontrol edin.');
             } else {
                 showToast('✉️ Mektubunuz havuza eklendi! Bir edebiyatsever mektup atınca size ulaşacak.');
@@ -9735,7 +9736,6 @@ function initWysiwygEditor() {
         };
 
         await saveLetter(letterObj);
-        myLetters.push(letterObj);
         buildThreads();
 
         state.replyMode = null;
@@ -9807,11 +9807,13 @@ function initWysiwygEditor() {
                     <div class="letter-card-preview">${isTransit ? '📦 Mektup henüz yolda, mühür teslimatta açılabilir...' : sanitize((l.body || '').slice(0,80)) + '…'}</div>
                     <div class="letter-card-time">${new Date(l.sent_at).toLocaleDateString('tr-TR')} ${statusBadge}</div>
                 </div>
+                <button class="penpal-delete-btn" data-delete-id="${l.id}" title="Mektubu Sil">🗑️</button>
             </div>`;
         }).join('');
 
         list.querySelectorAll('[data-open-letter]').forEach(card => {
-            card.addEventListener('click', () => {
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.penpal-delete-btn')) return;
                 const letterId = card.dataset.letterId;
                 const letter = myLetters.find(l => l.id === letterId);
                 if (letter) {
