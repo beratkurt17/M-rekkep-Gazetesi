@@ -9132,6 +9132,22 @@ function initWysiwygEditor() {
         return String(currentUser.username || currentUser.email?.split('@')[0] || '').trim();
     }
 
+    // ── Local Storage Cache Helper ────────────────────────────
+    function getLocalLetters() {
+        const curId = getCurId();
+        if (!curId) return [];
+        try {
+            return JSON.parse(localStorage.getItem('mp_letters_cache_' + curId) || '[]');
+        } catch(e) { return []; }
+    }
+    function setLocalLetters(arr) {
+        const curId = getCurId();
+        if (!curId) return;
+        try {
+            localStorage.setItem('mp_letters_cache_' + curId, JSON.stringify(arr));
+        } catch(e) {}
+    }
+
     // ── Fetch This User's Letters from Supabase ───────────────
     async function fetchMyLetters() {
         if (!currentUser) { myLetters = []; return; }
@@ -9139,34 +9155,63 @@ function initWysiwygEditor() {
         const curName = getCurName();
         if (!curId && !curName) return;
 
+        // Start with cached local letters
+        const local = getLocalLetters();
+        if (local.length > 0 && myLetters.length === 0) {
+            myLetters = local;
+        }
+
         if (hasSupabase()) {
             try {
                 let sentList = [];
                 let recvList = [];
 
+                // 1. Fetch Sent Letters
                 if (curId) {
-                    const { data: s1 } = await supabaseClient.from('letters').select('*').eq('sender_id', curId);
-                    if (s1) sentList.push(...s1);
-                    const { data: r1 } = await supabaseClient.from('letters').select('*').eq('recipient_id', curId);
-                    if (r1) recvList.push(...r1);
+                    const { data: s1, error: e1 } = await supabaseClient.from('letters').select('*').eq('sender_id', curId);
+                    if (s1 && !e1) sentList.push(...s1);
                 }
                 if (curName && curName !== curId) {
-                    const { data: s2 } = await supabaseClient.from('letters').select('*').eq('sender_username', curName);
-                    if (s2) sentList.push(...s2);
-                    const { data: r2 } = await supabaseClient.from('letters').select('*').eq('recipient_username', curName);
-                    if (r2) recvList.push(...r2);
+                    const { data: s2, error: e2 } = await supabaseClient.from('letters').select('*').eq('sender_username', curName);
+                    if (s2 && !e2) sentList.push(...s2);
                 }
 
-                const all = [...sentList, ...recvList];
+                // 2. Fetch Received Letters
+                if (curId) {
+                    const { data: r1, error: er1 } = await supabaseClient.from('letters').select('*').eq('recipient_id', curId);
+                    if (r1 && !er1) recvList.push(...r1);
+                }
+                if (curName && curName !== curId) {
+                    const { data: r2, error: er2 } = await supabaseClient.from('letters').select('*').eq('recipient_username', curName);
+                    if (r2 && !er2) recvList.push(...r2);
+                }
+
+                // Combine remote letters
+                const remoteAll = [...sentList, ...recvList];
                 const seen = new Set();
+                const merged = [];
+
+                // Add remote letters first
+                remoteAll.forEach(l => {
+                    if (l && l.id && !seen.has(l.id)) {
+                        seen.add(l.id);
+                        merged.push(l);
+                    }
+                });
+
+                // Keep local letters that may not have synced yet
+                myLetters.forEach(l => {
+                    if (l && l.id && !seen.has(l.id)) {
+                        seen.add(l.id);
+                        merged.push(l);
+                    }
+                });
+
                 const curIdLower = curId.toLowerCase();
                 const curNameLower = curName.toLowerCase();
 
-                myLetters = all.filter(l => {
-                    if (seen.has(l.id)) return false;
-                    seen.add(l.id);
-
-                    // Soft delete check
+                // Filter soft deleted
+                myLetters = merged.filter(l => {
                     const deletedBy = Array.isArray(l.deleted_by) ? l.deleted_by.map(x => String(x).toLowerCase()) : [];
                     if (deletedBy.includes(curIdLower) || (curNameLower && deletedBy.includes(curNameLower))) {
                         return false;
@@ -9174,15 +9219,16 @@ function initWysiwygEditor() {
                     return true;
                 });
 
-                // Update transit → delivered
+                // Update transit → delivered in Supabase
                 const now = Date.now();
                 for (const l of myLetters) {
                     if (l.status === 'transit' && l.deliver_at <= now) {
                         l.status = 'delivered';
-                        await supabaseClient.from('letters').update({ status: 'delivered' }).eq('id', l.id);
+                        supabaseClient.from('letters').update({ status: 'delivered' }).eq('id', l.id);
                     }
                 }
 
+                setLocalLetters(myLetters);
                 buildThreads();
                 return;
             } catch(e) {
@@ -9190,11 +9236,6 @@ function initWysiwygEditor() {
             }
         }
 
-        // Fallback: localStorage
-        try {
-            const saved = localStorage.getItem('mp_letters_mine_' + curId);
-            myLetters = saved ? JSON.parse(saved) : [];
-        } catch(e) { myLetters = []; }
         buildThreads();
     }
 
@@ -9247,6 +9288,12 @@ function initWysiwygEditor() {
 
     // ── Save a new letter to Supabase ────────────────────────
     async function saveLetter(letterObj) {
+        // Save locally first so it never gets lost
+        const existingIdx = myLetters.findIndex(l => l.id === letterObj.id);
+        if (existingIdx >= 0) myLetters[existingIdx] = letterObj;
+        else myLetters.push(letterObj);
+        setLocalLetters(myLetters);
+
         if (hasSupabase()) {
             try {
                 const row = {
@@ -9254,49 +9301,53 @@ function initWysiwygEditor() {
                     thread_id:          letterObj.thread_id,
                     sender_id:          letterObj.sender_id,
                     sender_username:    letterObj.sender_username,
-                    sender_hint:        letterObj.sender_hint,
+                    sender_hint:        letterObj.sender_hint || '',
                     recipient_id:       letterObj.recipient_id || null,
                     recipient_username: letterObj.recipient_username || null,
                     is_pool:            letterObj.is_pool ?? true,
                     sent_at:            letterObj.sent_at,
                     deliver_at:         letterObj.deliver_at,
                     status:             letterObj.status || 'transit',
-                    paper_theme:        letterObj.paper_theme,
-                    font:               letterObj.font,
-                    ink_color:          letterObj.ink_color,
-                    stamp:              letterObj.stamp,
-                    seal_type:          letterObj.seal_type,
-                    seal_img:           letterObj.seal_img,
-                    seal_gradient:      letterObj.seal_gradient,
-                    salutation:         letterObj.salutation,
-                    body:               letterObj.body,
-                    closing:            letterObj.closing,
-                    signature:          letterObj.signature,
+                    paper_theme:        letterObj.paper_theme || 'parchment',
+                    font:               letterObj.font || "'Caveat', cursive",
+                    ink_color:          letterObj.ink_color || '#1a1008',
+                    stamp:              letterObj.stamp || '🪶',
+                    seal_type:          letterObj.seal_type || 'image',
+                    seal_img:           letterObj.seal_img || '',
+                    seal_gradient:      letterObj.seal_gradient || '',
+                    salutation:         letterObj.salutation || '',
+                    body:               letterObj.body || '',
+                    closing:            letterObj.closing || '',
+                    signature:          letterObj.signature || '',
                     read_by:            [],
                     deleted_by:         []
                 };
-                await supabaseClient.from('letters').insert(row);
+
+                const { error } = await supabaseClient.from('letters').insert([row]);
+                if (error) {
+                    console.error('[MürekkepliMektup] Supabase Insert Error:', error);
+                } else {
+                    console.log('[MürekkepliMektup] Mektup Supabase\'e başarıyla kaydedildi:', letterObj.id);
+                }
             } catch(e) {
-                console.error('[MürekkepliMektup] Save error:', e);
+                console.error('[MürekkepliMektup] Save exception:', e);
             }
-        } else {
-            const curId = getCurId();
-            const key = 'mp_letters_mine_' + curId;
-            try {
-                const saved = JSON.parse(localStorage.getItem(key) || '[]');
-                saved.push(letterObj);
-                localStorage.setItem(key, JSON.stringify(saved));
-            } catch(e){}
         }
     }
 
     // ── Update an existing letter row ─────────────────────────
     async function updateLetter(letterId, fields) {
+        const localLetter = myLetters.find(l => l.id === letterId);
+        if (localLetter) {
+            Object.assign(localLetter, fields);
+            setLocalLetters(myLetters);
+        }
         if (hasSupabase()) {
             try {
-                await supabaseClient.from('letters').update(fields).eq('id', letterId);
+                const { error } = await supabaseClient.from('letters').update(fields).eq('id', letterId);
+                if (error) console.error('[MürekkepliMektup] Update error:', error);
             } catch(e) {
-                console.error('[MürekkepliMektup] Update error:', e);
+                console.error('[MürekkepliMektup] Update exception:', e);
             }
         }
     }
@@ -9307,15 +9358,16 @@ function initWysiwygEditor() {
         const curName = getCurName();
         if (hasSupabase()) {
             try {
-                await supabaseClient.from('letters')
+                const { error } = await supabaseClient.from('letters')
                     .update({
                         recipient_id: curId,
                         recipient_username: curName,
                         is_pool: false
                     })
                     .eq('id', poolLetterId);
+                if (error) console.error('[MürekkepliMektup] Claim error:', error);
             } catch(e) {
-                console.error('[MürekkepliMektup] Claim error:', e);
+                console.error('[MürekkepliMektup] Claim exception:', e);
             }
         }
     }
@@ -9326,13 +9378,13 @@ function initWysiwygEditor() {
         const curId = getCurId();
         const curName = getCurName();
         try {
-            const { data } = await supabaseClient
+            const { data, error } = await supabaseClient
                 .from('letters')
                 .select('*')
                 .eq('is_pool', true)
                 .is('recipient_id', null);
 
-            if (!data || !data.length) return null;
+            if (error || !data || !data.length) return null;
 
             const candidate = data.find(l => {
                 const sId = String(l.sender_id || '').toLowerCase();
@@ -9351,12 +9403,15 @@ function initWysiwygEditor() {
     // ── Soft-delete a letter (only for sender) ────────────────
     async function deleteLetter(letterId) {
         const curId = getCurId();
+        const curName = getCurName();
         if (hasSupabase()) {
             try {
                 const { data: current } = await supabaseClient
                     .from('letters').select('deleted_by').eq('id', letterId).single();
                 const deletedBy = Array.isArray(current?.deleted_by) ? current.deleted_by : [];
-                if (!deletedBy.includes(curId)) deletedBy.push(curId);
+                if (curId && !deletedBy.includes(curId)) deletedBy.push(curId);
+                if (curName && !deletedBy.includes(curName)) deletedBy.push(curName);
+
                 await supabaseClient.from('letters')
                     .update({ deleted_by: deletedBy })
                     .eq('id', letterId);
@@ -9365,6 +9420,7 @@ function initWysiwygEditor() {
             }
         }
         myLetters = myLetters.filter(l => l.id !== letterId);
+        setLocalLetters(myLetters);
         buildThreads();
         renderOutbox();
         renderThreads();
