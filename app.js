@@ -108,35 +108,49 @@ function checkCommentCooldown(articleId) {
 // overlays open by using position:fixed + top offset.
 // =============================================
 let _scrollLockDepth = 0;
-let _savedScrollY = 0;
 
 function lockBodyScroll() {
-    if (_scrollLockDepth === 0) {
-        _savedScrollY = window.scrollY || window.pageYOffset;
-        document.body.style.position = 'fixed';
-        document.body.style.top = `-${_savedScrollY}px`;
-        document.body.style.left = '0';
-        document.body.style.right = '0';
-        document.body.style.overflow = 'hidden';
-    }
     _scrollLockDepth++;
+    document.body.classList.add('modal-open');
+    document.body.style.overflow = 'hidden';
 }
 
 function unlockBodyScroll() {
-    if (_scrollLockDepth > 0) {
-        _scrollLockDepth--;
-    }
+    _scrollLockDepth = Math.max(0, _scrollLockDepth - 1);
     if (_scrollLockDepth === 0) {
-        const savedY = _savedScrollY;
+        document.body.classList.remove('modal-open');
         document.body.style.position = '';
         document.body.style.top = '';
         document.body.style.left = '';
         document.body.style.right = '';
         document.body.style.overflow = '';
-        window.scrollTo(0, savedY);
-        _savedScrollY = 0;
     }
 }
+
+function forceUnlockAllOverlays() {
+    _scrollLockDepth = 0;
+    document.body.classList.remove('modal-open');
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.overflow = '';
+    document.querySelectorAll('.overlay').forEach(el => {
+        el.classList.add('hidden');
+    });
+    const actionModal = document.getElementById('mobile-action-modal');
+    if (actionModal) actionModal.classList.remove('active');
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    forceUnlockAllOverlays();
+});
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        forceUnlockAllOverlays();
+    }
+});
 
 // Application State & Seed Data
 const DEFAULT_ARTICLES = [];

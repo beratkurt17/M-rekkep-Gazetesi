@@ -1748,7 +1748,7 @@ body {
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
     z-index: 10000;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     padding: 20px;
@@ -1758,6 +1758,7 @@ body {
 }
 
 .mobile-action-modal-overlay.active {
+    display: flex !important;
     opacity: 1;
     pointer-events: auto;
 }
@@ -2690,10 +2691,14 @@ body {
     transition: opacity 0.3s ease, transform 0.3s ease, background-color var(--transition-speed);
 }
 
-.overlay.hidden {
+.overlay.hidden,
+.hidden,
+[hidden] {
     display: none !important;
-    opacity: 0;
-    transform: translateY(20px);
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    z-index: -9999 !important;
 }
 
 /* Glassmorphism modal backdrop */
