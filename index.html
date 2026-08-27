@@ -53,7 +53,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400..700;1,400..700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Caveat:wght@400;600;700&family=Dancing+Script:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
     <!-- CSS stylesheet -->
-    <link rel="stylesheet" href="style.css?v=2.5.3">
+    <link rel="stylesheet" href="style.css?v=3.0.0">
 
     <!-- Canonical URL -->
     <link rel="canonical" href="https://murekkepgzt.com">
@@ -421,15 +421,15 @@
                 <p>Eseriniz Mürekkep Yayın Kurulu ve Editör heyetimizce incelenecektir. Onaylanan eserler gazetemizde yayına alınır.</p>
             </header>
 
-            <form id="publish-form" class="editor-form">
+            <form id="publish-form" class="editor-form" autocomplete="off">
                 <div class="form-group">
                     <label for="post-title">Başlık</label>
-                    <input type="text" id="post-title" placeholder="Yazınızın çarpıcı başlığı..." required class="form-control">
+                    <input type="text" id="post-title" placeholder="Yazınızın çarpıcı başlığı..." required class="form-control" autocomplete="off">
                 </div>
 
                 <div class="form-group">
                     <label for="post-subtitle">Alt Başlık veya Özet</label>
-                    <input type="text" id="post-subtitle" placeholder="Kısa bir özet veya alt başlık yazın..." required class="form-control">
+                    <input type="text" id="post-subtitle" placeholder="Kısa bir özet veya alt başlık yazın..." required class="form-control" autocomplete="off">
                 </div>
 
                 <div class="form-row" style="display: flex; gap: 15px;">
@@ -1692,6 +1692,6 @@
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Core Logic script -->
-    <script src="app.js?v=2.6.0"></script>
+    <script src="app.js?v=3.0.0"></script>
 </body>
 </html>
