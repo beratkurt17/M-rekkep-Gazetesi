@@ -175,9 +175,21 @@ const DEFAULT_LAYOUT = {
 let layoutConfig = null;
 let customCategories = [];
 let editorNoteData = {
-    quote: "Mürekkep, genç yazarların sesini duymak, edebiyata yeni nefesler katmak için kuruldu.",
-    desc: "Amacımız; nitelikli içerikleri desteklemek, edebiyatseverleri bir araya getirmek ve dijital dünyanın sunduğu imkânlarla edebiyatı geleceğe taşımaktır."
+    quote: "Bir dizesi eksik kalmış bir şiir gibi gezinir insan; ta ki hakikatin kelimesini bulana kadar.",
+    desc: "Ahmet Hamdi Tanpınar"
 };
+
+let dailyWordData = {
+    word: "Tahassür",
+    origin: "[Arapça • İsim]",
+    meaning: "Kavuşulması istenen şeye veya geçmişe duyulan derin özlem, hasret ve hüzünlü iç çekiş.",
+    example: "“Gözlerinde eski günlerin tahassürü, dilinde yarım kalmış bir türkü vardı.”"
+};
+
+try {
+    const savedWord = localStorage.getItem("murekkep_daily_word");
+    if (savedWord) dailyWordData = JSON.parse(savedWord);
+} catch(e) {}
 
 // Category helper list (built-in + custom)
 function getCategoriesList() {
@@ -4958,6 +4970,27 @@ window.openWriteModalForCategory = function(categoryKey) {
     if (catSelect && categoryKey) {
         catSelect.value = categoryKey;
     }
+
+    if (categoryKey === "gunun-sozu") {
+        const titleInput = document.getElementById("post-title");
+        const subtitleInput = document.getElementById("post-subtitle");
+        if (titleInput) titleInput.value = editorNoteData.quote || "";
+        if (subtitleInput) subtitleInput.value = editorNoteData.desc || "Ahmet Hamdi Tanpınar";
+    } else if (categoryKey === "lugat") {
+        const titleInput = document.getElementById("post-title");
+        const subtitleInput = document.getElementById("post-subtitle");
+        const editorDiv = document.getElementById("post-editor");
+        const cornerNameInput = document.getElementById("post-corner-name");
+        if (titleInput) titleInput.value = dailyWordData.word || "Tahassür";
+        if (subtitleInput) subtitleInput.value = dailyWordData.origin || "[Arapça • İsim]";
+        if (editorDiv) editorDiv.innerText = dailyWordData.meaning || "";
+        if (cornerNameInput) cornerNameInput.value = dailyWordData.example || "";
+    }
+
+    const editorOverlay = document.getElementById("editor-overlay");
+    if (editorOverlay) {
+        editorOverlay.scrollTop = 0;
+    }
 };
 
 // RENDER NEWSPAPER FRONT-PAGE GRID (MÜREKKEP PROFESYONEL MİZANPAJ)
@@ -4971,7 +5004,7 @@ function renderNewspaperGrid() {
     const allArts = getSortedArticles();
 
     // 1. Identify Main Lead Story (Ana Manşet)
-    let leadArt = allArts.find(a => a.corner_name === "Haftanın Manşeti" || a.corner_name === "MANŞET" || a.corner_name === "Kapak Dosyası")
+    let leadArt = allArts.find(a => a.category === "manset" || a.corner_name === "MANŞET" || a.corner_name === "Haftanın Manşeti" || a.corner_name === "Kapak Dosyası")
                || allArts.find(a => a.category === "deneme" || a.category === "haber")
                || allArts[0]
                || null;
@@ -5027,18 +5060,18 @@ function renderNewspaperGrid() {
                 </div>
             </div>
 
-            <!-- Günün Sözü Kartı -->
-            <div class="editorial-slot-card" style="background: var(--bg-secondary); border-top: 4px solid var(--accent-color);">
+            <!-- Günün Sözü Kartı (Editörler Tıklayıp Değiştirebilir) -->
+            <div class="editorial-slot-card" style="background: var(--bg-secondary); border-top: 4px solid var(--accent-color);" onclick="window.openWriteModalForCategory('gunun-sozu')">
                 <span class="slot-kicker">📜 GÜNÜN SÖZÜ</span>
                 <p class="slot-quote-text">“${editorNoteData.quote || 'Bir dizesi eksik kalmış bir şiir gibi gezinir insan; ta ki hakikatin kelimesini bulana kadar.'}”</p>
                 <div class="slot-byline">
-                    <span>— Ahmet Hamdi Tanpınar</span>
+                    <span>— ${editorNoteData.desc || 'Ahmet Hamdi Tanpınar'}</span>
                     <span style="font-size: 0.68rem; color: var(--accent-color); font-weight: 800;">EDEBİ HAFIZA</span>
                 </div>
             </div>
 
             <!-- Günün Sözünün Altındaki Ek Slot: Genç Kalemler & Anlatı -->
-            <div class="editorial-slot-card" ${youthArt ? `data-id="${youthArt.id}"` : `onclick="window.openWriteModalForCategory('oyku')"`}>
+            <div class="editorial-slot-card" ${youthArt ? `data-id="${youthArt.id}"` : `onclick="window.openWriteModalForCategory('genc-kalemler')"`}>
                 <span class="slot-kicker">📖 GENÇ KALEMLER & ANLATI</span>
                 <h3 class="slot-title">${youthArt ? youthArt.title : 'Kuşların Kanadında Saklı Şehir'}</h3>
                 <p class="slot-excerpt">${youthArt ? truncateText(youthArt.subtitle || (youthArt.content ? youthArt.content.replace(/<[^>]*>/g, '') : ''), 120) : 'Taş sokakların yankısında büyüyen düşler, genç bir yazarın satırlarında yeniden hayat buluyor.'}</p>
@@ -5084,7 +5117,7 @@ function renderNewspaperGrid() {
         `;
     } else {
         mainLeadHTML = `
-            <article class="lead-headline-box" onclick="window.openWriteModalForCategory('deneme')">
+            <article class="lead-headline-box" onclick="window.openWriteModalForCategory('manset')">
                 <span class="lead-kicker-tag">EDEBİYAT & DÜŞÜNCE • HAFTANIN MANŞETİ</span>
                 <h2 class="lead-main-title">YAPAY ZEKA ÇAĞINDA İNSAN, EDEBİYAT VE ANLAM ARAYIŞI</h2>
                 <div class="lead-byline-bar">
@@ -5100,7 +5133,7 @@ function renderNewspaperGrid() {
                     <p class="drop-cap-text">Zamanın yıpratıcı ve aceleci akışına karşı direnen tek sığınak, kelimelerin ebedi tınısıdır. Sayfalar arasında kaybolan her dize insan ruhuna açılan bir kapıdır.</p>
                     <div>
                         <p>Mürekkep Gazetesi'nin bu sayısında genç kalemlerin fikir tahlillerini okurlarımızla buluşturuyoruz.</p>
-                        <span class="lead-readmore">+ Yazı Başvurusu Yap</span>
+                        <span class="lead-readmore">+ Manşet Yazısı Yayınla</span>
                     </div>
                 </div>
             </article>
@@ -5136,7 +5169,7 @@ function renderNewspaperGrid() {
         </main>
     `;
 
-    // ─── C. SAĞ SÜTUN (GÜNÜN ŞİİRİ, KÜLTÜR & MEDENİYET, SANAT) ───
+    // ─── C. SAĞ SÜTUN (GÜNÜN ŞİİRİ, KÜLTÜR & MEDENİYET, LÛGAT) ───
     const colRightHTML = `
         <aside class="broadsheet-col-right">
             <div class="poem-slot-card" ${poemArt ? `data-id="${poemArt.id}"` : `onclick="window.openWriteModalForCategory('siir')"`}>
@@ -5158,18 +5191,18 @@ function renderNewspaperGrid() {
                 </div>
             </div>
 
-            <!-- Edebi Lûgat / Anlamını Bilmediğimiz Kelimeler Köşesi -->
-            <div class="editorial-slot-card" style="background: var(--bg-secondary); border-top: 4px solid var(--accent-color);">
+            <!-- Edebi Lûgat / Anlamını Bilmediğimiz Kelimeler Köşesi (Editörler Değiştirebilir) -->
+            <div class="editorial-slot-card" style="background: var(--bg-secondary); border-top: 4px solid var(--accent-color);" onclick="window.openWriteModalForCategory('lugat')">
                 <span class="slot-kicker">📖 EDEBİ LÛGAT • GÜNÜN KELİMESİ</span>
                 <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 4px 0 2px;">
-                    <h3 class="slot-title" style="font-size: 1.22rem; letter-spacing: 0.5px; color: var(--accent-color); margin: 0;">Tahassür</h3>
-                    <span style="font-family: var(--font-ui); font-size: 0.68rem; font-weight: 700; color: var(--text-secondary);">[Arapça • İsim]</span>
+                    <h3 class="slot-title" style="font-size: 1.22rem; letter-spacing: 0.5px; color: var(--accent-color); margin: 0;">${dailyWordData.word || 'Tahassür'}</h3>
+                    <span style="font-family: var(--font-ui); font-size: 0.68rem; font-weight: 700; color: var(--text-secondary);">${dailyWordData.origin || '[Arapça • İsim]'}</span>
                 </div>
                 <p class="slot-excerpt" style="-webkit-line-clamp: 2; margin-bottom: 4px; font-weight: 600; color: var(--text-primary);">
-                    Kavuşulması istenen şeye veya geçmişe duyulan derin özlem, hasret ve hüzünlü iç çekiş.
+                    ${dailyWordData.meaning || 'Kavuşulması istenen şeye veya geçmişe duyulan derin özlem, hasret ve hüzünlü iç çekiş.'}
                 </p>
                 <p class="slot-excerpt" style="-webkit-line-clamp: 2; font-style: italic; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 6px;">
-                    “Gözlerinde eski günlerin tahassürü, dilinde yarım kalmış bir türkü vardı.”
+                    ${dailyWordData.example || '“Gözlerinde eski günlerin tahassürü, dilinde yarım kalmış bir türkü vardı.”'}
                 </p>
                 <div class="slot-byline">
                     <span>Lûgat-ı Mürekkep</span>
@@ -5974,6 +6007,7 @@ writeToggleBtn.addEventListener("click", () => {
         return;
     }
     editorOverlay.classList.remove("hidden");
+    editorOverlay.scrollTop = 0;
     lockBodyScroll();
     
     // Prefill the author name to match user profile exactly and lock input
@@ -5989,8 +6023,8 @@ writeToggleBtn.addEventListener("click", () => {
     const submitBtn = document.querySelector(".btn-publish-submit");
 
     if ((currentUser && currentUser.isEditor) || isEditorModeActive) {
-        if (studioTitle) studioTitle.innerText = "Editör Paneli - İçerik Girişi";
-        if (studioDesc) studioDesc.innerText = "Editör yetkileriniz aktiftir. Eklediğiniz eser doğrudan gazetede yayına alınır.";
+        if (studioTitle) studioTitle.innerText = "Editör Paneli - Gazete Köşe & Eser Girişi";
+        if (studioDesc) studioDesc.innerText = "Yayınlamak istediğiniz gazete köşesini seçin ve eseri doğrudan ilgili slota yerleştirin.";
         if (submitBtn) submitBtn.innerText = "Gazetede Doğrudan Yayınla";
     } else {
         if (studioTitle) studioTitle.innerText = "Editöryal Yazı Başvurusu";
@@ -5998,22 +6032,38 @@ writeToggleBtn.addEventListener("click", () => {
         if (submitBtn) submitBtn.innerText = "Yayın Kuruluna Başvuru Gönder";
     }
 
-    // Limit category select dynamically to prevent regular users from selecting admin categories
+    // Limit category select dynamically according to user role / editor slots
     const categorySelect = document.getElementById("post-category");
     if (categorySelect) {
         categorySelect.innerHTML = "";
-        const baseOptions = [
-            { id: "siir", name: "Şiir" },
-            { id: "oyku", name: "Öykü" },
-            { id: "deneme", name: "Deneme" },
-            { id: "kitap", name: "Kitap İncelemesi" },
-            { id: "roportaj", name: "Yazar Röportajı" },
-            { id: "kose-yazilari", name: "Köşe Yazısı" }
-        ];
+        let baseOptions = [];
 
         if (currentUser.isEditor || isEditorModeActive) {
-            baseOptions.push({ id: "haber", name: "Edebiyat Haberleri" });
-            baseOptions.push({ id: "yarismalar", name: "Yarışmalar" });
+            baseOptions = [
+                { id: "manset", name: "🌟 1. Ana Manşet (Hero Story)" },
+                { id: "kose-yazilari", name: "✒️ 2. Köşe Yazısı (Sol 1. Slot)" },
+                { id: "deneme", name: "🖋️ 3. Deneme & Eleştiri (Sol 2. Slot)" },
+                { id: "gunun-sozu", name: "📜 4. Günün Sözü (Sol 3. Slot)" },
+                { id: "genc-kalemler", name: "📖 5. Genç Kalemler & Anlatı (Sol 4. Slot)" },
+                { id: "oyku", name: "📖 6. Öykü & Anlatı (Orta Alt Sol Slot)" },
+                { id: "kitap", name: "📚 7. Kitaplık & Tenkit (Orta Alt Sağ Slot)" },
+                { id: "siir", name: "📜 8. Günün Şiiri (Sağ 1. Slot)" },
+                { id: "haber", name: "🏛️ 9. Kültür & Medeniyet (Sağ 2. Slot)" },
+                { id: "lugat", name: "📖 10. Edebi Lûgat / Günün Kelimesi (Sağ 3. Slot)" },
+                { id: "biyografi", name: "Edebi Portre & Biyografi" },
+                { id: "roportaj", name: "Yazar Röportajı / Söyleşi" },
+                { id: "yarismalar", name: "Yarışmalar & Duyurular" }
+            ];
+        } else {
+            baseOptions = [
+                { id: "deneme", name: "Deneme & Düşünce" },
+                { id: "oyku", name: "Öykü & Anlatı" },
+                { id: "siir", name: "Şiir" },
+                { id: "kitap", name: "Kitap İncelemesi" },
+                { id: "kose-yazilari", name: "Köşe Yazısı" },
+                { id: "genc-kalemler", name: "Genç Kalemler" },
+                { id: "roportaj", name: "Yazar Röportajı" }
+            ];
         }
 
         customCategories.forEach(cat => {
@@ -6029,7 +6079,9 @@ writeToggleBtn.addEventListener("click", () => {
             categorySelect.appendChild(el);
         });
 
-        categorySelect.value = "deneme";
+        if (!categorySelect.value) {
+            categorySelect.value = (currentUser.isEditor || isEditorModeActive) ? "manset" : "deneme";
+        }
     }
 });
 
@@ -6677,6 +6729,39 @@ publishForm.addEventListener("submit", async (e) => {
         return;
     }
 
+    if (category === "gunun-sozu") {
+        editorNoteData.quote = title;
+        editorNoteData.desc = subtitle || author || "Ahmet Hamdi Tanpınar";
+        localStorage.setItem("murekkep_editor_note", JSON.stringify(editorNoteData));
+        if (isSupabaseConnected && supabaseClient) {
+            try {
+                await supabaseClient.from('site_settings').upsert({ key: 'editor_note', value: editorNoteData });
+            } catch(e) {}
+        }
+        showToast("✓ Günün Sözü gazetede başarıyla güncellendi!");
+        publishForm.reset();
+        editorOverlay.classList.add("hidden");
+        unlockBodyScroll();
+        renderNewspaperGrid();
+        return;
+    }
+
+    if (category === "lugat") {
+        dailyWordData = {
+            word: title,
+            origin: subtitle || "[Arapça • İsim]",
+            meaning: plainTextForFilter.slice(0, 140),
+            example: cornerName ? `“${cornerName}”` : "“Gözlerinde eski günlerin tahassürü, dilinde yarım kalmış bir türkü vardı.”"
+        };
+        localStorage.setItem("murekkep_daily_word", JSON.stringify(dailyWordData));
+        showToast("✓ Edebi Lûgat / Günün Kelimesi güncellendi!");
+        publishForm.reset();
+        editorOverlay.classList.add("hidden");
+        unlockBodyScroll();
+        renderNewspaperGrid();
+        return;
+    }
+
     // Direct publishing by Editor
     const newArticle = {
         id: generateId(),
@@ -6692,7 +6777,7 @@ publishForm.addEventListener("submit", async (e) => {
         claps: 0,
         comments: [],
         content: contentHTML,
-        corner_name: cornerName || null
+        corner_name: cornerName || (category === 'manset' ? "EDEBİYAT & DÜŞÜNCE • HAFTANIN MANŞETİ" : null)
     };
 
     articles.push(newArticle);

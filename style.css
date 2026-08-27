@@ -877,8 +877,9 @@ body {
 @media (max-width: 768px) {
     .newspaper-wrapper {
         width: 100%;
-        margin: 0 0 40px;
-        padding: 20px 16px 40px;
+        margin: 0 0 10px;
+        padding: 16px 14px 20px;
+        min-height: auto !important;
         border-left: none;
         border-right: none;
         border-radius: 0;
@@ -3226,35 +3227,44 @@ body {
     color: var(--text-primary);
 }
 
-/* Writer Studio Overlay layout */
+/* Writer Studio / Editorial Overlay layout - Top Aligned & Smooth Scroll */
+#editor-overlay {
+    display: block !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 50px 20px 120px !important;
+    box-sizing: border-box !important;
+}
+
 .editor-studio-container {
     max-width: 800px;
-    width: 90%;
-    margin: 80px auto 100px;
+    width: 100%;
+    margin: 0 auto !important;
+    box-sizing: border-box;
 }
 
 .editor-studio-header {
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 28px;
 }
 
 .editor-studio-header h2 {
     font-family: var(--font-header);
-    font-size: 2.5rem;
+    font-size: 2.2rem;
     font-weight: 800;
     color: var(--text-primary);
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .editor-studio-header p {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--text-secondary);
 }
 
 .editor-form {
     display: flex;
     flex-direction: column;
-    gap: 25px;
+    gap: 20px;
 }
 
 .form-group {
@@ -5318,11 +5328,13 @@ button, a, input, textarea, select {
         display: none !important;
     }
     
-    /* Center and stack footer elements */
+    /* Center and stack footer elements compactly */
     .newspaper-footer {
         grid-template-columns: 1fr !important;
-        gap: 20px !important;
+        gap: 16px !important;
         text-align: center !important;
+        margin-top: 18px !important;
+        padding: 16px 0 10px !important;
     }
     
     .footer-left {
@@ -5335,6 +5347,12 @@ button, a, input, textarea, select {
     
     .footer-right {
         text-align: center !important;
+    }
+
+    .pagination-controls:empty {
+        display: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 }
 

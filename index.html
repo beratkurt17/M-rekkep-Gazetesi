@@ -441,22 +441,27 @@
                         </div>
                         <small style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 3px; display: block;">Yazınız hesabınız altında yayınlanır. Kalem isminizi profilinizden değiştirebilirsiniz.</small>
                     </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label for="post-category">Kategori</label>
+                    <div class="form-group" style="flex: 1.2;">
+                        <label for="post-category">Yayınlanacağı Köşe / Slot</label>
                         <select id="post-category" required class="form-control">
-                            <option value="siir">Şiir</option>
-                            <option value="biyografi">Yazar Biyografisi & Edebi Portre</option>
-                            <option value="oyku">Öykü</option>
-                            <option value="deneme" selected>Deneme</option>
-                            <option value="kitap">Kitap İncelemesi</option>
+                            <option value="manset">🌟 1. Ana Manşet (Hero Story)</option>
+                            <option value="kose-yazilari">✒️ 2. Köşe Yazısı (Sol 1. Slot)</option>
+                            <option value="deneme" selected>🖋️ 3. Deneme & Eleştiri (Sol 2. Slot)</option>
+                            <option value="gunun-sozu">📜 4. Günün Sözü (Sol 3. Slot)</option>
+                            <option value="genc-kalemler">📖 5. Genç Kalemler & Anlatı (Sol 4. Slot)</option>
+                            <option value="oyku">📖 6. Öykü & Anlatı (Orta Alt Sol Slot)</option>
+                            <option value="kitap">📚 7. Kitaplık & Tenkit (Orta Alt Sağ Slot)</option>
+                            <option value="siir">📜 8. Günün Şiiri (Sağ 1. Slot)</option>
+                            <option value="haber">🏛️ 9. Kültür & Medeniyet (Sağ 2. Slot)</option>
+                            <option value="lugat">📖 10. Edebi Lûgat / Günün Kelimesi (Sağ 3. Slot)</option>
+                            <option value="biyografi">Edebi Portre & Biyografi</option>
                             <option value="roportaj">Yazar Röportajı / Söyleşi</option>
-                            <option value="haber">Edebiyat & Kültür Haberleri</option>
                             <option value="yarismalar">Yarışmalar & Duyurular</option>
                         </select>
                     </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label for="post-corner-name">Köşe Adı <span style="font-size: 0.65rem; opacity: 0.6;">(Opsiyonel)</span></label>
-                        <input type="text" id="post-corner-name" placeholder="Örn: Batı Yakası..." class="form-control">
+                    <div class="form-group" style="flex: 0.8;">
+                        <label for="post-corner-name">Özel Üst Etiket <span style="font-size: 0.65rem; opacity: 0.6;">(Opsiyonel)</span></label>
+                        <input type="text" id="post-corner-name" placeholder="Örn: Edebiyat & Düşünce..." class="form-control">
                     </div>
                 </div>
 
