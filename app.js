@@ -182,14 +182,14 @@ let editorNoteData = {
 // Category helper list (built-in + custom)
 function getCategoriesList() {
     const builtIn = [
-        { id: "kitap", name: "Kitap İncelemesi" },
-        { id: "deneme", name: "Deneme" },
-        { id: "roportaj", name: "Yazar Röportajı" },
-        { id: "siir", name: "Şiir" },
-        { id: "oyku", name: "Öykü" },
-        { id: "kose-yazilari", name: "Köşe Yazısı" },
-        { id: "haber", name: "Edebiyat Haberleri" },
-        { id: "yarismalar", name: "Yarışmalar" }
+        { id: "siir", name: "Şiir Köşesi" },
+        { id: "biyografi", name: "Yazar Biyografileri & Portre" },
+        { id: "oyku", name: "Öykü & Anlatı" },
+        { id: "deneme", name: "Deneme & Eleştiri" },
+        { id: "kitap", name: "Kitaplık & Tahlil" },
+        { id: "roportaj", name: "Yazar Röportajı & Söyleşi" },
+        { id: "haber", name: "Kültür & Sanat Haberleri" },
+        { id: "yarismalar", name: "Yarışmalar & Duyurular" }
     ];
     return [...builtIn, ...customCategories];
 }
@@ -2494,7 +2494,7 @@ function renderShareCard(template) {
     ctx.fillStyle = t.accentColor;
     ctx.font = `700 28px 'Inter', sans-serif`;
     ctx.textAlign = 'right';
-    ctx.fillText('murekkepgzt.com', W - pad, H - pad);
+    ctx.fillText('Devamı ► murekkepgzt.com', W - pad, H - pad);
     ctx.textAlign = 'left';
 }
 
@@ -3320,12 +3320,20 @@ function updateAuthUI() {
         if (bookmarksTab) bookmarksTab.classList.remove("hidden");
 
         // Editor panel control
-        if (currentUser.isEditor) {
+        const editorialInboxToggle = document.getElementById("editorial-inbox-toggle");
+        const dropdownEditorialInboxBtn = document.getElementById("dropdown-editorial-inbox-btn");
+
+        if (currentUser.isEditor || currentUser.isAdmin) {
             if (editorSection) editorSection.classList.remove("hidden");
             if (editorDivider) editorDivider.classList.remove("hidden");
+            if (editorialInboxToggle) editorialInboxToggle.classList.remove("hidden");
+            if (dropdownEditorialInboxBtn) dropdownEditorialInboxBtn.classList.remove("hidden");
+            updateEditorialSubmissionsBadge();
         } else {
             if (editorSection) editorSection.classList.add("hidden");
             if (editorDivider) editorDivider.classList.add("hidden");
+            if (editorialInboxToggle) editorialInboxToggle.classList.add("hidden");
+            if (dropdownEditorialInboxBtn) dropdownEditorialInboxBtn.classList.add("hidden");
             isEditorModeActive = false;
             updateEditorBannerUI();
         }
@@ -3354,6 +3362,11 @@ function updateAuthUI() {
 
     } else {
         // Logged out / Guest
+        const editorialInboxToggle = document.getElementById("editorial-inbox-toggle");
+        const dropdownEditorialInboxBtn = document.getElementById("dropdown-editorial-inbox-btn");
+        if (editorialInboxToggle) editorialInboxToggle.classList.add("hidden");
+        if (dropdownEditorialInboxBtn) dropdownEditorialInboxBtn.classList.add("hidden");
+
         if (loginToggleBtn) loginToggleBtn.classList.remove("hidden");
         if (userProfileSection) userProfileSection.classList.add("hidden");
         if (notificationsSection) notificationsSection.classList.add("hidden");
@@ -4168,33 +4181,16 @@ function loadLocalStorageFallback() {
     try {
         const savedArticles = localStorage.getItem("murekkep_articles_v2");
         if (savedArticles) {
-            articles = JSON.parse(savedArticles);
-            let updated = false;
-            DEFAULT_ARTICLES.forEach(def => {
-                const idx = articles.findIndex(a => a.id === def.id);
-                if (idx === -1) {
-                    articles.push(def);
-                    updated = true;
-                } else {
-                    let repaired = false;
-                    for (const key in def) {
-                        if (articles[idx][key] === undefined || articles[idx][key] === null || articles[idx][key] === "undefined") {
-                            articles[idx][key] = def[key];
-                            repaired = true;
-                        }
-                    }
-                    if (repaired) updated = true;
-                }
-            });
-            if (updated) {
-                localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
-            }
+            const parsed = JSON.parse(savedArticles);
+            // Filter out old seed test ids
+            const testIds = ["art_manset_01", "art_siir_01", "art_bio_01", "art_bio_02", "art_bio_03", "art_oyku_01", "art_kitap_01", "art_haber_01", "manset-1", "kitap-1", "deneme-1", "roportaj-1", "siir-1", "oyku-1", "kose-yazilari-1", "haber-1", "yarismalar-1", "deneme-2", "siir-2", "oyku-2"];
+            articles = Array.isArray(parsed) ? parsed.filter(a => !testIds.includes(a.id)) : [];
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
         } else {
-            articles = JSON.parse(JSON.stringify(DEFAULT_ARTICLES));
-            localStorage.setItem("murekkep_articles_v2", JSON.stringify(DEFAULT_ARTICLES));
+            articles = [];
         }
     } catch (e) {
-        articles = JSON.parse(JSON.stringify(DEFAULT_ARTICLES));
+        articles = [];
     }
 
     try {
@@ -4294,14 +4290,22 @@ function backupDefaultSEO() {
 // Call backup function immediately
 backupDefaultSEO();
 
-// Check for deep links on initial page load
+// Check for deep links on initial page load (supporting both query param & hash for social sharing)
 function checkDeepLink() {
     const urlParams = new URLSearchParams(window.location.search);
-    const queryArticleId = urlParams.get('article');
-    if (queryArticleId) {
+    let targetArticleId = urlParams.get('article');
+
+    if (!targetArticleId && window.location.hash) {
+        const hashVal = window.location.hash.replace('#', '').trim();
+        if (hashVal.startsWith('art_') || hashVal.startsWith('art-') || hashVal.length > 3) {
+            targetArticleId = hashVal;
+        }
+    }
+
+    if (targetArticleId) {
         setTimeout(() => {
-            openArticle(queryArticleId);
-        }, 100);
+            openArticle(targetArticleId);
+        }, 150);
     }
 }
 
@@ -4945,367 +4949,418 @@ function updateHeaderMeta() {
     }
 }
 
-// RENDER NEWSPAPER FRONT-PAGE GRID
+// RENDER NEWSPAPER FRONT-PAGE GRID (EDITORIAL BROADSIDE LAYOUT)
+// Helper: Open write modal pre-selected for a specific category
+window.openWriteModalForCategory = function(categoryKey) {
+    const writeToggle = document.getElementById("write-toggle");
+    if (writeToggle) writeToggle.click();
+    const catSelect = document.getElementById("post-category");
+    if (catSelect && categoryKey) {
+        catSelect.value = categoryKey;
+    }
+};
+
+// RENDER NEWSPAPER FRONT-PAGE GRID (MÜREKKEP PROFESYONEL MİZANPAJ)
 function renderNewspaperGrid() {
-    mainGrid.className = "newspaper-grid"; // ensure grid class is set
+    mainGrid.className = "newspaper-grid";
+    mainGrid.style.display = "block";
 
     reconcileUserArticles();
-
-    // Ensure all slots have unique IDs
-    ensureLayoutSlotIds();
-
-    const sorted = getSortedArticles();
-
-    // PAGE CAPACITY = total number of category-type slots across all columns
-    const allLayoutSlots = [
-        ...(layoutConfig.col1 || []),
-        ...(layoutConfig.col2 || []),
-        ...(layoutConfig.col3 || [])
-    ];
-    const categorySlotCount = Math.max(1, allLayoutSlots.filter(s => s.type === 'category').length);
-    const headlineSlotCount = allLayoutSlots.filter(s => s.type === 'system' && s.value === 'headline').length;
-    const pageCapacity = categorySlotCount + headlineSlotCount;
-
-    // Pages: only open page 2 when page 1 is completely full
-    const totalPages = Math.max(1, Math.ceil(sorted.length / pageCapacity));
-
-    if (currentPage > totalPages) {
-        currentPage = Math.max(1, totalPages);
-    }
-
-    // Slice articles for this page (sequential, clap-sorted)
-    
-    // One headline per page = first article of each page's pool
-    const headlines = [];
-    for (let p = 0; p < totalPages; p++) {
-        const first = sorted[p * pageCapacity];
-        if (first) headlines.push(first);
-    }
-    const slotHeadline = headlines[currentPage - 1];
-
-    _slotArticleMap = {};
-
-    // Count how many category slots there are total
-    const allCategorySlots = [];
-    ['col1', 'col2', 'col3'].forEach(colKey => {
-        if (layoutConfig[colKey]) {
-            layoutConfig[colKey].forEach(s => {
-                if (s.type === 'category') allCategorySlots.push(s);
-            });
-        }
-    });
-
-    // Sort slots by ID for stable assignment across renders
-    const sortedSlots = allCategorySlots.slice().sort((a, b) => a.id.localeCompare(b.id));
-    const totalCategorySlots = sortedSlots.length;
-
-    // Get all articles for this page (skip headlines of all pages)
-    const headlineIds = new Set(headlines.map(h => h && h.id).filter(Boolean));
-    const nonHeadlineArticles = sorted.filter(art => !headlineIds.has(art.id));
-
-    // Each page gets a fresh "window" of articles
-    const slotPageStartIdx = (currentPage - 1) * totalCategorySlots;
-    const pageArticles = nonHeadlineArticles.slice(slotPageStartIdx, slotPageStartIdx + totalCategorySlots);
-
-    sortedSlots.forEach((slot, idx) => {
-        _slotArticleMap[slot.id] = pageArticles[idx] || null;
-    });
-
-    _pageArticles = pageArticles;
-
-    _slotArticleIdx = 0; // reset slot index before rendering
-
-    // Update Header page label
     updateHeaderMeta();
 
-    // Gather global comments for the "Okur Yorumları" section
-    const recentComments = comments.slice(-3).reverse();
+    const allArts = getSortedArticles();
 
+    // 1. Identify Main Lead Story (Ana Manşet)
+    let leadArt = allArts.find(a => a.corner_name === "Haftanın Manşeti" || a.corner_name === "MANŞET" || a.corner_name === "Kapak Dosyası")
+               || allArts.find(a => a.category === "deneme" || a.category === "haber")
+               || allArts[0]
+               || null;
 
-    // Determine dynamic column widths for CSS Grid columns
-    const colWidths = layoutConfig.colWidths || { col1: 1, col2: 2, col3: 1 };
-    
-    const col1Slots = layoutConfig.col1 || [];
-    const col2Slots = layoutConfig.col2 || [];
-    const col3Slots = layoutConfig.col3 || [];
+    // 2. Identify categorized corners without duplicating lead
+    const usedIds = new Set();
+    if (leadArt) usedIds.add(leadArt.id);
 
-    const col1MaxSlotW = Math.max(1, ...col1Slots.map(s => s.slotWidth || 1));
-    const col2MaxSlotW = Math.max(1, ...col2Slots.map(s => s.slotWidth || 1));
-    const col3MaxSlotW = Math.max(1, ...col3Slots.map(s => s.slotWidth || 1));
+    let essayArt1 = allArts.find(a => (a.category === "kose-yazilari" || a.category === "deneme") && !usedIds.has(a.id));
+    if (essayArt1) usedIds.add(essayArt1.id);
 
-    const col1W = Math.max(colWidths.col1 || 1, col1MaxSlotW);
-    const col2W = Math.max(colWidths.col2 || 1, col2MaxSlotW);
-    const col3W = Math.max(colWidths.col3 || 1, col3MaxSlotW);
+    let essayArt2 = allArts.find(a => (a.category === "deneme" || a.category === "biyografi") && !usedIds.has(a.id));
+    if (essayArt2) usedIds.add(essayArt2.id);
 
-    // Apply column template dynamically based on colWidths
-    mainGrid.style.gridTemplateColumns = `${colWidths.col1 || 1}fr ${colWidths.col2 || 2.6}fr ${colWidths.col3 || 1}fr`;
+    let youthArt = allArts.find(a => (a.category === "oyku" || a.category === "deneme" || a.category === "genc-kalemler") && !usedIds.has(a.id));
+    if (youthArt) usedIds.add(youthArt.id);
 
-    let col1HTML = "";
-    let col2HTML = "";
-    let col3HTML = "";
+    let storyArt = allArts.find(a => a.category === "oyku" && !usedIds.has(a.id));
+    if (storyArt) usedIds.add(storyArt.id);
 
-    if (layoutConfig.col1) {
-        layoutConfig.col1.forEach((slot, index) => {
-            let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
-            if (isEditorModeActive) {
-                if (!slotHTML.trim()) return;
-                slotHTML = wrapSlotInEditorControls(slot, index, 'col1', slotHTML, col1W);
-            } else {
-                const sz = slot.size || 'normal';
-                const sw = slot.slotWidth || 1;
-                const sh = slot.slotHeight || 1;
-                if (!slotHTML.trim()) {
-                    // For system slots that have no content (e.g. no headline yet), skip entirely
-                    if (slot.type === 'system') return;
-                    // For category slots, still render a grid cell (may be empty placeholder)
-                    slotHTML = '<div></div>';
-                }
-                slotHTML = `<div class="slot-size-${sz} slot-height-${sh}" style="grid-column: span ${sw}; grid-row: span ${sh}; min-width: 0; display: flex; flex-direction: column;">
-                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
-                        ${slotHTML}
-                    </div>
-                </div>`;
-            }
-            col1HTML += slotHTML;
-        });
-    }
-    if (layoutConfig.col2) {
-        layoutConfig.col2.forEach((slot, index) => {
-            let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
-            if (isEditorModeActive) {
-                if (!slotHTML.trim()) return;
-                slotHTML = wrapSlotInEditorControls(slot, index, 'col2', slotHTML, col2W);
-            } else {
-                const sz = slot.size || 'normal';
-                const sw = slot.slotWidth || 1;
-                const sh = slot.slotHeight || 1;
-                if (!slotHTML.trim()) {
-                    if (slot.type === 'system') return;
-                    slotHTML = '<div></div>';
-                }
-                slotHTML = `<div class="slot-size-${sz} slot-height-${sh}" style="grid-column: span ${sw}; grid-row: span ${sh}; min-width: 0; display: flex; flex-direction: column;">
-                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
-                        ${slotHTML}
-                    </div>
-                </div>`;
-            }
-            col2HTML += slotHTML;
-        });
-    }
-    if (layoutConfig.col3) {
-        layoutConfig.col3.forEach((slot, index) => {
-            let slotHTML = renderSlotHelper(slot, index, sorted, headlines, recentComments);
-            if (isEditorModeActive) {
-                if (!slotHTML.trim()) return;
-                slotHTML = wrapSlotInEditorControls(slot, index, 'col3', slotHTML, col3W);
-            } else {
-                const sz = slot.size || 'normal';
-                const sw = slot.slotWidth || 1;
-                const sh = slot.slotHeight || 1;
-                if (!slotHTML.trim()) {
-                    if (slot.type === 'system') return;
-                    slotHTML = '<div></div>';
-                }
-                slotHTML = `<div class="slot-size-${sz} slot-height-${sh}" style="grid-column: span ${sw}; grid-row: span ${sh}; min-width: 0; display: flex; flex-direction: column;">
-                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
-                        ${slotHTML}
-                    </div>
-                </div>`;
-            }
-            col3HTML += slotHTML;
-        });
-    }
+    let bookArt = allArts.find(a => a.category === "kitap" && !usedIds.has(a.id));
+    if (bookArt) usedIds.add(bookArt.id);
 
-    // Append inline page-level "+" buttons and col-width controls when in Editor Mode
-    if (isEditorModeActive) {
-        const cw = layoutConfig.colWidths || { col1: 1, col2: 2, col3: 1 };
+    let poemArt = allArts.find(a => a.category === "siir" && !usedIds.has(a.id));
+    if (poemArt) usedIds.add(poemArt.id);
 
-        function colWidthBar(colKey, colLabel, colW) {
-            const cur = cw[colKey] || 1;
-            const opts = [1, 2, 3];
-            const btns = opts.map(n => {
-                const active = cur === n;
-                return `<button type="button" onclick="event.stopPropagation(); window.quickSetColWidth('${colKey}', ${n})" style="background:${active ? 'var(--accent-color)' : 'var(--bg-secondary)'}; color:${active ? '#fff' : 'var(--text-secondary)'}; border:1px solid ${active ? 'var(--accent-color)' : 'var(--border-light)'}; font-family:var(--font-ui); font-size:0.65rem; font-weight:700; padding:2px 8px; border-radius:4px; cursor:pointer;">${n}x</button>`;
-            }).join('');
-            return `<div style="grid-column: 1 / -1; display:flex; align-items:center; gap:6px; margin-bottom:12px; padding:6px 10px; background:var(--bg-secondary); border-radius:6px; border:1px solid var(--border-light);">
-                <span style="font-family:var(--font-ui); font-size:0.65rem; font-weight:700; color:var(--text-secondary); flex:1;">${colLabel} Genişliği:</span>
-                ${btns}
-            </div>`;
-        }
+    let cultureMedeniyetArt = allArts.find(a => (a.category === "haber" || a.category === "biyografi" || a.category === "roportaj") && !usedIds.has(a.id));
+    if (cultureMedeniyetArt) usedIds.add(cultureMedeniyetArt.id);
 
-        col1HTML = colWidthBar('col1', 'Sol Sütun', col1W) + col1HTML + `
-            <button class="btn-add-slot-page" onclick="window.quickAddSlot('col1')" style="grid-column: 1 / -1; background: none; border: 2px dashed var(--border-color); width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-top: 10px; margin-bottom: 20px; transition: all 0.2s ease;">
-                + Sol Sütuna Slot Ekle
-            </button>`;
-        col2HTML = colWidthBar('col2', 'Orta Sütun', col2W) + col2HTML + `
-            <button class="btn-add-slot-page" onclick="window.quickAddSlot('col2')" style="grid-column: 1 / -1; background: none; border: 2px dashed var(--border-color); width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-top: 10px; margin-bottom: 20px; transition: all 0.2s ease;">
-                + Orta Sütuna Slot Ekle
-            </button>`;
-        col3HTML = colWidthBar('col3', 'Sağ Sütun', col3W) + col3HTML + `
-            <button class="btn-add-slot-page" onclick="window.quickAddSlot('col3')" style="grid-column: 1 / -1; background: none; border: 2px dashed var(--border-color); width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-top: 10px; margin-bottom: 20px; transition: all 0.2s ease;">
-                + Sağ Sütuna Slot Ekle
-            </button>`;
-    }
+    let artEstetikArt = allArts.find(a => (a.category === "haber" || a.category === "yarismalar" || a.category === "deneme") && !usedIds.has(a.id));
+    if (artEstetikArt) usedIds.add(artEstetikArt.id);
 
-    // Assembly — three separate column containers
-    mainGrid.innerHTML = `
-        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col1W}, 1fr); gap: 16px; align-content: start;">${col1HTML}</div>
-        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col2W}, 1fr); gap: 16px; align-content: start;">${col2HTML}</div>
-        <div class="news-column" style="display: grid; grid-template-columns: repeat(${col3W}, 1fr); gap: 16px; align-content: start;">${col3HTML}</div>
+    // ─── A. SOL SÜTUN (KÖŞE YAZILARI, GÜNÜN SÖZÜ & GENÇ KALEMLER) ───
+    const colLeftHTML = `
+        <aside class="broadsheet-col-left">
+            <div class="editorial-slot-card" ${essayArt1 ? `data-id="${essayArt1.id}"` : `onclick="window.openWriteModalForCategory('kose-yazilari')"`}>
+                <span class="slot-kicker">✒️ KÖŞE YAZISI</span>
+                <h3 class="slot-title">${essayArt1 ? essayArt1.title : 'Edebiyatta Samimiyet ve Üslup'}</h3>
+                <p class="slot-excerpt">${essayArt1 ? truncateText(essayArt1.subtitle || (essayArt1.content ? essayArt1.content.replace(/<[^>]*>/g, '') : ''), 125) : 'Kelimelerin ardındaki samimiyet, yazarın ruhunu okura açtığı en şeffaf aynadır.'}</p>
+                <div class="slot-byline">
+                    <span>✍️ ${essayArt1 ? essayArt1.author : 'Yayın Kurulu'}</span>
+                    <span>${essayArt1 ? (essayArt1.date || 'Ağustos 2026') : 'Mürekkep'}</span>
+                </div>
+            </div>
+
+            <div class="editorial-slot-card" ${essayArt2 ? `data-id="${essayArt2.id}"` : `onclick="window.openWriteModalForCategory('deneme')"`}>
+                <span class="slot-kicker">🖋️ DENEME & ELEŞTİRİ</span>
+                <h3 class="slot-title">${essayArt2 ? essayArt2.title : 'Sanatın Gayesi ve Anlam Arayışı'}</h3>
+                <p class="slot-excerpt">${essayArt2 ? truncateText(essayArt2.subtitle || (essayArt2.content ? essayArt2.content.replace(/<[^>]*>/g, '') : ''), 125) : 'Felsefe ile edebiyatın kesiştiği noktada varoluşsal sancıların sözcüklerle dindirilmesi.'}</p>
+                <div class="slot-byline">
+                    <span>✍️ ${essayArt2 ? essayArt2.author : 'Mürekkep Tenkit'}</span>
+                    <span>${essayArt2 ? (essayArt2.date || 'Ağustos 2026') : 'İnceleme'}</span>
+                </div>
+            </div>
+
+            <!-- Günün Sözü Kartı -->
+            <div class="editorial-slot-card" style="background: var(--bg-secondary); border-top: 4px solid var(--accent-color);">
+                <span class="slot-kicker">📜 GÜNÜN SÖZÜ</span>
+                <p class="slot-quote-text">“${editorNoteData.quote || 'Bir dizesi eksik kalmış bir şiir gibi gezinir insan; ta ki hakikatin kelimesini bulana kadar.'}”</p>
+                <div class="slot-byline">
+                    <span>— Ahmet Hamdi Tanpınar</span>
+                    <span style="font-size: 0.68rem; color: var(--accent-color); font-weight: 800;">EDEBİ HAFIZA</span>
+                </div>
+            </div>
+
+            <!-- Günün Sözünün Altındaki Ek Slot: Genç Kalemler & Anlatı -->
+            <div class="editorial-slot-card" ${youthArt ? `data-id="${youthArt.id}"` : `onclick="window.openWriteModalForCategory('oyku')"`}>
+                <span class="slot-kicker">📖 GENÇ KALEMLER & ANLATI</span>
+                <h3 class="slot-title">${youthArt ? youthArt.title : 'Kuşların Kanadında Saklı Şehir'}</h3>
+                <p class="slot-excerpt">${youthArt ? truncateText(youthArt.subtitle || (youthArt.content ? youthArt.content.replace(/<[^>]*>/g, '') : ''), 120) : 'Taş sokakların yankısında büyüyen düşler, genç bir yazarın satırlarında yeniden hayat buluyor.'}</p>
+                <div class="slot-byline">
+                    <span>✍️ ${youthArt ? youthArt.author : 'Genç Yazar'}</span>
+                    <span>${youthArt ? (youthArt.date || 'Ağustos 2026') : '+ Yazı Gönder'}</span>
+                </div>
+            </div>
+        </aside>
     `;
 
-    // Render Bottom Pagination Controls
-    const paginationEl = document.getElementById("newspaper-pagination");
-    if (paginationEl) {
-        if (totalPages > 1) {
-            paginationEl.classList.remove("hidden");
-            let pagesButtons = "";
-            for (let i = 1; i <= totalPages; i++) {
-                pagesButtons += `
-                    <button class="pagination-btn ${i === currentPage ? 'active' : ''}" data-page="${i}" style="${i === currentPage ? 'color: var(--accent-color); border-bottom: 2px solid var(--accent-color); font-weight: 900;' : ''}">
-                        SAYFA ${i}
-                    </button>
-                `;
-            }
-            paginationEl.innerHTML = `
-                <button class="pagination-btn" id="prev-page-btn" ${currentPage === 1 ? 'disabled' : ''}>◀ Önceki</button>
-                <div class="pagination-numbers" style="display: flex; gap: 8px;">${pagesButtons}</div>
-                <button class="pagination-btn" id="next-page-btn" ${currentPage === totalPages ? 'disabled' : ''}>Sonraki ▶</button>
-            `;
-            
-            // Add listeners to page numbers
-            paginationEl.querySelectorAll(".pagination-btn[data-page]").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    const targetPage = parseInt(btn.getAttribute("data-page"));
-                    changePage(targetPage);
-                });
-            });
-            
-            const prevBtn = document.getElementById("prev-page-btn");
-            if (prevBtn) {
-                prevBtn.addEventListener("click", () => {
-                    if (currentPage > 1) changePage(currentPage - 1);
-                });
-            }
-            
-            const nextBtn = document.getElementById("next-page-btn");
-            if (nextBtn) {
-                nextBtn.addEventListener("click", () => {
-                    if (currentPage < totalPages) changePage(currentPage + 1);
-                });
-            }
-        } else {
-            paginationEl.classList.add("hidden");
-        }
+    // ─── B. ORTA SÜTUN (TEK VE GÜÇLÜ ANA MANŞET + ALT İKİLİ IZGARA) ───
+    let mainLeadHTML = "";
+    if (leadArt) {
+        const leadImg = leadArt.image || "assets/typewriter_birds.webp";
+        const leadKicker = leadArt.corner_name || "EDEBİYAT & DÜŞÜNCE • HAFTANIN MANŞETİ";
+        const leadSubdeck = leadArt.subtitle || "İnsanlığın derin sancısı ve edebiyatın ruhu; hakikati kelimelere dökebilme cesaretinde yatar.";
+        const leadTextRaw = leadArt.content ? leadArt.content.replace(/<[^>]*>/g, ' ') : leadSubdeck;
+        const textCol1 = truncateText(leadTextRaw, 220);
+        const textCol2 = truncateText(leadTextRaw.slice(220) || leadSubdeck, 200);
+
+        mainLeadHTML = `
+            <article class="lead-headline-box" data-id="${leadArt.id}">
+                <span class="lead-kicker-tag">${leadKicker}</span>
+                <h2 class="lead-main-title">${leadArt.title}</h2>
+                <div class="lead-byline-bar">
+                    <span>YAZAR: ${leadArt.author.toUpperCase()} — İSTANBUL</span> • <span>${leadArt.date || 'AĞUSTOS 2026'}</span>
+                </div>
+                
+                <div class="lead-image-frame">
+                    <img src="${leadImg}" alt="${leadArt.title}" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
+                </div>
+                <span class="lead-image-caption">Fotoğraf: Mürekkep Arşivi • Kelimelerin ve edebiyatın ebedi tınısı çağları aşıyor.</span>
+
+                <div class="lead-columns-text">
+                    <p class="drop-cap-text">${textCol1}</p>
+                    <div>
+                        <p>${textCol2}</p>
+                        <span class="lead-readmore">► Yazının Tamamını Oku</span>
+                    </div>
+                </div>
+            </article>
+        `;
+    } else {
+        mainLeadHTML = `
+            <article class="lead-headline-box" onclick="window.openWriteModalForCategory('deneme')">
+                <span class="lead-kicker-tag">EDEBİYAT & DÜŞÜNCE • HAFTANIN MANŞETİ</span>
+                <h2 class="lead-main-title">YAPAY ZEKA ÇAĞINDA İNSAN, EDEBİYAT VE ANLAM ARAYIŞI</h2>
+                <div class="lead-byline-bar">
+                    <span>MÜREKKEP EDEBİ HEYETİ — İSTANBUL</span> • <span>AĞUSTOS 2026</span>
+                </div>
+                
+                <div class="lead-image-frame">
+                    <img src="assets/typewriter_birds.webp" alt="Mürekkep Manşet">
+                </div>
+                <span class="lead-image-caption">Fotoğraf: Mürekkep Matbuatı • Kelimelerin hafızası çağa direniyor.</span>
+
+                <div class="lead-columns-text">
+                    <p class="drop-cap-text">Zamanın yıpratıcı ve aceleci akışına karşı direnen tek sığınak, kelimelerin ebedi tınısıdır. Sayfalar arasında kaybolan her dize insan ruhuna açılan bir kapıdır.</p>
+                    <div>
+                        <p>Mürekkep Gazetesi'nin bu sayısında genç kalemlerin fikir tahlillerini okurlarımızla buluşturuyoruz.</p>
+                        <span class="lead-readmore">+ Yazı Başvurusu Yap</span>
+                    </div>
+                </div>
+            </article>
+        `;
     }
 
-    // Add click listeners to all generated cards and popular item list items
-    document.querySelectorAll(".article-card[data-id], .popular-item[data-id]").forEach(card => {
-        card.addEventListener("click", (e) => {
+    const subleadHTML = `
+        <div class="sublead-grid-row">
+            <div class="editorial-slot-card" ${storyArt ? `data-id="${storyArt.id}"` : `onclick="window.openWriteModalForCategory('oyku')"`}>
+                <span class="slot-kicker">📖 ÖYKÜ & ANLATI</span>
+                <h3 class="slot-title">${storyArt ? storyArt.title : 'Karanfil ve Yağmur Kokusu'}</h3>
+                <p class="slot-excerpt">${storyArt ? truncateText(storyArt.subtitle || (storyArt.content ? storyArt.content.replace(/<[^>]*>/g, '') : ''), 120) : 'Eski bir konağın gıcırdayan merdivenlerinde durdu ihtiyar. Sararmış mektuba son kez baktı...'}</p>
+                <div class="slot-byline">
+                    <span>Yazan: ${storyArt ? storyArt.author : 'Mürekkep Yazar'}</span>
+                </div>
+            </div>
+
+            <div class="editorial-slot-card" ${bookArt ? `data-id="${bookArt.id}"` : `onclick="window.openWriteModalForCategory('kitap')"`}>
+                <span class="slot-kicker">📚 KİTAPLIK & TENKİT</span>
+                <h3 class="slot-title">${bookArt ? bookArt.title : 'Kuyucaklı Yusuf Tahlili'}</h3>
+                <p class="slot-excerpt">${bookArt ? truncateText(bookArt.subtitle || (bookArt.content ? bookArt.content.replace(/<[^>]*>/g, '') : ''), 120) : 'Anadolu insanının saf ve hırçın doğasını ustalıkla işleyen eserin edebi tahlili.'}</p>
+                <div class="slot-byline">
+                    <span>İnceleyen: ${bookArt ? bookArt.author : 'Mürekkep Tenkit'}</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const colCenterHTML = `
+        <main class="broadsheet-col-center">
+            ${mainLeadHTML}
+            ${subleadHTML}
+        </main>
+    `;
+
+    // ─── C. SAĞ SÜTUN (GÜNÜN ŞİİRİ, KÜLTÜR & MEDENİYET, SANAT) ───
+    const colRightHTML = `
+        <aside class="broadsheet-col-right">
+            <div class="poem-slot-card" ${poemArt ? `data-id="${poemArt.id}"` : `onclick="window.openWriteModalForCategory('siir')"`}>
+                <span class="slot-kicker" style="justify-content: center;">📜 GÜNÜN ŞİİRİ</span>
+                <strong class="poem-title">${poemArt ? poemArt.title : 'Kelimelerin Sükûtu'}</strong>
+                <div class="poem-stanzas">
+                    ${poemArt ? (poemArt.content ? poemArt.content.replace(/<[^>]*>/g, '\n').split('\n').filter(Boolean).slice(0, 5).join('<br>') : poemArt.subtitle) : 'Kelimeler yorulur, susar geceler,<br>Yalnızlığın kıyısında açar bir çiçek.<br>Ne giden döner geri, ne kalan kalır,<br>Yalnızca bir şiir kalır yadigar.'}
+                </div>
+                <span class="poem-poet">${poemArt ? `ŞAİR: ${poemArt.author}` : '+ Şiir Başvurusu Yap'}</span>
+            </div>
+
+            <!-- Edebiyat Söyleşileri yerine Kültür & Medeniyet Slotu -->
+            <div class="editorial-slot-card" ${cultureMedeniyetArt ? `data-id="${cultureMedeniyetArt.id}"` : `onclick="window.openWriteModalForCategory('haber')"`}>
+                <span class="slot-kicker">🏛️ KÜLTÜR & MEDENİYET</span>
+                <h3 class="slot-title">${cultureMedeniyetArt ? cultureMedeniyetArt.title : 'Mazi ile İstikbal Arasında Türk Şiiri'}</h3>
+                <p class="slot-excerpt">${cultureMedeniyetArt ? truncateText(cultureMedeniyetArt.subtitle || (cultureMedeniyetArt.content ? cultureMedeniyetArt.content.replace(/<[^>]*>/g, '') : ''), 120) : '“Kültürel hafızamızın kökleri, klasik metinlerimiz ile çağdaş düşüncenin sentezinde yeşeriyor.”'}</p>
+                <div class="slot-byline">
+                    <span>${cultureMedeniyetArt ? `Hazırlayan: ${cultureMedeniyetArt.author}` : 'Mürekkep Kültür Servisi'}</span>
+                </div>
+            </div>
+
+            <!-- Edebi Lûgat / Anlamını Bilmediğimiz Kelimeler Köşesi -->
+            <div class="editorial-slot-card" style="background: var(--bg-secondary); border-top: 4px solid var(--accent-color);">
+                <span class="slot-kicker">📖 EDEBİ LÛGAT • GÜNÜN KELİMESİ</span>
+                <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 4px 0 2px;">
+                    <h3 class="slot-title" style="font-size: 1.22rem; letter-spacing: 0.5px; color: var(--accent-color); margin: 0;">Tahassür</h3>
+                    <span style="font-family: var(--font-ui); font-size: 0.68rem; font-weight: 700; color: var(--text-secondary);">[Arapça • İsim]</span>
+                </div>
+                <p class="slot-excerpt" style="-webkit-line-clamp: 2; margin-bottom: 4px; font-weight: 600; color: var(--text-primary);">
+                    Kavuşulması istenen şeye veya geçmişe duyulan derin özlem, hasret ve hüzünlü iç çekiş.
+                </p>
+                <p class="slot-excerpt" style="-webkit-line-clamp: 2; font-style: italic; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 6px;">
+                    “Gözlerinde eski günlerin tahassürü, dilinde yarım kalmış bir türkü vardı.”
+                </p>
+                <div class="slot-byline">
+                    <span>Lûgat-ı Mürekkep</span>
+                    <span style="font-size: 0.68rem; color: var(--accent-color); font-weight: 800;">HAFTALIK KELİME</span>
+                </div>
+            </div>
+        </aside>
+    `;
+
+    // Assembly Complete Broadsheet Layout
+    mainGrid.innerHTML = `
+        <div class="broadsheet-layout-container">
+            ${colLeftHTML}
+            ${colCenterHTML}
+            ${colRightHTML}
+        </div>
+    `;
+
+    // Attach click handlers to all actionable items
+    mainGrid.querySelectorAll("[data-id]").forEach(item => {
+        item.addEventListener("click", (e) => {
             e.stopPropagation();
-            const articleId = card.getAttribute("data-id");
-            openArticle(articleId);
+            const articleId = item.getAttribute("data-id");
+            if (window.innerWidth <= 768) {
+                openMobileActionModal(articleId);
+            } else {
+                if (articleId) openArticle(articleId);
+            }
         });
     });
 }
 
+// Mobile Quick Action Modal Handlers (Smart iPhone Pop-up)
+let activeMobileArticleId = null;
+
+function openMobileActionModal(articleId) {
+    activeMobileArticleId = articleId;
+    const modal = document.getElementById("mobile-action-modal");
+    if (modal) modal.classList.add("active");
+}
+
+function closeMobileActionModal(e) {
+    if (e) e.stopPropagation();
+    const modal = document.getElementById("mobile-action-modal");
+    if (modal) modal.classList.remove("active");
+}
+
+// Bind mobile action buttons
+document.addEventListener("DOMContentLoaded", () => {
+    const actShare = document.getElementById("mobile-act-share");
+    const actPdf = document.getElementById("mobile-act-pdf");
+    const actListen = document.getElementById("mobile-act-listen");
+    const actComment = document.getElementById("mobile-act-comment");
+
+    if (actShare) {
+        actShare.addEventListener("click", () => {
+            closeMobileActionModal();
+            if (activeMobileArticleId) {
+                openArticle(activeMobileArticleId);
+                setTimeout(() => {
+                    if (window.openCustomShareModal) window.openCustomShareModal();
+                }, 300);
+            }
+        });
+    }
+
+    if (actPdf) {
+        actPdf.addEventListener("click", () => {
+            closeMobileActionModal();
+            window.print();
+        });
+    }
+
+    if (actListen) {
+        actListen.addEventListener("click", () => {
+            closeMobileActionModal();
+            if (activeMobileArticleId) {
+                openArticle(activeMobileArticleId);
+                setTimeout(() => {
+                    const audioBtn = document.getElementById("audio-toggle-btn");
+                    if (audioBtn) audioBtn.click();
+                }, 300);
+            }
+        });
+    }
+
+    if (actComment) {
+        actComment.addEventListener("click", () => {
+            closeMobileActionModal();
+            if (activeMobileArticleId) {
+                openArticle(activeMobileArticleId);
+                setTimeout(() => {
+                    const commentBtn = document.getElementById("detail-comment-btn");
+                    if (commentBtn) commentBtn.click();
+                }, 300);
+            }
+        });
+    }
+});
+
 
 // RENDER FEED LIST VIEW FOR CATEGORIES
 function renderCategoryFeed(category) {
-    mainGrid.className = "newspaper-grid feed-view-active"; // change class for layout styling
+    mainGrid.className = "newspaper-grid feed-view-active";
+    mainGrid.style.display = "block";
 
     reconcileUserArticles();
 
-    // Filter articles belonging to selected category or bookmarks
+    // Map category aliases
     let filteredArticles = [];
     if (category === "bookmarks") {
         filteredArticles = articles.filter(a => savedArticleIds.includes(a.id));
+    } else if (category === "biyografi") {
+        filteredArticles = articles.filter(a => a.category === "biyografi" || a.category === "kose-yazilari");
+    } else if (category === "kose-yazilari") {
+        filteredArticles = articles.filter(a => a.category === "kose-yazilari" || a.category === "biyografi");
     } else {
-        filteredArticles = articles.filter(a => a.category === category || (category === 'kose-yazilari' && a.category === 'kose-yazilari'));
+        filteredArticles = articles.filter(a => a.category === category);
     }
-    
+
+    const catTitles = {
+        "siir": "ŞİİR KÖŞESİ",
+        "biyografi": "YAZAR BİYOGRAFİLERİ & EDEBİ PORTRELER",
+        "kose-yazilari": "YAZAR BİYOGRAFİLERİ & EDEBİ PORTRELER",
+        "oyku": "ÖYKÜ & ANLATI",
+        "deneme": "DENEME & ELEŞTİRİ",
+        "kitap": "KİTAPLIK & TAHLİL",
+        "roportaj": "SÖYLEŞİ & RÖPORTAJ",
+        "haber": "KÜLTÜR-SANAT GÜNDEMİ",
+        "yarismalar": "YARIŞMALAR & DUYURULAR",
+        "bookmarks": "KAYDEDİLENLER"
+    };
+
+    const displayTitle = catTitles[category] || category.toUpperCase();
+
     if (filteredArticles.length === 0) {
-        if (category === "bookmarks") {
-            mainGrid.innerHTML = `
-                <div class="empty-feed-message" style="grid-column: span 3; text-align: center; padding: 60px 20px; font-family: var(--font-body);">
-                    <svg viewBox="0 0 24 24" style="width: 48px; height: 48px; fill: var(--text-secondary); margin-bottom: 15px;"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
-                    <h3 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 10px;">Henüz Kayıtlı Yazı Yok</h3>
-                    <p style="color: var(--text-secondary);">Beğendiğiniz yazıları okuma penceresindeki kaydet butonuyla buraya ekleyebilirsiniz.</p>
+        mainGrid.innerHTML = `
+            <div class="category-feed-container" style="max-width: 860px; margin: 0 auto; width: 100%; padding: 40px 0;">
+                <header style="border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 30px; text-align: center;">
+                    <h2 style="font-family: var(--font-header); font-size: 2.2rem; font-weight: 800; text-transform: uppercase;">${displayTitle}</h2>
+                </header>
+                <div style="text-align: center; padding: 40px 20px; font-family: var(--font-body);">
+                    <p style="color: var(--text-secondary); font-size: 1.1rem;">Bu köşede henüz yayınlanmış bir eser bulunmamaktadır.</p>
+                    <button onclick="document.getElementById('write-toggle').click()" style="margin-top: 20px; background-color: var(--accent-color); color: #fff; border: none; padding: 10px 24px; border-radius: 20px; font-family: var(--font-ui); font-weight: 600; cursor: pointer;">Yayın Kuruluna Yazı Gönder</button>
                 </div>
-            `;
-        } else {
-            mainGrid.innerHTML = `
-                <div class="empty-feed-message" style="grid-column: span 3; text-align: center; padding: 60px 20px; font-family: var(--font-body);">
-                    <svg viewBox="0 0 24 24" style="width: 48px; height: 48px; fill: var(--text-secondary); margin-bottom: 15px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2zm0 8H7v-2h10v2z"/></svg>
-                    <h3 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 10px;">Henüz Bu Kategoride Yazı Yok</h3>
-                    <p style="color: var(--text-secondary);">İlk yazıyı yazmak ve bu alanı hareketlendirmek ister misiniz?</p>
-                    <button onclick="document.getElementById('write-toggle').click()" style="margin-top: 20px; background-color: var(--accent-color); color: #fff; border: none; padding: 10px 24px; border-radius: 20px; font-family: var(--font-ui); font-weight: 600; cursor: pointer;">Yazı Yaz</button>
-                </div>
-            `;
-        }
+            </div>
+        `;
         return;
     }
 
-    // Build feed view in list layout (occupies center, simple list cards)
     let listHTML = "";
     filteredArticles.slice().reverse().forEach(art => {
-        const reports = getArticleReports(art.id);
-        if (reports >= 3 && !isEditorModeActive) {
-            listHTML += `
-                <div class="moderated-content-placeholder" style="grid-column: span 3; padding: 20px; text-align: center; border: 1px dashed var(--border-light); border-radius: 8px; background: var(--bg-secondary); margin-bottom: 15px;">
-                    <p style="font-size: 0.85rem; color: var(--text-secondary);">⚠️ Bu yazı okur şikayetleri nedeniyle geçici olarak gizlenmiştir.</p>
-                </div>
-            `;
-            return;
-        }
+        const artImg = art.image || "assets/typewriter_birds.webp";
+        const excerpt = truncateText(art.subtitle || (art.content ? art.content.replace(/<[^>]*>/g, '') : ''), 200);
 
         listHTML += `
-            <div class="feed-item-card ${reports > 0 ? 'flagged' : ''}" data-id="${art.id}" style="grid-column: span 3; display: flex; flex-direction: column; gap: 15px; border-bottom: 1px solid var(--border-light); padding: 30px 0; cursor: pointer; position: relative;">
-                ${(reports > 0 && isEditorModeActive) ? `<div class="flag-badge" style="top: 15px; right: 15px;">⚠️ Şikayet: ${reports}</div>` : ''}
-                <div style="display: flex; gap: 30px; align-items: center; width: 100%;">
-                    <div style="flex: 1;">
-                        <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-color); text-transform: uppercase; margin-bottom: 10px;">${art.category.replace("-", " ")}</div>
-                        <h3 style="font-family: var(--font-header); font-size: 2rem; font-weight: 800; line-height: 1.2; margin-bottom: 10px; color: var(--text-primary);">${art.title}</h3>
-                        <p style="font-family: var(--font-body); font-size: 1.05rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 15px;">${art.subtitle}</p>
-                        <div style="display: flex; gap: 10px; align-items: center; font-size: 0.8rem; color: var(--text-secondary);">
-                            <span style="font-weight: 600; color: var(--text-primary);">${art.author}</span>
-                            <span>•</span>
-                            <span>${art.date}</span>
-                            <span>•</span>
-                            <span style="display: inline-flex; align-items: center; gap: 4px;"><svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: currentColor;"><path d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm-1.78 12.77c-.31.31-.69.43-1.07.43-.38 0-.76-.12-1.07-.43-.59-.59-.59-1.54 0-2.12l4.9-4.9c.59-.59 1.54-.59 2.12 0 .59.59.59 1.54 0 2.12l-4.88 4.9zm4.78-4.78c.31-.31.69-.43 1.07-.43.38 0 .76.12 1.07.43.59.59.59 1.54 0 2.12l-4.9 4.9c-.3.3-.68.44-1.06.44-.38 0-.76-.14-1.06-.44-.59-.59-.59-1.54 0-2.12l4.95-4.91z"/></svg>${art.claps}</span>
-                        </div>
+            <article class="feed-item-card" data-id="${art.id}" style="display: flex; gap: 24px; border-bottom: 1px solid var(--border-light); padding: 24px 0; cursor: pointer; align-items: center; transition: transform 0.2s ease;">
+                <div style="flex: 1;">
+                    <span style="font-family: var(--font-ui); font-size: 0.72rem; font-weight: 800; color: var(--accent-color); text-transform: uppercase; letter-spacing: 1px;">${displayTitle}</span>
+                    <h3 style="font-family: var(--font-header); font-size: 1.65rem; font-weight: 800; line-height: 1.25; margin: 6px 0 8px 0; color: var(--text-primary);">${art.title}</h3>
+                    <p style="font-family: var(--font-body); font-size: 0.95rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">${excerpt}</p>
+                    <div style="display: flex; gap: 12px; align-items: center; font-size: 0.76rem; color: var(--text-secondary);">
+                        <span style="font-weight: 700; color: var(--text-primary);">✍️ ${art.author}</span>
+                        <span>•</span>
+                        <span>${art.date || 'Ağustos 2026'}</span>
+                        <span>•</span>
+                        <span>👏 ${art.claps || 0} Alkış</span>
                     </div>
-                    ${art.image ? `
-                    <div style="width: 180px; height: 120px; border: 1px solid var(--border-light); padding: 3px; background-color: var(--bg-primary); flex-shrink: 0;">
-                        <img src="${art.image}" alt="${art.title}" style="width: 100%; height: 100%; object-fit: cover; filter: grayscale(80%);">
-                    </div>` : ''}
                 </div>
-                ${isEditorModeActive ? `
-                    <div class="editor-card-controls" onclick="event.stopPropagation();" style="margin-top: 10px; display: flex; justify-content: flex-end; gap: 10px;">
-                        <button class="btn-editor-action approve" onclick="window.approveArticleClick('${art.id}', event)">Onayla</button>
-                        <button class="btn-editor-action delete" onclick="window.deleteArticleClick('${art.id}', event)">Yayından Kaldır</button>
-                    </div>
-                ` : ''}
-            </div>
+                <div style="width: 140px; height: 110px; border: 1px solid var(--border-light); padding: 2px; background: var(--bg-primary); flex-shrink: 0; border-radius: 4px; overflow: hidden;">
+                    <img src="${artImg}" alt="${art.title}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
+                </div>
+            </article>
         `;
     });
 
-    const displayCategoryName = category === "bookmarks" ? "KAYDEDİLENLER" : category.replace("-", " ");
-
     mainGrid.innerHTML = `
-        <div class="category-feed-container" style="grid-column: span 3; max-width: 800px; margin: 0 auto; width: 100%;">
-            <header style="border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
-                <h2 style="font-family: var(--font-header); font-size: 2.2rem; font-weight: 800; text-transform: uppercase;">${displayCategoryName}</h2>
+        <div class="category-feed-container" style="max-width: 900px; margin: 0 auto; width: 100%;">
+            <header style="border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="font-family: var(--font-header); font-size: 2rem; font-weight: 900; text-transform: uppercase;">${displayTitle}</h2>
+                <button onclick="window.filterCategory('all')" style="background: none; border: 1px solid var(--border-color); font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700; padding: 6px 14px; border-radius: 16px; cursor: pointer; color: var(--text-primary);">◀ Gazeteye Dön</button>
             </header>
             <div class="feed-list">${listHTML}</div>
         </div>
     `;
 
-    // Add click listeners to items in feed list
-    document.querySelectorAll(".feed-item-card[data-id]").forEach(card => {
-        card.addEventListener("click", () => {
-            const articleId = card.getAttribute("data-id");
-            openArticle(articleId);
+    mainGrid.querySelectorAll("[data-id]").forEach(item => {
+        item.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const articleId = item.getAttribute("data-id");
+            if (articleId) openArticle(articleId);
         });
     });
 }
@@ -5460,7 +5515,35 @@ async function openArticle(id) {
 
     // Update readTime and fill content
     if (detailReadtime) detailReadtime.innerText = article.readTime || calculateReadTime(article.content || '');
-    detailContent.innerHTML = article.content || '<p style="color: var(--text-secondary);">Yazı içeriği bulunamadı.</p>';
+    
+    // Recommendations / Funnel Retention Box (Bunları da Okumak İster misiniz?)
+    const relatedList = articles.filter(a => a.id !== id).slice(0, 3);
+    let relatedHTML = "";
+    if (relatedList.length > 0) {
+        relatedHTML = `
+            <div class="related-articles-box">
+                <div style="font-family: var(--font-ui); font-size: 0.72rem; font-weight: 800; color: var(--accent-color); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px;">MÜREKKEP EDEBİYAT ARŞİVİ</div>
+                <h3 style="font-family: var(--font-header); font-size: 1.35rem; font-weight: 800; color: var(--text-primary); margin-bottom: 12px;">Bunları da Okumak İster misiniz?</h3>
+                <div class="related-articles-grid">
+                    ${relatedList.map(ra => `
+                        <div class="related-article-card" onclick="window.openArticle('${ra.id}')">
+                            <span style="font-size: 0.68rem; font-weight: 800; color: var(--accent-color); text-transform: uppercase;">${(ra.category || 'Edebiyat').toUpperCase()}</span>
+                            <h4 style="font-family: var(--font-header); font-size: 1.05rem; font-weight: 800; margin: 4px 0; color: var(--text-primary);">${ra.title}</h4>
+                            <span style="font-size: 0.72rem; color: var(--text-secondary); margin-top: auto; padding-top: 6px;">✍️ ${ra.author}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    detailContent.innerHTML = (article.content || '<p style="color: var(--text-secondary);">Yazı içeriği bulunamadı.</p>') + relatedHTML;
+
+    // Update browser URL for deep linking without page reload
+    try {
+        const newUrl = window.location.pathname + '?article=' + encodeURIComponent(article.id);
+        window.history.replaceState({ articleId: article.id }, '', newUrl);
+    } catch (e) {}
 
     // Update bookmark UI state
     updateBookmarkBtnUI();
@@ -5535,6 +5618,11 @@ function closeArticle() {
     }
     unlockBodyScroll(); // restore page scroll
     activeArticleId = null;
+
+    // Restore clean URL
+    try {
+        window.history.replaceState({}, '', window.location.pathname);
+    } catch (e) {}
 
     // Restore default SEO tags
     updateSEOMetadata(null);
@@ -5878,11 +5966,11 @@ if (savedTheme === "dark") {
     document.querySelector(".icon-moon").classList.add("hidden");
 }
 
-// Writer Studio Overlay Toggle — requires login
+// Editorial Submission / Writer Studio Overlay Toggle — requires login
 writeToggleBtn.addEventListener("click", () => {
     if (!currentUser) {
         openAuthModal();
-        showToast("Yazı yayınlamak için lütfen giriş yapın.");
+        showToast("Yazı başvurusu yapmak için lütfen giriş yapın.");
         return;
     }
     editorOverlay.classList.remove("hidden");
@@ -5893,6 +5981,21 @@ writeToggleBtn.addEventListener("click", () => {
     if (authorInput) {
         authorInput.value = currentUser.username || (currentUser.email ? currentUser.email.split("@")[0] : "Anonim Yazar");
         authorInput.readOnly = true;
+    }
+
+    // Dynamic headers based on user role / editor mode
+    const studioTitle = document.querySelector(".editor-studio-header h2");
+    const studioDesc = document.querySelector(".editor-studio-header p");
+    const submitBtn = document.querySelector(".btn-publish-submit");
+
+    if ((currentUser && currentUser.isEditor) || isEditorModeActive) {
+        if (studioTitle) studioTitle.innerText = "Editör Paneli - İçerik Girişi";
+        if (studioDesc) studioDesc.innerText = "Editör yetkileriniz aktiftir. Eklediğiniz eser doğrudan gazetede yayına alınır.";
+        if (submitBtn) submitBtn.innerText = "Gazetede Doğrudan Yayınla";
+    } else {
+        if (studioTitle) studioTitle.innerText = "Editöryal Yazı Başvurusu";
+        if (studioDesc) studioDesc.innerText = "Eseriniz Mürekkep Yayın Kurulu ve Editör heyetimizce incelenecektir. Onaylanan eserler gazetemizde yayına alınır.";
+        if (submitBtn) submitBtn.innerText = "Yayın Kuruluna Başvuru Gönder";
     }
 
     // Limit category select dynamically to prevent regular users from selecting admin categories
@@ -5908,7 +6011,7 @@ writeToggleBtn.addEventListener("click", () => {
             { id: "kose-yazilari", name: "Köşe Yazısı" }
         ];
 
-        if (currentUser.isEditor) {
+        if (currentUser.isEditor || isEditorModeActive) {
             baseOptions.push({ id: "haber", name: "Edebiyat Haberleri" });
             baseOptions.push({ id: "yarismalar", name: "Yarışmalar" });
         }
@@ -5933,15 +6036,200 @@ writeToggleBtn.addEventListener("click", () => {
 closeEditorBtn.addEventListener("click", () => {
     editingArticleId = null;
     const studioTitle = document.querySelector(".editor-studio-header h2");
-    if (studioTitle) studioTitle.innerText = "Yazarlık Stüdyosu";
+    if (studioTitle) studioTitle.innerText = "Editöryal Yazı Başvurusu";
     const studioDesc = document.querySelector(".editor-studio-header p");
-    if (studioDesc) studioDesc.innerText = "Edebiyat hareketinin bir parçası olun. Yazınızı kaleme alın ve Mürekkep sayfalarında yayınlayın.";
+    if (studioDesc) studioDesc.innerText = "Eseriniz Mürekkep Yayın Kurulu ve Editör heyetimizce incelenecektir. Onaylanan eserler gazetemizde yayına alınır.";
     const submitBtn = document.querySelector(".btn-publish-submit");
-    if (submitBtn) submitBtn.innerText = "Gazetede Yayınla";
+    if (submitBtn) submitBtn.innerText = "Yayın Kuruluna Başvuru Gönder";
     publishForm.reset();
     editorOverlay.classList.add("hidden");
     unlockBodyScroll();
 });
+
+// ── EDITORIAL SUBMISSIONS / BAŞVURU HAVUZU CONTROLLER ──
+function getEditorialSubmissions() {
+    try {
+        return JSON.parse(localStorage.getItem("murekkep_editorial_submissions") || "[]");
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveEditorialSubmissions(subs) {
+    try {
+        localStorage.setItem("murekkep_editorial_submissions", JSON.stringify(subs));
+    } catch (e) {}
+}
+
+function updateEditorialSubmissionsBadge() {
+    const subs = getEditorialSubmissions().filter(s => s.status !== 'rejected');
+    const count = subs.length;
+    
+    const badge = document.getElementById("editorial-inbox-badge");
+    const dropdownBadge = document.getElementById("editorial-badge-count");
+    
+    if (badge) {
+        badge.innerText = count;
+        badge.style.display = count > 0 ? "inline-block" : "none";
+    }
+    if (dropdownBadge) {
+        dropdownBadge.innerText = count;
+        dropdownBadge.style.display = count > 0 ? "inline-block" : "none";
+    }
+}
+
+function openEditorialInboxOverlay() {
+    const overlay = document.getElementById("editorial-inbox-overlay");
+    if (!overlay) return;
+    renderEditorialSubmissionsList();
+    overlay.classList.remove("hidden");
+    lockBodyScroll();
+}
+
+function closeEditorialInboxOverlay() {
+    const overlay = document.getElementById("editorial-inbox-overlay");
+    if (!overlay) return;
+    overlay.classList.add("hidden");
+    unlockBodyScroll();
+}
+
+function renderEditorialSubmissionsList() {
+    const listContainer = document.getElementById("editorial-submissions-list");
+    if (!listContainer) return;
+    
+    const subs = getEditorialSubmissions();
+    updateEditorialSubmissionsBadge();
+    
+    if (subs.length === 0) {
+        listContainer.innerHTML = `
+            <div style="text-align: center; padding: 40px 20px; background: var(--bg-primary); border: 1.5px dashed var(--border-color); border-radius: 6px;">
+                <span style="font-size: 2.2rem; display: block; margin-bottom: 10px;">📭</span>
+                <strong style="font-family: var(--font-header); font-size: 1.1rem; color: var(--text-primary); display: block;">Bekleyen Başvuru Bulunmuyor</strong>
+                <p style="font-family: var(--font-body); font-size: 0.85rem; color: var(--text-secondary); margin-top: 6px;">Yazarlar 'Editöryal Başvuru' yaptıklarında incelemeniz için bu havuza düşecektir.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    listContainer.innerHTML = subs.map(sub => {
+        const catLabels = {
+            siir: "Şiir",
+            oyku: "Öykü",
+            deneme: "Deneme",
+            kitap: "Kitap İncelemesi",
+            roportaj: "Röportaj",
+            "kose-yazilari": "Köşe Yazısı",
+            haber: "Haber",
+            yarismalar: "Yarışmalar"
+        };
+        const catName = catLabels[sub.category] || sub.category || "Edebi Eser";
+        
+        return `
+            <div class="editorial-submission-item" style="background: var(--bg-primary); border: 1.5px solid var(--border-color); border-top: 4px solid var(--accent-color); padding: 16px 18px; border-radius: 4px; box-shadow: 0 2px 8px var(--shadow-color);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid var(--border-light); padding-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                    <span style="font-family: var(--font-ui); font-size: 0.72rem; font-weight: 800; color: var(--accent-color); text-transform: uppercase;">
+                        🏷️ ${catName} • ${sub.date || 'Yeni Başvuru'}
+                    </span>
+                    <span style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--text-secondary);">
+                        Yazar: <strong style="color: var(--text-primary);">${sub.author}</strong> ${sub.author_email ? `(${sub.author_email})` : ''}
+                    </span>
+                </div>
+                
+                <h3 style="font-family: var(--font-header); font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin: 6px 0 4px;">
+                    ${sub.title}
+                </h3>
+                ${sub.subtitle ? `<p style="font-family: var(--font-body); font-size: 0.88rem; font-style: italic; color: var(--text-secondary); margin-bottom: 8px;">${sub.subtitle}</p>` : ''}
+                
+                <div style="background: var(--bg-secondary); padding: 12px; border-radius: 4px; border: 1px solid var(--border-light); font-family: var(--font-body); font-size: 0.86rem; line-height: 1.55; color: var(--text-primary); max-height: 160px; overflow-y: auto; margin-bottom: 12px;">
+                    ${sub.content}
+                </div>
+                
+                <div style="display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="rejectEditorialSubmission('${sub.id}')" style="background: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 7px 14px; border-radius: 20px; font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                        ✕ Başvuruyu Reddet / Sil
+                    </button>
+                    <button onclick="approveEditorialSubmission('${sub.id}')" style="background: var(--accent-color); border: 1px solid var(--accent-color); color: #fff; padding: 7px 18px; border-radius: 20px; font-family: var(--font-ui); font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 6px rgba(93, 26, 26, 0.3);">
+                        ✓ Onayla ve Gazetede Yayınla
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+window.approveEditorialSubmission = async function(subId) {
+    let subs = getEditorialSubmissions();
+    const sub = subs.find(s => s.id === subId);
+    if (!sub) return;
+    
+    // Create live article
+    const newArt = {
+        id: generateId(),
+        title: sub.title,
+        subtitle: sub.subtitle || "",
+        author: sub.author,
+        author_email: sub.author_email || null,
+        user_id: sub.user_id || null,
+        category: sub.category || "deneme",
+        image: sub.image || "assets/typewriter_birds.webp",
+        date: sub.date || formatDate(new Date()),
+        readTime: sub.readTime || calculateReadTime(sub.content),
+        claps: 0,
+        comments: [],
+        content: sub.content,
+        corner_name: sub.corner_name || null
+    };
+    
+    articles.push(newArt);
+    try {
+        localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+    } catch(e) {}
+    
+    if (isSupabaseConnected && supabaseClient) {
+        try {
+            await supabaseClient.from('articles').insert(newArt);
+            await supabaseClient.from('editorial_submissions').delete().eq('id', subId);
+        } catch(e) {
+            console.warn("Supabase sync warning:", e);
+        }
+        clearSupabaseCache();
+    }
+    
+    // Remove from local submissions
+    subs = subs.filter(s => s.id !== subId);
+    saveEditorialSubmissions(subs);
+    
+    showToast("✓ Eser onaylandı ve gazetede yayına alındı!");
+    renderEditorialSubmissionsList();
+    if (currentCategoryFilter === "all") {
+        renderNewspaperGrid();
+    } else {
+        renderCategoryFeed(currentCategoryFilter);
+    }
+};
+
+window.rejectEditorialSubmission = async function(subId) {
+    let subs = getEditorialSubmissions();
+    subs = subs.filter(s => s.id !== subId);
+    saveEditorialSubmissions(subs);
+    
+    if (isSupabaseConnected && supabaseClient) {
+        try {
+            await supabaseClient.from('editorial_submissions').delete().eq('id', subId);
+        } catch(e) {}
+    }
+    
+    showToast("Başvuru silindi.");
+    renderEditorialSubmissionsList();
+};
+
+// Event listeners for editorial inbox
+document.getElementById("editorial-inbox-toggle")?.addEventListener("click", openEditorialInboxOverlay);
+document.getElementById("dropdown-editorial-inbox-btn")?.addEventListener("click", () => {
+    toggleProfileDropdown(true);
+    openEditorialInboxOverlay();
+});
+document.getElementById("close-editorial-inbox")?.addEventListener("click", closeEditorialInboxOverlay);
 
 // Close Reading modal on back button
 closeReadingBtn.addEventListener("click", closeArticle);
@@ -6224,9 +6512,8 @@ publishForm.addEventListener("submit", async (e) => {
     const contentText = contentInput.value.trim();
     const cornerName = cornerNameInput ? cornerNameInput.value.trim() : "";
     
-    // Get selected image from radio group
-    const selectedImageInput = document.querySelector('input[name="post-image"]:checked');
-    const image = selectedImageInput ? selectedImageInput.value : "assets/typewriter_birds.webp";
+    // Automatically determine image without requiring user selection
+    const image = (editingArticleId && articles.find(a => a.id === editingArticleId)?.image) || "assets/typewriter_birds.webp";
 
     if (!title || !subtitle || !author || !contentText) return;
 
@@ -6349,6 +6636,48 @@ publishForm.addEventListener("submit", async (e) => {
         return;
     }
 
+    const isEditorAction = isEditorModeActive || (currentUser && currentUser.isEditor);
+
+    if (!isEditorAction) {
+        // Save as pending editorial submission
+        const submission = {
+            id: 'sub_' + Date.now(),
+            title: title,
+            subtitle: subtitle,
+            author: author,
+            author_email: currentUser ? currentUser.email : null,
+            user_id: currentUser ? currentUser.id : null,
+            category: category,
+            image: image,
+            date: formatDate(new Date()),
+            readTime: calculateReadTime(contentHTML),
+            content: contentHTML,
+            corner_name: cornerName || null,
+            status: 'pending'
+        };
+
+        try {
+            const subs = JSON.parse(localStorage.getItem("murekkep_editorial_submissions") || "[]");
+            subs.push(submission);
+            localStorage.setItem("murekkep_editorial_submissions", JSON.stringify(subs));
+        } catch (e) {}
+
+        if (isSupabaseConnected && supabaseClient) {
+            try {
+                await supabaseClient.from('editorial_submissions').insert(submission);
+            } catch (err) {
+                console.warn("Could not insert submission to Supabase:", err);
+            }
+        }
+
+        showToast("🖋️ Başvurunuz Yayın Kuruluna iletildi. Editör incelemesi ve onayından sonra gazetede yayınlanacaktır.");
+        publishForm.reset();
+        editorOverlay.classList.add("hidden");
+        unlockBodyScroll();
+        return;
+    }
+
+    // Direct publishing by Editor
     const newArticle = {
         id: generateId(),
         title: title,
@@ -6365,11 +6694,6 @@ publishForm.addEventListener("submit", async (e) => {
         content: contentHTML,
         corner_name: cornerName || null
     };
-
-    // If publishing in 'manset' category, we override the previous main headlines
-    if (category === 'manset') {
-        // Change category to something else, or keep it, slot handles latest
-    }
 
     articles.push(newArticle);
 
@@ -6421,6 +6745,8 @@ publishForm.addEventListener("submit", async (e) => {
         }
         clearSupabaseCache();
     }
+
+    showToast("✓ Eser editör yetkisiyle doğrudan yayına alındı.");
 
     // Reset and hide form
     publishForm.reset();
@@ -8976,6 +9302,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const activeSizeBtn = document.querySelector(`.font-size-options .rs-opt-btn[data-size="${savedSize}"]`);
         if (activeSizeBtn) activeSizeBtn.click();
+    }
+
+    // Instagram Visitor Bar Controller
+    const igVisitorBar = document.getElementById("instagram-visitor-bar");
+    const closeIgbBtn = document.getElementById("close-ivb-btn");
+
+    if (igVisitorBar) {
+        const isDismissed = sessionStorage.getItem("murekkep_ig_bar_dismissed");
+        if (isDismissed) {
+            igVisitorBar.classList.add("hidden");
+        } else {
+            igVisitorBar.classList.remove("hidden");
+        }
+
+        if (closeIgbBtn) {
+            closeIgbBtn.addEventListener("click", () => {
+                igVisitorBar.classList.add("hidden");
+                sessionStorage.setItem("murekkep_ig_bar_dismissed", "true");
+            });
+        }
     }
 });
 
