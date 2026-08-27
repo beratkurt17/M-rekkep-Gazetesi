@@ -4977,6 +4977,55 @@ function updateHeaderMeta() {
 
 // RENDER NEWSPAPER FRONT-PAGE GRID (EDITORIAL BROADSIDE LAYOUT)
 // Helper: Open write modal pre-selected for a specific category
+// Helper: Update dynamic slot form sections based on selected category
+function updateSlotFormSections(categoryKey) {
+    const secGununSozu = document.getElementById("slot-section-gunun-sozu");
+    const secLugat = document.getElementById("slot-section-lugat");
+    const secSiir = document.getElementById("slot-section-siir");
+    const secStandard = document.getElementById("slot-section-standard");
+
+    [secGununSozu, secLugat, secSiir, secStandard].forEach(s => {
+        if (s) s.classList.add("hidden");
+    });
+
+    const studioHeader = document.querySelector(".editor-studio-header h2");
+    const studioDesc = document.querySelector(".editor-studio-header p");
+
+    if (categoryKey === "gunun-sozu") {
+        if (secGununSozu) secGununSozu.classList.remove("hidden");
+        if (studioHeader) studioHeader.innerText = "📜 Günün Sözü / Vecize Yayınla";
+        if (studioDesc) studioDesc.innerText = "Gazetenin sol sütunundaki Günün Sözü kutusunda yayınlanacak vecizeyi ve sahibini yazın.";
+        
+        const qText = document.getElementById("quote-text-input");
+        const qAuth = document.getElementById("quote-author-input");
+        if (qText && !qText.value && editorNoteData.quote) qText.value = editorNoteData.quote;
+        if (qAuth && !qAuth.value && editorNoteData.desc) qAuth.value = editorNoteData.desc;
+    } else if (categoryKey === "lugat") {
+        if (secLugat) secLugat.classList.remove("hidden");
+        if (studioHeader) studioHeader.innerText = "📖 Edebi Lûgat • Günün Kelimesi";
+        if (studioDesc) studioDesc.innerText = "Gazetenin sağ sütunundaki Günün Kelimesi ve köken izahını güncelleyin.";
+        
+        const wTitle = document.getElementById("word-title-input");
+        const wOrigin = document.getElementById("word-origin-input");
+        const wMean = document.getElementById("word-meaning-input");
+        const wEx = document.getElementById("word-example-input");
+        if (wTitle && !wTitle.value && dailyWordData.word) wTitle.value = dailyWordData.word;
+        if (wOrigin && !wOrigin.value && dailyWordData.origin) wOrigin.value = dailyWordData.origin;
+        if (wMean && !wMean.value && dailyWordData.meaning) wMean.value = dailyWordData.meaning;
+        if (wEx && !wEx.value && dailyWordData.example) wEx.value = dailyWordData.example;
+    } else if (categoryKey === "siir") {
+        if (secSiir) secSiir.classList.remove("hidden");
+        if (studioHeader) studioHeader.innerText = "📜 Günün Şiiri Yayınla";
+        if (studioDesc) studioDesc.innerText = "Gazetenin sağ sütunundaki Günün Şiiri kutusunda yayınlanacak şiiri yazın.";
+    } else {
+        if (secStandard) secStandard.classList.remove("hidden");
+        if (studioHeader) studioHeader.innerText = categoryKey === "manset" ? "🌟 Ana Manşet Haberi Yaz" : "🖋️ Editöryal Yazı Yayınla";
+        if (studioDesc) studioDesc.innerText = "Eserinizi kaleme alın ve Mürekkep gazetesinin seçtiğiniz slotunda yayınlayın.";
+    }
+}
+
+// RENDER NEWSPAPER FRONT-PAGE GRID (EDITORIAL BROADSIDE LAYOUT)
+// Helper: Open write modal pre-selected for a specific category
 window.openWriteModalForCategory = function(categoryKey) {
     const writeToggle = document.getElementById("write-toggle");
     if (writeToggle) writeToggle.click();
@@ -4984,22 +5033,7 @@ window.openWriteModalForCategory = function(categoryKey) {
     if (catSelect && categoryKey) {
         catSelect.value = categoryKey;
     }
-
-    if (categoryKey === "gunun-sozu") {
-        const titleInput = document.getElementById("post-title");
-        const subtitleInput = document.getElementById("post-subtitle");
-        if (titleInput) titleInput.value = editorNoteData.quote || "";
-        if (subtitleInput) subtitleInput.value = editorNoteData.desc || "Ahmet Hamdi Tanpınar";
-    } else if (categoryKey === "lugat") {
-        const titleInput = document.getElementById("post-title");
-        const subtitleInput = document.getElementById("post-subtitle");
-        const editorDiv = document.getElementById("post-editor");
-        const cornerNameInput = document.getElementById("post-corner-name");
-        if (titleInput) titleInput.value = dailyWordData.word || "Tahassür";
-        if (subtitleInput) subtitleInput.value = dailyWordData.origin || "[Arapça • İsim]";
-        if (editorDiv) editorDiv.innerText = dailyWordData.meaning || "";
-        if (cornerNameInput) cornerNameInput.value = dailyWordData.example || "";
-    }
+    updateSlotFormSections(categoryKey || (catSelect ? catSelect.value : "deneme"));
 
     const editorOverlay = document.getElementById("editor-overlay");
     if (editorOverlay) {
@@ -6560,56 +6594,203 @@ commentForm.addEventListener("submit", async (e) => {
     }
 });
 
-// Publish New Article from Writer's Studio
+// Publish New Article / Slot Content from Writer's Studio
 publishForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    const category = document.getElementById("post-category").value;
+    const authorInput = document.getElementById("post-author");
+    const author = currentUser ? (currentUser.username || (currentUser.email ? currentUser.email.split("@")[0] : "Anonim Yazar")) : (authorInput ? authorInput.value.trim() || "Anonim Yazar" : "Anonim Yazar");
+    const editorOverlay = document.getElementById("editor-overlay");
+
+    // 1. GÜNÜN SÖZÜ HANDLER
+    if (category === "gunun-sozu") {
+        const qTextInput = document.getElementById("quote-text-input");
+        const qAuthInput = document.getElementById("quote-author-input");
+        const quote = (qTextInput ? qTextInput.value.trim() : "") || document.getElementById("post-title")?.value.trim() || "";
+        const quoteAuthor = (qAuthInput ? qAuthInput.value.trim() : "") || document.getElementById("post-subtitle")?.value.trim() || "Ahmet Hamdi Tanpınar";
+
+        if (!quote) {
+            showToast("⚠️ Lütfen günün sözünü / alıntısını yazın.");
+            return;
+        }
+
+        if (containsProfanity(quote) || containsProfanity(quoteAuthor)) {
+            showToast("❌ Girdiğiniz metin uygunsuz ifadeler içermektedir.");
+            return;
+        }
+
+        editorNoteData = {
+            quote: quote,
+            desc: quoteAuthor
+        };
+        localStorage.setItem("murekkep_editor_note", JSON.stringify(editorNoteData));
+        if (isSupabaseConnected && supabaseClient) {
+            try {
+                await supabaseClient.from('site_settings').upsert({ key: 'editor_note', value: editorNoteData });
+            } catch(e) {
+                console.warn("Error saving editor note to Supabase:", e);
+            }
+        }
+        showToast("✓ Günün Sözü gazetede başarıyla güncellendi!");
+        publishForm.reset();
+        editorOverlay.classList.add("hidden");
+        unlockBodyScroll();
+        renderNewspaperGrid();
+        return;
+    }
+
+    // 2. EDEBİ LÛGAT • GÜNÜN KELİMESİ HANDLER
+    if (category === "lugat") {
+        const wTitle = document.getElementById("word-title-input")?.value.trim() || document.getElementById("post-title")?.value.trim() || "";
+        const wOrigin = document.getElementById("word-origin-input")?.value.trim() || document.getElementById("post-subtitle")?.value.trim() || "[Arapça • İsim]";
+        const wMeaning = document.getElementById("word-meaning-input")?.value.trim() || document.getElementById("post-content")?.value.trim() || "";
+        const wExample = document.getElementById("word-example-input")?.value.trim() || document.getElementById("post-corner-name")?.value.trim() || "";
+
+        if (!wTitle || !wMeaning) {
+            showToast("⚠️ Lütfen günün kelimesini ve anlamını eksiksiz yazın.");
+            return;
+        }
+
+        if (containsProfanity(wTitle) || containsProfanity(wMeaning) || containsProfanity(wExample)) {
+            showToast("❌ Girdiğiniz kelime veya izah uygunsuz ifadeler içermektedir.");
+            return;
+        }
+
+        dailyWordData = {
+            word: wTitle,
+            origin: wOrigin,
+            meaning: wMeaning,
+            example: wExample ? (wExample.startsWith("“") ? wExample : `“${wExample}”`) : "“Gözlerinde eski günlerin tahassürü vardı...”"
+        };
+        localStorage.setItem("murekkep_daily_word", JSON.stringify(dailyWordData));
+        if (isSupabaseConnected && supabaseClient) {
+            try {
+                await supabaseClient.from('site_settings').upsert({ key: 'daily_word', value: dailyWordData });
+            } catch(e) {
+                console.warn("Error saving daily word to Supabase:", e);
+            }
+        }
+        showToast("✓ Edebi Lûgat / Günün Kelimesi güncellendi!");
+        publishForm.reset();
+        editorOverlay.classList.add("hidden");
+        unlockBodyScroll();
+        renderNewspaperGrid();
+        return;
+    }
+
+    // 3. GÜNÜN ŞİİRİ HANDLER
+    if (category === "siir") {
+        const pTitle = document.getElementById("poem-title-input")?.value.trim() || document.getElementById("post-title")?.value.trim() || "";
+        const pPoet = document.getElementById("poem-poet-input")?.value.trim() || author;
+        const pContent = document.getElementById("poem-content-input")?.value.trim() || document.getElementById("post-content")?.value.trim() || "";
+
+        if (!pTitle || !pContent) {
+            showToast("⚠️ Lütfen şiirin başlığını ve dizelerini yazın.");
+            return;
+        }
+
+        if (containsProfanity(pTitle) || containsProfanity(pPoet) || containsProfanity(pContent)) {
+            showToast("❌ Şiiriniz uygunsuz ifadeler içermektedir.");
+            return;
+        }
+
+        const formattedPoem = pContent
+            .split(/\n\s*\n/)
+            .map(stanza => `<p style="font-style: italic; margin-bottom: 16px; line-height: 1.8;">${stanza.replace(/\n/g, "<br>")}</p>`)
+            .join("\n");
+
+        const poemArticle = {
+            id: generateId(),
+            title: pTitle,
+            subtitle: `${pPoet} • Günün Şiiri`,
+            author: pPoet,
+            author_email: currentUser ? currentUser.email : null,
+            user_id: currentUser ? currentUser.id : null,
+            category: "siir",
+            image: "assets/typewriter_birds.webp",
+            date: formatDate(new Date()),
+            readTime: "2 dk",
+            claps: 0,
+            comments: [],
+            content: formattedPoem,
+            corner_name: "GÜNÜN ŞİİRİ"
+        };
+
+        articles.push(poemArticle);
+        try {
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+        } catch(e) {}
+
+        if (isSupabaseConnected) {
+            try {
+                await supabaseClient.from('articles').insert({
+                    id: poemArticle.id,
+                    title: poemArticle.title,
+                    subtitle: poemArticle.subtitle,
+                    author: poemArticle.author,
+                    author_email: poemArticle.author_email,
+                    user_id: poemArticle.user_id,
+                    category: poemArticle.category,
+                    image: poemArticle.image,
+                    date: poemArticle.date,
+                    read_time: poemArticle.readTime,
+                    claps: poemArticle.claps,
+                    content: poemArticle.content,
+                    corner_name: poemArticle.corner_name
+                });
+            } catch(e) {}
+        }
+
+        showToast("✓ Günün Şiiri gazetede yayınlandı!");
+        publishForm.reset();
+        editorOverlay.classList.add("hidden");
+        unlockBodyScroll();
+        renderNewspaperGrid();
+        return;
+    }
+
+    // 4. STANDART YAZI HANDLER (MANŞET, KÖŞE YAZISI, DENEME, GENÇ KALEMLER, ÖYKÜ, KİTAPLIK, KÜLTÜR-SANAT)
     const titleInput = document.getElementById("post-title");
     const subtitleInput = document.getElementById("post-subtitle");
-    const authorInput = document.getElementById("post-author");
     const contentInput = document.getElementById("post-content");
     const cornerNameInput = document.getElementById("post-corner-name");
 
-    const title = titleInput.value.trim();
-    const subtitle = subtitleInput.value.trim();
-    // Strictly bind author name to current logged-in user's profile
-    const author = currentUser ? (currentUser.username || (currentUser.email ? currentUser.email.split("@")[0] : "Anonim Yazar")) : (authorInput.value.trim() || "Anonim Yazar");
-    const category = document.getElementById("post-category").value;
-    const contentText = contentInput.value.trim();
+    const title = titleInput ? titleInput.value.trim() : "";
+    const subtitle = subtitleInput ? subtitleInput.value.trim() : "";
+    const contentText = contentInput ? contentInput.value.trim() : "";
     const cornerName = cornerNameInput ? cornerNameInput.value.trim() : "";
-    
-    // Automatically determine image without requiring user selection
     const image = (editingArticleId && articles.find(a => a.id === editingArticleId)?.image) || "assets/typewriter_birds.webp";
 
-    if (!title || !subtitle || !author || !contentText) return;
+    if (!title || !subtitle || !contentText) {
+        showToast("⚠️ Lütfen başlık, özet ve yazı içeriğini doldurun.");
+        return;
+    }
 
     // Reset previous error markings
-    titleInput.classList.remove("profanity-error");
-    subtitleInput.classList.remove("profanity-error");
-    authorInput.classList.remove("profanity-error");
-    contentInput.classList.remove("profanity-error");
+    if (titleInput) titleInput.classList.remove("profanity-error");
+    if (subtitleInput) subtitleInput.classList.remove("profanity-error");
+    if (contentInput) contentInput.classList.remove("profanity-error");
     const editorWrapper = document.getElementById("post-editor-wrapper");
     if (editorWrapper) editorWrapper.classList.remove("profanity-error");
     if (cornerNameInput) cornerNameInput.classList.remove("profanity-error");
 
     let hasError = false;
     if (containsProfanity(title)) {
-        titleInput.classList.add("profanity-error");
+        if (titleInput) titleInput.classList.add("profanity-error");
         hasError = true;
     }
     if (containsProfanity(subtitle)) {
-        subtitleInput.classList.add("profanity-error");
+        if (subtitleInput) subtitleInput.classList.add("profanity-error");
         hasError = true;
     }
     if (containsProfanity(author)) {
-        authorInput.classList.add("profanity-error");
         hasError = true;
     }
     
-    // Strip HTML tags for cleaner profanity check on the editor body
     const plainTextForFilter = contentText.replace(/<[^>]*>/g, "");
     if (containsProfanity(plainTextForFilter)) {
-        contentInput.classList.add("profanity-error");
+        if (contentInput) contentInput.classList.add("profanity-error");
         if (editorWrapper) editorWrapper.classList.add("profanity-error");
         hasError = true;
     }
@@ -6623,7 +6804,6 @@ publishForm.addEventListener("submit", async (e) => {
         return;
     }
 
-    // Convert raw content text with double newlines into HTML paragraphs only if it doesn't already have tags
     let contentHTML = contentText;
     if (!contentHTML.includes("<p>") && !contentHTML.includes("<div") && !contentHTML.includes("<span")) {
         contentHTML = contentText
@@ -6743,39 +6923,6 @@ publishForm.addEventListener("submit", async (e) => {
         return;
     }
 
-    if (category === "gunun-sozu") {
-        editorNoteData.quote = title;
-        editorNoteData.desc = subtitle || author || "Ahmet Hamdi Tanpınar";
-        localStorage.setItem("murekkep_editor_note", JSON.stringify(editorNoteData));
-        if (isSupabaseConnected && supabaseClient) {
-            try {
-                await supabaseClient.from('site_settings').upsert({ key: 'editor_note', value: editorNoteData });
-            } catch(e) {}
-        }
-        showToast("✓ Günün Sözü gazetede başarıyla güncellendi!");
-        publishForm.reset();
-        editorOverlay.classList.add("hidden");
-        unlockBodyScroll();
-        renderNewspaperGrid();
-        return;
-    }
-
-    if (category === "lugat") {
-        dailyWordData = {
-            word: title,
-            origin: subtitle || "[Arapça • İsim]",
-            meaning: plainTextForFilter.slice(0, 140),
-            example: cornerName ? `“${cornerName}”` : "“Gözlerinde eski günlerin tahassürü, dilinde yarım kalmış bir türkü vardı.”"
-        };
-        localStorage.setItem("murekkep_daily_word", JSON.stringify(dailyWordData));
-        showToast("✓ Edebi Lûgat / Günün Kelimesi güncellendi!");
-        publishForm.reset();
-        editorOverlay.classList.add("hidden");
-        unlockBodyScroll();
-        renderNewspaperGrid();
-        return;
-    }
-
     // Direct publishing by Editor
     const newArticle = {
         id: generateId(),
@@ -6796,7 +6943,6 @@ publishForm.addEventListener("submit", async (e) => {
 
     articles.push(newArticle);
 
-    // Always save to LocalStorage immediately
     try {
         localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
     } catch (e) {}
@@ -9495,6 +9641,15 @@ function initWysiwygEditor() {
     editor.addEventListener("keyup", updateToolbarButtonStates);
     editor.addEventListener("mouseup", updateToolbarButtonStates);
     editor.addEventListener("focus", updateToolbarButtonStates);
+
+    // Listen for category selection changes to show slot-specific form sections
+    const catSelect = document.getElementById("post-category");
+    if (catSelect) {
+        catSelect.addEventListener("change", function() {
+            updateSlotFormSections(this.value);
+        });
+        updateSlotFormSections(catSelect.value);
+    }
 }
 
 

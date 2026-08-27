@@ -53,7 +53,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400..700;1,400..700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Caveat:wght@400;600;700&family=Dancing+Script:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
     <!-- CSS stylesheet -->
-    <link rel="stylesheet" href="style.css?v=3.0.0">
+    <link rel="stylesheet" href="style.css?v=3.1.0">
 
     <!-- Canonical URL -->
     <link rel="canonical" href="https://murekkepgzt.com">
@@ -422,123 +422,182 @@
             </header>
 
             <form id="publish-form" class="editor-form" autocomplete="off">
+                <!-- Slot / Kategori Seçimi -->
                 <div class="form-group">
-                    <label for="post-title">Başlık</label>
-                    <input type="text" id="post-title" placeholder="Yazınızın çarpıcı başlığı..." required class="form-control" autocomplete="off">
+                    <label for="post-category" style="font-weight: 800; font-size: 0.95rem; color: var(--accent-color);">🎯 Yayınlanacağı Gazete Köşesi / Slot</label>
+                    <select id="post-category" required class="form-control" style="font-size: 1rem; font-weight: 700; padding: 12px 16px;">
+                        <option value="manset">🌟 1. Ana Manşet (Hero Story)</option>
+                        <option value="kose-yazilari">✒️ 2. Köşe Yazısı (Sol 1. Slot)</option>
+                        <option value="deneme" selected>🖋️ 3. Deneme & Eleştiri (Sol 2. Slot)</option>
+                        <option value="gunun-sozu">📜 4. Günün Sözü (Sol 3. Slot)</option>
+                        <option value="genc-kalemler">📖 5. Genç Kalemler & Anlatı (Sol 4. Slot)</option>
+                        <option value="oyku">📖 6. Öykü & Anlatı (Orta Alt Sol Slot)</option>
+                        <option value="kitap">📚 7. Kitaplık & Tenkit (Orta Alt Sağ Slot)</option>
+                        <option value="siir">📜 8. Günün Şiiri (Sağ 1. Slot)</option>
+                        <option value="haber">🏛️ 9. Kültür & Medeniyet (Sağ 2. Slot)</option>
+                        <option value="lugat">📖 10. Edebi Lûgat / Günün Kelimesi (Sağ 3. Slot)</option>
+                        <option value="biyografi">Edebi Portre & Biyografi</option>
+                        <option value="roportaj">Yazar Röportajı / Söyleşi</option>
+                        <option value="yarismalar">Yarışmalar & Duyurular</option>
+                    </select>
                 </div>
 
-                <div class="form-group">
-                    <label for="post-subtitle">Alt Başlık veya Özet</label>
-                    <input type="text" id="post-subtitle" placeholder="Kısa bir özet veya alt başlık yazın..." required class="form-control" autocomplete="off">
-                </div>
-
-                <div class="form-row" style="display: flex; gap: 15px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label for="post-author">Yazar Hesabı</label>
-                        <div style="position: relative;">
-                            <input type="text" id="post-author" readonly class="form-control" style="background: var(--bg-secondary); color: var(--text-primary); cursor: not-allowed; font-weight: 600; padding-right: 30px;" title="Yazı aktif hesabınız altında yayınlanacaktır">
-                            <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); opacity: 0.6;" title="Yazı otomatik olarak hesabınız altında yayınlanır">🔒</span>
+                <!-- 1. GÜNÜN SÖZÜ ÖZEL FORMU -->
+                <div id="slot-section-gunun-sozu" class="slot-section hidden" style="display: flex; flex-direction: column; gap: 16px;">
+                    <div class="form-group">
+                        <label for="quote-text-input">📜 Günün Sözü / Edebi Vecize</label>
+                        <textarea id="quote-text-input" rows="4" placeholder="Alıntı veya sözü buraya yazın..." class="form-control" style="font-family: var(--font-body); font-size: 1.1rem; font-style: italic;"></textarea>
+                    </div>
+                    <div class="form-row" style="display: flex; gap: 15px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="quote-author-input">✍️ Sözün Sahibi (Yazar / Şair)</label>
+                            <input type="text" id="quote-author-input" placeholder="Örn: Ahmet Hamdi Tanpınar" class="form-control">
                         </div>
-                        <small style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 3px; display: block;">Yazınız hesabınız altında yayınlanır. Kalem isminizi profilinizden değiştirebilirsiniz.</small>
-                    </div>
-                    <div class="form-group" style="flex: 1.2;">
-                        <label for="post-category">Yayınlanacağı Köşe / Slot</label>
-                        <select id="post-category" required class="form-control">
-                            <option value="manset">🌟 1. Ana Manşet (Hero Story)</option>
-                            <option value="kose-yazilari">✒️ 2. Köşe Yazısı (Sol 1. Slot)</option>
-                            <option value="deneme" selected>🖋️ 3. Deneme & Eleştiri (Sol 2. Slot)</option>
-                            <option value="gunun-sozu">📜 4. Günün Sözü (Sol 3. Slot)</option>
-                            <option value="genc-kalemler">📖 5. Genç Kalemler & Anlatı (Sol 4. Slot)</option>
-                            <option value="oyku">📖 6. Öykü & Anlatı (Orta Alt Sol Slot)</option>
-                            <option value="kitap">📚 7. Kitaplık & Tenkit (Orta Alt Sağ Slot)</option>
-                            <option value="siir">📜 8. Günün Şiiri (Sağ 1. Slot)</option>
-                            <option value="haber">🏛️ 9. Kültür & Medeniyet (Sağ 2. Slot)</option>
-                            <option value="lugat">📖 10. Edebi Lûgat / Günün Kelimesi (Sağ 3. Slot)</option>
-                            <option value="biyografi">Edebi Portre & Biyografi</option>
-                            <option value="roportaj">Yazar Röportajı / Söyleşi</option>
-                            <option value="yarismalar">Yarışmalar & Duyurular</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="flex: 0.8;">
-                        <label for="post-corner-name">Özel Üst Etiket <span style="font-size: 0.65rem; opacity: 0.6;">(Opsiyonel)</span></label>
-                        <input type="text" id="post-corner-name" placeholder="Örn: Edebiyat & Düşünce..." class="form-control">
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="post-editor">İçerik</label>
-                    <div id="post-editor-wrapper" class="wysiwyg-editor-wrapper">
-                        <!-- Toolbar -->
-                        <div class="editor-toolbar">
-                            <div class="toolbar-group">
-                                <select id="editor-font-family" class="toolbar-select" title="Yazı Tipi">
-                                    <option value="'Lora', Georgia, serif" style="font-family: 'Lora', Georgia, serif;">Lora (Varsayılan)</option>
-                                    <option value="'Playfair Display', Georgia, serif" style="font-family: 'Playfair Display', Georgia, serif;">Playfair Display</option>
-                                    <option value="'Cinzel', serif" style="font-family: 'Cinzel', serif;">Cinzel</option>
-                                    <option value="'Inter', system-ui, sans-serif" style="font-family: 'Inter', system-ui, sans-serif;">Inter</option>
-                                </select>
-                            </div>
-                            
-                            <div class="toolbar-divider"></div>
-                            
-                            <div class="toolbar-group">
-                                <button type="button" class="toolbar-btn" data-command="bold" title="Kalın (Ctrl+B)">
-                                    <i class="fas fa-bold"></i>
-                                </button>
-                                <button type="button" class="toolbar-btn" data-command="italic" title="İtalik (Ctrl+I)">
-                                    <i class="fas fa-italic"></i>
-                                </button>
-                                <button type="button" class="toolbar-btn" data-command="underline" title="Altı Çizili (Ctrl+U)">
-                                    <i class="fas fa-underline"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="toolbar-divider"></div>
-                            
-                            <div class="toolbar-group">
-                                <button type="button" class="toolbar-btn" data-command="justifyLeft" title="Sola Hizala">
-                                    <i class="fas fa-align-left"></i>
-                                </button>
-                                <button type="button" class="toolbar-btn" data-command="justifyCenter" title="Ortala">
-                                    <i class="fas fa-align-center"></i>
-                                </button>
-                                <button type="button" class="toolbar-btn" data-command="justifyRight" title="Sağa Hizala">
-                                    <i class="fas fa-align-right"></i>
-                                </button>
-                                <button type="button" class="toolbar-btn" data-command="justifyFull" title="İki Yana Yasla">
-                                    <i class="fas fa-align-justify"></i>
-                                </button>
-                            </div>
-
-                            <div class="toolbar-divider"></div>
-
-                            <div class="toolbar-group">
-                                <button type="button" class="toolbar-btn" data-command="insertUnorderedList" title="Sırasız Liste">
-                                    <i class="fas fa-list-ul"></i>
-                                </button>
-                                <button type="button" class="toolbar-btn" data-command="insertOrderedList" title="Sıralı Liste">
-                                    <i class="fas fa-list-ol"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="toolbar-divider"></div>
-                            
-                            <div class="toolbar-group">
-                                <button type="button" class="toolbar-btn" data-command="removeFormat" title="Biçimlendirmeyi Temizle">
-                                    <i class="fas fa-eraser"></i>
-                                </button>
-                            </div>
+                <!-- 2. EDEBİ LÛGAT ÖZEL FORMU -->
+                <div id="slot-section-lugat" class="slot-section hidden" style="display: flex; flex-direction: column; gap: 16px;">
+                    <div class="form-row" style="display: flex; gap: 15px;">
+                        <div class="form-group" style="flex: 1.2;">
+                            <label for="word-title-input">📖 Günün Kelimesi</label>
+                            <input type="text" id="word-title-input" placeholder="Örn: Tahassür" class="form-control" style="font-weight: 700; font-size: 1.1rem;">
                         </div>
-                        
-                        <!-- Content Editable Area -->
-                        <div id="post-editor" contenteditable="true" class="editor-content" placeholder="Edebi eserinizi buraya dökün..."></div>
+                        <div class="form-group" style="flex: 0.8;">
+                            <label for="word-origin-input">🏛️ Köken & Tür</label>
+                            <input type="text" id="word-origin-input" placeholder="Örn: [Arapça • İsim]" class="form-control">
+                        </div>
                     </div>
-                    <!-- Hidden textarea for form submission / compatibility -->
-                    <textarea id="post-content" required style="display: none;"></textarea>
+                    <div class="form-group">
+                        <label for="word-meaning-input">🔍 Kelimenin Anlamı & İzahı</label>
+                        <textarea id="word-meaning-input" rows="3" placeholder="Kelimenin ayrıntılı edebi manasını yazın..." class="form-control"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="word-example-input">✒️ Edebi Eserden Örnek Cümle</label>
+                        <textarea id="word-example-input" rows="2" placeholder="Örn: “Gözlerinde eski günlerin tahassürü, dilinde yarım kalmış bir türkü vardı.”" class="form-control" style="font-style: italic;"></textarea>
+                    </div>
                 </div>
 
-                <div class="form-actions">
-                    <button type="submit" class="btn-publish-submit">Yayın Kuruluna Başvuru Gönder</button>
+                <!-- 3. GÜNÜN ŞİİRİ ÖZEL FORMU -->
+                <div id="slot-section-siir" class="slot-section hidden" style="display: flex; flex-direction: column; gap: 16px;">
+                    <div class="form-row" style="display: flex; gap: 15px;">
+                        <div class="form-group" style="flex: 1.3;">
+                            <label for="poem-title-input">📜 Şiir Başlığı</label>
+                            <input type="text" id="poem-title-input" placeholder="Şiirin başlığı..." class="form-control" style="font-weight: 700;">
+                        </div>
+                        <div class="form-group" style="flex: 0.7;">
+                            <label for="poem-poet-input">✍️ Şair</label>
+                            <input type="text" id="poem-poet-input" placeholder="Şairin adı..." class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="poem-content-input">🖋️ Şiir Dizeleri (Dörtlükler & Kıtalar)</label>
+                        <textarea id="poem-content-input" rows="8" placeholder="Şiir dizelerini satır satır buraya yazın..." class="form-control" style="font-family: var(--font-body); font-style: italic; line-height: 1.8;"></textarea>
+                    </div>
+                </div>
+
+                <!-- 4. STANDART YAZI FORMU (MANŞET, KÖŞE YAZISI, DENEME, GENÇ KALEMLER, ÖYKÜ, KİTAPLIK, KÜLTÜR-MEDENİYET) -->
+                <div id="slot-section-standard" class="slot-section" style="display: flex; flex-direction: column; gap: 16px;">
+                    <div class="form-group">
+                        <label for="post-title">Yazı Başlığı</label>
+                        <input type="text" id="post-title" placeholder="Yazınızın çarpıcı başlığı..." class="form-control" autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="post-subtitle">Alt Başlık veya Spot Özet</label>
+                        <input type="text" id="post-subtitle" placeholder="Kısa bir özet veya alt başlık yazın..." class="form-control" autocomplete="off">
+                    </div>
+
+                    <div class="form-row" style="display: flex; gap: 15px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="post-author">Yazar Hesabı</label>
+                            <div style="position: relative;">
+                                <input type="text" id="post-author" readonly class="form-control" style="background: var(--bg-secondary); color: var(--text-primary); cursor: not-allowed; font-weight: 600; padding-right: 30px;" title="Yazı aktif hesabınız altında yayınlanacaktır">
+                                <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); opacity: 0.6;" title="Yazı otomatik olarak hesabınız altında yayınlanır">🔒</span>
+                            </div>
+                            <small style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 3px; display: block;">Yazınız hesabınız altında yayınlanır. Kalem isminizi profilinizden değiştirebilirsiniz.</small>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="post-corner-name">Özel Üst Etiket <span style="font-size: 0.65rem; opacity: 0.6;">(Opsiyonel)</span></label>
+                            <input type="text" id="post-corner-name" placeholder="Örn: Edebiyat & Düşünce..." class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="post-editor">Yazı İçeriği</label>
+                        <div id="post-editor-wrapper" class="wysiwyg-editor-wrapper">
+                            <!-- Toolbar -->
+                            <div class="editor-toolbar">
+                                <div class="toolbar-group">
+                                    <select id="editor-font-family" class="toolbar-select" title="Yazı Tipi">
+                                        <option value="'Lora', Georgia, serif" style="font-family: 'Lora', Georgia, serif;">Lora (Varsayılan)</option>
+                                        <option value="'Playfair Display', Georgia, serif" style="font-family: 'Playfair Display', Georgia, serif;">Playfair Display</option>
+                                        <option value="'Cinzel', serif" style="font-family: 'Cinzel', serif;">Cinzel</option>
+                                        <option value="'Inter', system-ui, sans-serif" style="font-family: 'Inter', system-ui, sans-serif;">Inter</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="toolbar-divider"></div>
+                                
+                                <div class="toolbar-group">
+                                    <button type="button" class="toolbar-btn" data-command="bold" title="Kalın (Ctrl+B)">
+                                        <i class="fas fa-bold"></i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" data-command="italic" title="İtalik (Ctrl+I)">
+                                        <i class="fas fa-italic"></i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" data-command="underline" title="Altı Çizili (Ctrl+U)">
+                                        <i class="fas fa-underline"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="toolbar-divider"></div>
+                                
+                                <div class="toolbar-group">
+                                    <button type="button" class="toolbar-btn" data-command="justifyLeft" title="Sola Hizala">
+                                        <i class="fas fa-align-left"></i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" data-command="justifyCenter" title="Ortala">
+                                        <i class="fas fa-align-center"></i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" data-command="justifyRight" title="Sağa Hizala">
+                                        <i class="fas fa-align-right"></i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" data-command="justifyFull" title="İki Yana Yasla">
+                                        <i class="fas fa-align-justify"></i>
+                                    </button>
+                                </div>
+
+                                <div class="toolbar-divider"></div>
+
+                                <div class="toolbar-group">
+                                    <button type="button" class="toolbar-btn" data-command="insertUnorderedList" title="Sırasız Liste">
+                                        <i class="fas fa-list-ul"></i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" data-command="insertOrderedList" title="Sıralı Liste">
+                                        <i class="fas fa-list-ol"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="toolbar-divider"></div>
+                                
+                                <div class="toolbar-group">
+                                    <button type="button" class="toolbar-btn" data-command="removeFormat" title="Biçimlendirmeyi Temizle">
+                                        <i class="fas fa-eraser"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Content Editable Area -->
+                            <div id="post-editor" contenteditable="true" class="editor-content" placeholder="Edebi eserinizi buraya dökün..."></div>
+                        </div>
+                        <!-- Hidden textarea for form submission / compatibility -->
+                        <textarea id="post-content" style="display: none;"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions" style="margin-top: 20px;">
+                    <button type="submit" class="btn-publish-submit" style="width: 100%; padding: 14px; font-size: 1.1rem; font-weight: 800;">Gazetede Doğrudan Yayınla</button>
                 </div>
             </form>
         </div>
@@ -1692,6 +1751,6 @@
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Core Logic script -->
-    <script src="app.js?v=3.0.0"></script>
+    <script src="app.js?v=3.1.0"></script>
 </body>
 </html>
