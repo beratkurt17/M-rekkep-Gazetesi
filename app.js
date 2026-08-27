@@ -9212,23 +9212,11 @@ if (document.readyState === "loading") {
     initWysiwygEditor();
 }
 
-// Dynamic Viewport & History Manager for Mobile Modals
+// History Manager for Modals
 function initDynamicViewport() {
     const overlays = document.querySelectorAll('.overlay');
     
     let isHandlingPopstate = false;
-
-    // Fix iOS keyboard scroll shift on input/textarea blur inside overlays or drawers
-    document.addEventListener('focusout', (e) => {
-        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
-            if (e.target.closest('.overlay') || e.target.closest('.comments-drawer')) {
-                // Reset window scroll position (iOS visual viewport shift fix)
-                setTimeout(() => {
-                    window.scrollTo(0, 0);
-                }, 100);
-            }
-        }
-    });
 
     const checkOverlays = () => {
         let anyVisible = false;
