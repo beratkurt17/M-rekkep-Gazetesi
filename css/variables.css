@@ -1,0 +1,73 @@
+/* =============================================
+   VARIABLES & THEME SYSTEM
+   ============================================= */
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Light Mode (Classic Newspaper Parchment) */
+    --bg-primary: #faf8f5;
+    --bg-secondary: #f3efe6;
+    --text-primary: #111111;
+    --text-secondary: #444444;
+    --border-color: #222222;
+    --border-light: #d8d2c4;
+    --accent-color: #5d1a1a;
+    --accent-hover: #802828;
+    --shadow-color: rgba(0, 0, 0, 0.06);
+    --shadow-sm: 0 2px 4px var(--shadow-color);
+    --shadow-md: 0 4px 12px var(--shadow-color);
+    --shadow-lg: 0 10px 25px var(--shadow-color);
+    --utility-bg: rgba(250, 248, 245, 0.95);
+    
+    --font-header: 'Playfair Display', Georgia, serif;
+    --font-title: 'Cinzel', serif;
+    --font-body: 'Lora', Georgia, serif;
+    --font-ui: 'Inter', system-ui, sans-serif;
+    
+    --transition-speed: 0.3s;
+}
+
+[data-theme="dark"] {
+    /* Dark Mode (Gece Okuması / Night Reading) */
+    --bg-primary: #121212;
+    --bg-secondary: #1a1a1a;
+    --text-primary: #e2ddd5;
+    --text-secondary: #a39e95;
+    --border-color: #444444;
+    --border-light: #2c2c2c;
+    --accent-color: #c94040;
+    --accent-hover: #e55c5c;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --utility-bg: rgba(18, 18, 18, 0.95);
+}
+
+body {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+    line-height: 1.5;
+    transition: background-color var(--transition-speed), color var(--transition-speed);
+    /* Do NOT use overflow-x: hidden here — it breaks position:sticky!
+       Horizontal overflow is controlled at the wrapper level instead. */
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--border-light);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}

@@ -1,33 +1,44 @@
-import time
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+import time
 
-chrome_options = Options()
-chrome_options.add_argument('--headless')
-chrome_options.add_argument('--no-sandbox')
-chrome_options.add_argument('--disable-dev-shm-usage')
+def check_browser():
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    
+    # Enable browser logs
+    chrome_options.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
 
-# Enable browser logging
-chrome_options.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
-
-try:
+    print("Launching headless Chrome...")
     driver = webdriver.Chrome(options=chrome_options)
-    print("Navigating to http://localhost:8080/ ...")
-    driver.get("http://localhost:8080/")
-    
-    # Wait for page scripts to run
-    time.sleep(5)
-    
-    print("=== Browser Console Logs ===")
-    for entry in driver.get_log('browser'):
-        print(f"[{entry['level']}] {entry['message']}")
+    try:
+        print("Navigating to http://localhost:8000/index.html...")
+        driver.get("http://localhost:8000/index.html")
+        time.sleep(2)  # Wait for async loads
         
-    print("=== HTML of main grid ===")
-    grid = driver.find_element("id", "newspaper-main-grid")
-    print("HTML length:", len(grid.get_attribute('innerHTML')))
-    print(grid.get_attribute('innerHTML')[:500])
-    
-    driver.quit()
-except Exception as e:
-    print("Error running selenium:", e)
+        print("\n--- Browser Console Logs ---")
+        logs = driver.get_log('browser')
+        for log in logs:
+            print(f"[{log.get('level')}] {log.get('message')}")
+            
+        print("\n--- Page HTML Summary ---")
+        body_text = driver.find_element(By.TAG_NAME, "body").text
+        print("Body text snippet (first 500 chars):")
+        print(body_text[:500])
+        
+        # Check if empty slot or articles are shown
+        cards = driver.find_elements(By.CLASS_NAME, "article-card")
+        print(f"\nNumber of article cards found: {len(cards)}")
+        for idx, card in enumerate(cards[:5]):
+            print(f"Card {idx}: {card.text[:100]}...")
+            
+    except Exception as e:
+        print("Error during selenium check:", e)
+    finally:
+        driver.quit()
+
+if __name__ == "__main__":
+    check_browser()

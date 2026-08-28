@@ -1,0 +1,274 @@
+
+        <div class="news-column" style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 16px; align-content: start;"><div class="slot-size-normal slot-height-1" style="grid-column: span 1; grid-row: span 1; min-width: 0; display: flex; flex-direction: column;">
+                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
+                        
+                <div class="article-card popular-articles-box" style="margin-bottom: 20px;">
+                    <span class="card-category">POPÜLER YAZILAR</span>
+                    <ul class="popular-list">
+                        
+                    <li class="popular-item" data-id="art_9373unxlo">
+                        <div class="popular-item-meta">
+                            <span class="popular-item-category">KITAP</span>
+                            <span class="popular-item-claps">
+                                <svg viewBox="0 0 24 24"><path d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm-1.78 12.77c-.31.31-.69.43-1.07.43-.38 0-.76-.12-1.07-.43-.59-.59-.59-1.54 0-2.12l4.9-4.9c.59-.59 1.54-.59 2.12 0 .59.59.59 1.54 0 2.12l-4.88 4.9zm4.78-4.78c.31-.31.69-.43 1.07-.43.38 0 .76.12 1.07.43.59.59.59 1.54 0 2.12l-4.9 4.9c-.3.3-.68.44-1.06.44-.38 0-.76-.14-1.06-.44-.59-.59-.59-1.54 0-2.12l4.95-4.91z"></path></svg>
+                                14
+                            </span>
+                        </div>
+                        <h4 class="popular-item-title">Empati</h4>
+                        <span class="popular-item-author">Çağrı Dingiltepe</span>
+                    </li>
+                
+                    <li class="popular-item" data-id="art_tpi058dc7">
+                        <div class="popular-item-meta">
+                            <span class="popular-item-category">OYKU</span>
+                            <span class="popular-item-claps">
+                                <svg viewBox="0 0 24 24"><path d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm-1.78 12.77c-.31.31-.69.43-1.07.43-.38 0-.76-.12-1.07-.43-.59-.59-.59-1.54 0-2.12l4.9-4.9c.59-.59 1.54-.59 2.12 0 .59.59.59 1.54 0 2.12l-4.88 4.9zm4.78-4.78c.31-.31.69-.43 1.07-.43.38 0 .76.12 1.07.43.59.59.59 1.54 0 2.12l-4.9 4.9c-.3.3-.68.44-1.06.44-.38 0-.76-.14-1.06-.44-.59-.59-.59-1.54 0-2.12l4.95-4.91z"></path></svg>
+                                4
+                            </span>
+                        </div>
+                        <h4 class="popular-item-title">Ses Kutusu</h4>
+                        <span class="popular-item-author">Berat Kurt</span>
+                    </li>
+                
+                    <li class="popular-item" data-id="art_5lli2w00f">
+                        <div class="popular-item-meta">
+                            <span class="popular-item-category">OYKU</span>
+                            <span class="popular-item-claps">
+                                <svg viewBox="0 0 24 24"><path d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm-1.78 12.77c-.31.31-.69.43-1.07.43-.38 0-.76-.12-1.07-.43-.59-.59-.59-1.54 0-2.12l4.9-4.9c.59-.59 1.54-.59 2.12 0 .59.59.59 1.54 0 2.12l-4.88 4.9zm4.78-4.78c.31-.31.69-.43 1.07-.43.38 0 .76.12 1.07.43.59.59.59 1.54 0 2.12l-4.9 4.9c-.3.3-.68.44-1.06.44-.38 0-.76-.14-1.06-.44-.59-.59-.59-1.54 0-2.12l4.95-4.91z"></path></svg>
+                                3
+                            </span>
+                        </div>
+                        <h4 class="popular-item-title">Sessiz ve Renksiz</h4>
+                        <span class="popular-item-author">defne</span>
+                    </li>
+                
+                    <li class="popular-item" data-id="art_n8rfpx98j">
+                        <div class="popular-item-meta">
+                            <span class="popular-item-category">SIIR</span>
+                            <span class="popular-item-claps">
+                                <svg viewBox="0 0 24 24"><path d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm-1.78 12.77c-.31.31-.69.43-1.07.43-.38 0-.76-.12-1.07-.43-.59-.59-.59-1.54 0-2.12l4.9-4.9c.59-.59 1.54-.59 2.12 0 .59.59.59 1.54 0 2.12l-4.88 4.9zm4.78-4.78c.31-.31.69-.43 1.07-.43.38 0 .76.12 1.07.43.59.59.59 1.54 0 2.12l-4.9 4.9c-.3.3-.68.44-1.06.44-.38 0-.76-.14-1.06-.44-.59-.59-.59-1.54 0-2.12l4.95-4.91z"></path></svg>
+                                3
+                            </span>
+                        </div>
+                        <h4 class="popular-item-title">Bir Fani Dünya</h4>
+                        <span class="popular-item-author">dtpCagri</span>
+                    </li>
+                
+                    <li class="popular-item" data-id="art_tffyem6es">
+                        <div class="popular-item-meta">
+                            <span class="popular-item-category">SIIR</span>
+                            <span class="popular-item-claps">
+                                <svg viewBox="0 0 24 24"><path d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm-1.78 12.77c-.31.31-.69.43-1.07.43-.38 0-.76-.12-1.07-.43-.59-.59-.59-1.54 0-2.12l4.9-4.9c.59-.59 1.54-.59 2.12 0 .59.59.59 1.54 0 2.12l-4.88 4.9zm4.78-4.78c.31-.31.69-.43 1.07-.43.38 0 .76.12 1.07.43.59.59.59 1.54 0 2.12l-4.9 4.9c-.3.3-.68.44-1.06.44-.38 0-.76-.14-1.06-.44-.59-.59-.59-1.54 0-2.12l4.95-4.91z"></path></svg>
+                                2
+                            </span>
+                        </div>
+                        <h4 class="popular-item-title">Sanki</h4>
+                        <span class="popular-item-author">Berat Kurt</span>
+                    </li>
+                
+                    </ul>
+                </div>
+            
+                    </div>
+                </div><div class="slot-size-normal slot-height-1" style="grid-column: span 1; grid-row: span 1; min-width: 0; display: flex; flex-direction: column;">
+                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
+                        
+            <article class="article-card headline-card" data-id="art_tpi058dc7" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                <h2 class="card-title" style="font-family: var(--font-header); font-size: 2rem; font-weight: 900; line-height: 1.15; letter-spacing: -0.5px; margin-bottom: 8px; text-align: center;">Ses Kutusu</h2>
+                <p class="card-lead" style="font-family: var(--font-body); font-size: 0.95rem; line-height: 1.45; text-align: center; color: var(--text-secondary); margin-bottom: 15px; max-width: 90%; margin-left: auto; margin-right: auto;">13 yaşındaydı ama çok meraklıydı; her şeyi öğrenmek istiyordu..</p>
+                <div class="card-image-box" style="width: 100%; height: 260px; overflow: hidden; border: 1px solid var(--border-light); border-radius: 4px; margin-bottom: 10px;">
+                    <img src="assets/vintage_books.png" alt="Ses Kutusu" class="card-image" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
+                </div>
+            </article>
+        
+                    </div>
+                </div></div>
+        <div class="news-column" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-content: start;"><div class="slot-size-large slot-height-2" style="grid-column: span 3; grid-row: span 2; min-width: 0; display: flex; flex-direction: column;">
+                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
+                        
+            <article class="article-card headline-card" data-id="art_9373unxlo" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                <h2 class="card-title" style="font-family: var(--font-header); font-size: 2rem; font-weight: 900; line-height: 1.15; letter-spacing: -0.5px; margin-bottom: 8px; text-align: center;">Empati</h2>
+                <p class="card-lead" style="font-family: var(--font-body); font-size: 0.95rem; line-height: 1.45; text-align: center; color: var(--text-secondary); margin-bottom: 15px; max-width: 90%; margin-left: auto; margin-right: auto;">Mutluluğun anahtarı, tebessümün vesilesi</p>
+                <div class="card-image-box" style="width: 100%; height: 260px; overflow: hidden; border: 1px solid var(--border-light); border-radius: 4px; margin-bottom: 10px;">
+                    <img src="assets/inkwell_quill.png" alt="Empati" class="card-image" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
+                </div>
+            </article>
+        
+                    </div>
+                </div><div class="slot-size-normal slot-height-1" style="grid-column: span 1; grid-row: span 1; min-width: 0; display: flex; flex-direction: column;">
+                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
+                        
+                <article class="article-card" data-id="art_5lli2w00f" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">KITAP İNCELEMESI</span>
+                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.25rem; font-weight: 900; margin: 6px 0 4px 0;">Sessiz ve Renksiz</h3>
+                    <span class="card-author" style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--text-secondary); display: block; margin-bottom: 10px; font-weight: 500;"><span onclick="event.stopPropagation(); window.openAuthorProfile('defne')" style="cursor: pointer; text-decoration: underline; text-underline-offset: 2px; transition: color 0.2s; display: inline-flex; align-items: center; gap: 2px; flex-wrap: wrap;" onmouseover="this.style.color='var(--accent-color)'" onmouseout="this.style.color=''" title="Yazar Künyesini Göster">defne
+        <span class="author-rank-badge" style="background:rgba(46, 204, 113, 0.08); color:#2ecc71; border: 1px solid rgba(46, 204, 113, 0.2); font-size:0.58rem; padding: 1px 6px; border-radius: 4px; font-weight:700; margin-left:6px; letter-spacing:0.3px; text-transform:uppercase; font-family:var(--font-ui); display:inline-flex; align-items:center; gap:3px; cursor:help; vertical-align: middle;" title="İlk eserini vererek kalemini yeşerten hevesli yazar.">
+            ✒️ Genç Kalem
+        </span>
+    </span><span style="font-size: 0.68rem; font-weight: normal; color: var(--text-secondary); opacity: 0.75; margin-left: 5px; display: inline-flex; align-items: center; gap: 2px;" title="defne yazarının takipçi sayısı">👥 1</span></span>
+                    <div class="card-image-box" style="width: 100%; height: 110px; overflow: hidden; border: 1px solid var(--border-light); margin-bottom: 10px; border-radius: 4px;">
+                        <img src="assets/inkwell_quill.png" alt="Sessiz ve Renksiz" class="card-image" style="width: 100%; height: 100%; object-fit: cover; background-color: transparent;" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
+                    </div>
+                    <p class="card-preview" style="font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; margin-bottom: 8px;">Yıldızlar sıralanmıştı yine. Gökyüzü aynıydı belki ama gördükleri artık aynı gelmiyordu.</p>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block; margin-top: auto; padding-top: 8px;">► OKU</span>
+                </article>
+            
+                    </div>
+                </div><div class="slot-size-normal slot-height-1" style="grid-column: span 2; grid-row: span 1; min-width: 0; display: flex; flex-direction: column;">
+                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
+                        
+                <article class="article-card poem-card" data-id="art_n8rfpx98j" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">KITAP İNCELEMESI</span>
+                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.35rem; font-weight: 900; margin: 6px 0 2px 0;">Bir Fani Dünya</h3>
+                    <span class="card-author" style="font-family: var(--font-ui); font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 12px; font-weight: 500;"><span onclick="event.stopPropagation(); window.openAuthorProfile('dtpCagri')" style="cursor: pointer; text-decoration: underline; text-underline-offset: 2px; transition: color 0.2s; display: inline-flex; align-items: center; gap: 2px; flex-wrap: wrap;" onmouseover="this.style.color='var(--accent-color)'" onmouseout="this.style.color=''" title="Yazar Künyesini Göster">dtpCagri
+        <span class="author-rank-badge" style="background:rgba(52, 152, 219, 0.08); color:#3498db; border: 1px solid rgba(52, 152, 219, 0.2); font-size:0.58rem; padding: 1px 6px; border-radius: 4px; font-weight:700; margin-left:6px; letter-spacing:0.3px; text-transform:uppercase; font-family:var(--font-ui); display:inline-flex; align-items:center; gap:3px; cursor:help; vertical-align: middle;" title="Edebiyat dünyasına yeni adım atmış taze bir damla.">
+            💧 Mürekkep Damlası
+        </span>
+    </span><span style="font-size: 0.68rem; font-weight: normal; color: var(--text-secondary); opacity: 0.75; margin-left: 5px; display: inline-flex; align-items: center; gap: 2px;" title="dtpCagri yazarının takipçi sayısı">👥 0</span></span>
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; width: 100%;">
+                        <div class="poem-excerpt" style="font-family: var(--font-body); font-size: 0.85rem; line-height: 1.45; font-style: italic; color: var(--text-primary); flex: 1;">Bitmedi şu fani dünyada işlerin<br>Neden hep daha iyisini istersin<br>Dünyanın sahibi olsan ne olur<br>Karanlık çukura elbet sen de girersin</div>
+                        <div class="card-image-box" style="width: 100px; height: 110px; flex-shrink: 0; border: none; margin: 0; padding: 0;">
+                            <img src="assets/vintage_books.png" alt="Edebi Görsel" class="card-image" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror=null;this.src='assets/poetry_flowers.webp';">
+                        </div>
+                    </div>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; text-align: left; padding-top: 8px;">► OKU</span>
+                </article>
+            
+                    </div>
+                </div><div class="slot-size-normal slot-height-1" style="grid-column: span 1; grid-row: span 1; min-width: 0; display: flex; flex-direction: column;">
+                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
+                        
+                <article class="article-card poem-card" data-id="art_tffyem6es" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">KITAP İNCELEMESI</span>
+                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.35rem; font-weight: 900; margin: 6px 0 2px 0;">Sanki</h3>
+                    <span class="card-author" style="font-family: var(--font-ui); font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 12px; font-weight: 500;"><span onclick="event.stopPropagation(); window.openAuthorProfile('Berat Kurt')" style="cursor: pointer; text-decoration: underline; text-underline-offset: 2px; transition: color 0.2s; display: inline-flex; align-items: center; gap: 2px; flex-wrap: wrap;" onmouseover="this.style.color='var(--accent-color)'" onmouseout="this.style.color=''" title="Yazar Künyesini Göster">Berat Kurt
+        <span class="author-rank-badge" style="background:rgba(46, 204, 113, 0.08); color:#2ecc71; border: 1px solid rgba(46, 204, 113, 0.2); font-size:0.58rem; padding: 1px 6px; border-radius: 4px; font-weight:700; margin-left:6px; letter-spacing:0.3px; text-transform:uppercase; font-family:var(--font-ui); display:inline-flex; align-items:center; gap:3px; cursor:help; vertical-align: middle;" title="İlk eserini vererek kalemini yeşerten hevesli yazar.">
+            ✒️ Genç Kalem
+        </span>
+    </span><span style="font-size: 0.68rem; font-weight: normal; color: var(--text-secondary); opacity: 0.75; margin-left: 5px; display: inline-flex; align-items: center; gap: 2px;" title="Berat Kurt yazarının takipçi sayısı">👥 1</span></span>
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; width: 100%;">
+                        <div class="poem-excerpt" style="font-family: var(--font-body); font-size: 0.85rem; line-height: 1.45; font-style: italic; color: var(--text-primary); flex: 1;">Tanışmıyoruz ama biliyormuşuz gibi sanki...<br>Sanki ben çocukluğumda kovalamışım seni,<br>Sanki mahallemde otururken geçmişsin de<br>Ben seni izlemişim.</div>
+                        <div class="card-image-box" style="width: 100px; height: 110px; flex-shrink: 0; border: none; margin: 0; padding: 0;">
+                            <img src="assets/quiet_lake.webp" alt="Edebi Görsel" class="card-image" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror=null;this.src='assets/poetry_flowers.webp';">
+                        </div>
+                    </div>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; text-align: left; padding-top: 8px;">► OKU</span>
+                </article>
+            
+                    </div>
+                </div><div class="slot-size-normal slot-height-1" style="grid-column: span 1; grid-row: span 1; min-width: 0; display: flex; flex-direction: column;">
+                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
+                        
+                <article class="article-card poem-card" data-id="art_0gwic31et" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">KITAP İNCELEMESI</span>
+                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.35rem; font-weight: 900; margin: 6px 0 2px 0;">Firkat</h3>
+                    <span class="card-author" style="font-family: var(--font-ui); font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 12px; font-weight: 500;"><span onclick="event.stopPropagation(); window.openAuthorProfile('Furkan Güneş')" style="cursor: pointer; text-decoration: underline; text-underline-offset: 2px; transition: color 0.2s; display: inline-flex; align-items: center; gap: 2px; flex-wrap: wrap;" onmouseover="this.style.color='var(--accent-color)'" onmouseout="this.style.color=''" title="Yazar Künyesini Göster">Furkan Güneş
+        <span class="author-rank-badge" style="background:rgba(52, 152, 219, 0.08); color:#3498db; border: 1px solid rgba(52, 152, 219, 0.2); font-size:0.58rem; padding: 1px 6px; border-radius: 4px; font-weight:700; margin-left:6px; letter-spacing:0.3px; text-transform:uppercase; font-family:var(--font-ui); display:inline-flex; align-items:center; gap:3px; cursor:help; vertical-align: middle;" title="Edebiyat dünyasına yeni adım atmış taze bir damla.">
+            💧 Mürekkep Damlası
+        </span>
+    </span><span style="font-size: 0.68rem; font-weight: normal; color: var(--text-secondary); opacity: 0.75; margin-left: 5px; display: inline-flex; align-items: center; gap: 2px;" title="Furkan Güneş yazarının takipçi sayısı">👥 0</span></span>
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; width: 100%;">
+                        <div class="poem-excerpt" style="font-family: var(--font-body); font-size: 0.85rem; line-height: 1.45; font-style: italic; color: var(--text-primary); flex: 1;">İçim buram buram seherinden evvel<br>Taze demlenmiş firkatım var..&nbsp;<br>yüzümde akan bir elim dolu çisilim<br>Ne kalan baharım, ne de güneşim&nbsp;</div>
+                        <div class="card-image-box" style="width: 100px; height: 110px; flex-shrink: 0; border: none; margin: 0; padding: 0;">
+                            <img src="assets/quiet_lake.webp" alt="Edebi Görsel" class="card-image" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror=null;this.src='assets/poetry_flowers.webp';">
+                        </div>
+                    </div>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; text-align: left; padding-top: 8px;">► OKU</span>
+                </article>
+            
+                    </div>
+                </div><div class="slot-size-normal slot-height-2" style="grid-column: span 1; grid-row: span 2; min-width: 0; display: flex; flex-direction: column;">
+                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
+                        
+                <article class="article-card columnist-card" data-id="art_7o6fdsnf8" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">KITAP İNCELEMESI</span>
+                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.15rem; font-weight: 900; margin: 6px 0 2px 0;">Ahmet Telli</h3>
+                    <span class="card-author" style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--text-secondary); display: block; margin-bottom: 10px; font-weight: 500;"><span onclick="event.stopPropagation(); window.openAuthorProfile('Mürekkep')" style="cursor: pointer; text-decoration: underline; text-underline-offset: 2px; transition: color 0.2s; display: inline-flex; align-items: center; gap: 2px; flex-wrap: wrap;" onmouseover="this.style.color='var(--accent-color)'" onmouseout="this.style.color=''" title="Yazar Künyesini Göster">Mürekkep
+        <span class="author-rank-badge" style="background:rgba(52, 152, 219, 0.08); color:#3498db; border: 1px solid rgba(52, 152, 219, 0.2); font-size:0.58rem; padding: 1px 6px; border-radius: 4px; font-weight:700; margin-left:6px; letter-spacing:0.3px; text-transform:uppercase; font-family:var(--font-ui); display:inline-flex; align-items:center; gap:3px; cursor:help; vertical-align: middle;" title="Edebiyat dünyasına yeni adım atmış taze bir damla.">
+            💧 Mürekkep Damlası
+        </span>
+    </span><span style="font-size: 0.68rem; font-weight: normal; color: var(--text-secondary); opacity: 0.75; margin-left: 5px; display: inline-flex; align-items: center; gap: 2px;" title="Mürekkep yazarının takipçi sayısı">👥 1</span></span>
+                    <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
+                        <p class="card-preview" style="font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; flex: 1; margin: 0;">Ahmet Telli Biyografi..</p>
+                        <div class="columnist-avatar-box" style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; border: 1px solid var(--border-light); flex-shrink: 0; margin: 0;">
+                            <img src="assets/cozy_reading.png" alt="Mürekkep" class="columnist-avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                    </div>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; padding-top: 8px;">► OKU</span>
+                </article>
+            
+                    </div>
+                </div></div>
+        <div class="news-column" style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 16px; align-content: start;"><div class="slot-size-normal slot-height-1" style="grid-column: span 1; grid-row: span 1; min-width: 0; display: flex; flex-direction: column;">
+                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
+                        
+                <article class="article-card poem-card" data-id="art_nclbxp6e3" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">ÖYKÜ</span>
+                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.35rem; font-weight: 900; margin: 6px 0 2px 0;">Suret</h3>
+                    <span class="card-author" style="font-family: var(--font-ui); font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 12px; font-weight: 500;"><span onclick="event.stopPropagation(); window.openAuthorProfile('Berat Kurt')" style="cursor: pointer; text-decoration: underline; text-underline-offset: 2px; transition: color 0.2s; display: inline-flex; align-items: center; gap: 2px; flex-wrap: wrap;" onmouseover="this.style.color='var(--accent-color)'" onmouseout="this.style.color=''" title="Yazar Künyesini Göster">Berat Kurt
+        <span class="author-rank-badge" style="background:rgba(46, 204, 113, 0.08); color:#2ecc71; border: 1px solid rgba(46, 204, 113, 0.2); font-size:0.58rem; padding: 1px 6px; border-radius: 4px; font-weight:700; margin-left:6px; letter-spacing:0.3px; text-transform:uppercase; font-family:var(--font-ui); display:inline-flex; align-items:center; gap:3px; cursor:help; vertical-align: middle;" title="İlk eserini vererek kalemini yeşerten hevesli yazar.">
+            ✒️ Genç Kalem
+        </span>
+    </span><span style="font-size: 0.68rem; font-weight: normal; color: var(--text-secondary); opacity: 0.75; margin-left: 5px; display: inline-flex; align-items: center; gap: 2px;" title="Berat Kurt yazarının takipçi sayısı">👥 1</span></span>
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; width: 100%;">
+                        <div class="poem-excerpt" style="font-family: var(--font-body); font-size: 0.85rem; line-height: 1.45; font-style: italic; color: var(--text-primary); flex: 1;">Güzellik ateşinin en harlı yeri<br>Kalbe bırakır en korlu közü<br>Kimse giremez yanar yıkılır<br>Kerem’in Aslısına yandığı andır</div>
+                        <div class="card-image-box" style="width: 100px; height: 110px; flex-shrink: 0; border: none; margin: 0; padding: 0;">
+                            <img src="assets/rainy_window.webp" alt="Edebi Görsel" class="card-image" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror=null;this.src='assets/poetry_flowers.webp';">
+                        </div>
+                    </div>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; text-align: left; padding-top: 8px;">► OKU</span>
+                </article>
+            
+                    </div>
+                </div><div class="slot-size-normal slot-height-1" style="grid-column: span 1; grid-row: span 1; min-width: 0; display: flex; flex-direction: column;">
+                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
+                        
+                <div class="article-card" style="border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px; cursor: default;" onclick="event.stopPropagation();">
+                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">OKUR YORUMLARI</span>
+                    <div class="reader-quotes" style="margin-top: 10px; margin-bottom: 10px;">
+                        
+                    <div class="reader-quote-item" style="border-bottom: 1px dotted var(--border-light); padding-bottom: 10px; margin-bottom: 10px;">
+                        <p style="font-family: var(--font-body); font-size: 0.78rem; line-height: 1.4; color: var(--text-primary); font-style: italic; margin-bottom: 4px;">
+                            “ Kalemine sağlık Defne☺️ ”
+                        </p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; font-family: var(--font-ui); font-size: 0.68rem; color: var(--text-secondary); margin-top: 5px;">
+                            <span onclick="window.openArticle('art_rs1mnise3')" style="font-weight: 500; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;" title="Yazıyı Oku">✍️ Gölge</span>
+                            <span class="reader-quote-author" style="font-weight: 700;">— Berat</span>
+                        </div>
+                    </div>
+                
+                    <div class="reader-quote-item" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                        <p style="font-family: var(--font-body); font-size: 0.78rem; line-height: 1.4; color: var(--text-primary); font-style: italic; margin-bottom: 4px;">
+                            “ çok anlamlı, çok güzel bir öykü.. 🥲 ”
+                        </p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; font-family: var(--font-ui); font-size: 0.68rem; color: var(--text-secondary); margin-top: 5px;">
+                            <span onclick="window.openArticle('art_tpi058dc7')" style="font-weight: 500; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;" title="Yazıyı Oku">✍️ Ses Kutusu</span>
+                            <span class="reader-quote-author" style="font-weight: 700;">— defny</span>
+                        </div>
+                    </div>
+                
+                    </div>
+                </div>
+            
+                    </div>
+                </div><div class="slot-size-normal slot-height-1" style="grid-column: span 1; grid-row: span 1; min-width: 0; display: flex; flex-direction: column;">
+                    <div style="flex: 1; display: flex; flex-direction: column; width: 100%;">
+                        
+                <article class="article-card" data-id="art_z2ta8pphd" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">KITAP İNCELEMESI</span>
+                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.25rem; font-weight: 900; margin: 6px 0 4px 0;">Hiç Yanılmayanlar Ülkesi</h3>
+                    <span class="card-author" style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--text-secondary); display: block; margin-bottom: 10px; font-weight: 500;"><span onclick="event.stopPropagation(); window.openAuthorProfile('Berat Kurt')" style="cursor: pointer; text-decoration: underline; text-underline-offset: 2px; transition: color 0.2s; display: inline-flex; align-items: center; gap: 2px; flex-wrap: wrap;" onmouseover="this.style.color='var(--accent-color)'" onmouseout="this.style.color=''" title="Yazar Künyesini Göster">Berat Kurt
+        <span class="author-rank-badge" style="background:rgba(46, 204, 113, 0.08); color:#2ecc71; border: 1px solid rgba(46, 204, 113, 0.2); font-size:0.58rem; padding: 1px 6px; border-radius: 4px; font-weight:700; margin-left:6px; letter-spacing:0.3px; text-transform:uppercase; font-family:var(--font-ui); display:inline-flex; align-items:center; gap:3px; cursor:help; vertical-align: middle;" title="İlk eserini vererek kalemini yeşerten hevesli yazar.">
+            ✒️ Genç Kalem
+        </span>
+    </span><span style="font-size: 0.68rem; font-weight: normal; color: var(--text-secondary); opacity: 0.75; margin-left: 5px; display: inline-flex; align-items: center; gap: 2px;" title="Berat Kurt yazarının takipçi sayısı">👥 1</span></span>
+                    <div class="card-image-box" style="width: 100%; height: 110px; overflow: hidden; border: 1px solid var(--border-light); margin-bottom: 10px; border-radius: 4px;">
+                        <img src="assets/vintage_typewriter.png" alt="Hiç Yanılmayanlar Ülkesi" class="card-image" style="width: 100%; height: 100%; object-fit: cover; background-color: transparent;" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
+                    </div>
+                    <p class="card-preview" style="font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; margin-bottom: 8px;">kime gitsek hep çok haklı olmaları.......</p>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block; margin-top: auto; padding-top: 8px;">► OKU</span>
+                </article>
+            
+                    </div>
+                </div></div>
+    

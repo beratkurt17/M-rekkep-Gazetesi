@@ -1,15 +1,36 @@
 import json
-import sys
-sys.stdout.reconfigure(encoding='utf-8')
+import time
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
-log_path = r"C:\Users\WOOLF\.gemini\antigravity-ide\brain\79ba6373-7b9d-434c-99ea-4f73434bf375\.system_generated\logs\transcript.jsonl"
+def inspect_page():
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    driver = webdriver.Chrome(options=chrome_options)
+    try:
+        driver.get("http://localhost:8000/index.html")
+        time.sleep(2)
+        
+        # Execute script to inspect state
+        state = driver.execute_script("""
+            return {
+                articlesCount: articles.length,
+                articles: articles.map(a => ({ id: a.id, title: a.title, category: a.category })),
+                layoutConfig: layoutConfig,
+                slotArticleMap: _slotArticleMap,
+                currentPage: currentPage,
+                currentCategoryFilter: currentCategoryFilter
+            };
+        """)
+        
+        with open("scratch/inspected_state.json", "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2, ensure_ascii=False)
+            
+        print("Inspection state saved successfully.")
+    except Exception as e:
+        print("Error during inspection:", e)
+    finally:
+        driver.quit()
 
-with open(log_path, 'r', encoding='utf-8') as f:
-    for line in f:
-        step = json.loads(line)
-        content = step.get("content", "")
-        # Print subagent DOM results
-        if "Getting DOM structure" in str(step) or "DOM tree" in content:
-            if step.get("type") == "TOOL_OUTPUT":
-                print(f"=== DOM Output step {step.get('step_index')} ===")
-                print(content[:2000])
+inspect_page()

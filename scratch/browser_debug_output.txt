@@ -1,0 +1,75 @@
+=== Console Logs ===
+[SEVERE] http://localhost:8000/index.html 12 X-Frame-Options may only be set via an HTTP header sent along with a document. It may not be set inside <meta>.
+[SEVERE] http://localhost:8000/index.html 28 The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element.
+[INFO] http://localhost:8000/app.js?v=2.6.0 6033:8 "Supabase config btn element:" button#supabase-config-btn.btn-utility.hidden
+[INFO] http://localhost:8000/app.js?v=2.6.0 6034:8 "Supabase overlay element:" div#supabase-overlay.overlay.overlay-modal.hidden
+[INFO] http://localhost:8000/app.js?v=2.6.0 10053:16 "[MürekkepliMektup] Modül başarıyla yüklendi."
+[INFO] http://localhost:8000/app.js?v=2.6.0 3979:20 "Supabase connection initialized successfully."
+[DEBUG] http://localhost:8000/index.html - [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o
+[DEBUG] http://localhost:8000/index.html - [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o
+[DEBUG] http://localhost:8000/index.html - [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o
+[DEBUG] http://localhost:8000/index.html - [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o
+[DEBUG] http://localhost:8000/index.html - [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o
+[DEBUG] http://localhost:8000/index.html - [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o
+[INFO] http://localhost:8000/app.js?v=2.6.0 1067:24 "Loaded layout config from Supabase."
+[INFO] http://localhost:8000/app.js?v=2.6.0 434:24 "Loaded author profiles from Supabase."
+[INFO] http://localhost:8000/app.js?v=2.6.0 872:24 "Loaded author followers from Supabase."
+[INFO] http://localhost:8000/app.js?v=2.6.0 1119:24 "Loaded editor note from Supabase."
+[INFO] http://localhost:8000/app.js?v=2.6.0 485:24 "Loaded user roles from Supabase."
+[INFO] http://localhost:8000/app.js?v=2.6.0 4201:20 "Loaded 11 articles and 2 comments from Supabase."
+
+=== Body Text Snippet ===
+Gece Okuması
+MÜREKKEP
+Giriş Yap
+Yazı Yaz
+Kart Oluştur
+SAYI: 06 / SAYFA: 01
+AĞUSTOS 2026
+GENÇ KALEMLERİN SESİ, EDEBİYATIN YENİ NEFESİ
+MÜREKKEP
+DİJİTAL EDEBİYAT VE KÜLTÜR GAZETESİ
+HAFTALIK DİJİTAL GAZETE
+murekkepgzt.com
+HEPSİ
+ŞİİR
+ÖYKÜ
+DENEME
+KİTAP
+RÖPORTAJ
+KÖŞE YAZILARI
+HABER
+YARIŞMALAR
+✉️ MÜREKKEP POSTASI
+✉️ MÜREKKEP POSTASI — DİJİTAL GELENEKSEL MEKTUP ARKADAŞLIĞI
+Bir Zamanların O Efsane Mektup Arkadaşlığı Şimdi Burada...
+Satırların kağıda döküldüğü, posta kutusunun heyecanla açıldığı o köklü mektup kültürünü günümüze taşıyoruz. Kağıdınızı seçin, balmumunu mühürleyin ve bir mektup bırakın. 5 mektup boyunca anonim yazışın, kelimelerle bağ kurun.
+✍️ Mektup Yaz
+📬 Gelen Kutum
+POPÜLER YAZILAR
+KITAP
+14
+Empati
+ÇAĞRI DINGILTEPE
+OYKU
+4
+Ses Kutusu
+BERAT KURT
+OYKU
+3
+Sessiz ve Renksiz
+DEFNE
+SIIR
+3
+Bir Fani Dünya
+DTPCAGRI
+SIIR
+2
+Sanki
+BERAT KURT
+Bir Fani Dünya
+Milleti yargıladıkça kendini temizleyemezsin
+Hiç Yanılmayanlar Ülkesi
+kime gitsek hep çok haklı olmaları.......
+KITAP İNCELEMESI
+Ahmet Telli
