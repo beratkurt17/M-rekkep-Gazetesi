@@ -152,20 +152,111 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
+
+
+
+// =============================================
+// UTILITIES & SECURITY FUNCTIONS
+// =============================================
+
+// Disable console.log in production environments to keep the browser console clean and secure
+if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1" && !window.location.hostname.startsWith("192.168.")) {
+    console.log = () => {};
+}
+
+// =============================================
+// GÜVENLİK KATMANLARI (Security Utilities)
+// =============================================
+
+/**
+ * XSS Koruması: Kullanıcı girdilerini HTML özel karakterlerden
+ * arındırır. Kullanıcı kaynaklı metin innerHTML ile
+ * gösterilmeden önce mutlaka bu fonksiyondan geçirilmeli.
+ */
+function sanitizeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;')
+        .replace(/\//g, '&#x2F;');
+}
+
+/**
+ * Şifre Hash'leme: Web Crypto API ile SHA-256 hash üretir.
+ * Offline modda şifreler localStorage'a düz metin yerine
+ * hash olarak kaydedilir.
+ */
+async function hashPassword(password) {
+    try {
+        const encoder = new TextEncoder();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(String(password)));
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) {
+        console.warn('Hash error:', e);
+        return String(password); // Fallback (olmaması gerekir)
+    }
+}
+
+
+
+
+
+
+
+
+window.addEventListener('DOMContentLoaded', () => {
+    forceUnlockAllOverlays();
+});
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        forceUnlockAllOverlays();
+    }
+});
+
 // Application State & Seed Data
-const DEFAULT_ARTICLES = [];
 
-const DEFAULT_COMMENTS = [];
+// =============================================
+// GLOBAL STATE & DATA DECLARATIONS
+// =============================================
 
-// Initialize Storage
-let articles = [];
-let comments = [];
+var DEFAULT_ARTICLES = [];
+var DEFAULT_COMMENTS = [];
+var articles = [];
+var comments = [];
+var layoutConfig = null;
+var customCategories = [];
+var editorNoteData = {};
+var dailyWordData = {};
+var userNotifications = [];
+var authorProfiles = {};
+var DEFAULT_USER_ROLES = [
+    { email: "murekkep@admin.com", username: "Mürekkep", role: "admin" }
+];
+var userRoles = [];
+var followersData = {};
+var currentUser = null;
+var isEditorModeActive = false;
+var activeArticleId = null;
+var isAppBooted = false;
+var savedArticleIds = [];
+var currentCategoryFilter = "all";
+var activeProfileAuthor = null;
+var shareCurrentTemplate = 'gece';
+var shareCurrentArticle = null;
+var shareIsCustomMode = false;
+var isSupabaseConnected = false;
+var supabaseClient = null;
 
 // =============================================
 // ADMIN LAYOUT, CUSTOM CATEGORIES & SETTINGS
 // =============================================
 
-const DEFAULT_LAYOUT = {
+var DEFAULT_LAYOUT = {
     colWidths: { col1: 1, col2: 3, col3: 1 },
     col1: [
         { id: "slot_col1_popular", type: "system", value: "popular_posts", label: "Çok Okunanlar", size: "normal", slotWidth: 1, slotHeight: 1, style: "list" },
@@ -186,14 +277,14 @@ const DEFAULT_LAYOUT = {
     ]
 };
 
-let layoutConfig = null;
-let customCategories = [];
-let editorNoteData = {
+layoutConfig = null;
+customCategories = [];
+editorNoteData = {
     quote: "Bir dizesi eksik kalmış bir şiir gibi gezinir insan; ta ki hakikatin kelimesini bulana kadar.",
     desc: "Ahmet Hamdi Tanpınar"
 };
 
-let dailyWordData = {
+dailyWordData = {
     word: "Tahassür",
     origin: "[Arapça • İsim]",
     meaning: "Kavuşulması istenen şeye veya geçmişe duyulan derin özlem, hasret ve hüzünlü iç çekiş.",
@@ -206,6 +297,249 @@ try {
 } catch(e) {}
 
 // Category helper list (built-in + custom)
+
+// =============================================
+// DATABASE & SUPABASE SYNC
+// =============================================
+
+function initSupabase() {
+    const url = SUPABASE_URL || localStorage.getItem("murekkep_supabase_url");
+    const key = SUPABASE_ANON_KEY || localStorage.getItem("murekkep_supabase_key");
+
+    if (url && key && window.supabase) {
+        try {
+            supabaseClient = window.supabase.createClient(url, key);
+            isSupabaseConnected = true;
+            console.log("Supabase connection initialized successfully.");
+        } catch (err) {
+            console.error("Failed to initialize Supabase client:", err);
+            isSupabaseConnected = false;
+        }
+    } else {
+        isSupabaseConnected = false;
+        console.warn("Supabase credentials not found. Falling back to LocalStorage.");
+    }
+    updateSupabaseUI();
+}
+
+async function seedSupabase() {
+    try {
+        if (DEFAULT_ARTICLES.length > 0) {
+            // Insert all default articles
+            const articlesToInsert = DEFAULT_ARTICLES.map(art => ({
+                id: art.id,
+                title: art.title,
+                subtitle: art.subtitle,
+                author: art.author,
+                category: art.category,
+                image: art.image,
+                date: art.date,
+                read_time: art.readTime,
+                claps: art.claps,
+                content: art.content
+            }));
+
+            const { error: artError } = await supabaseClient
+                .from('articles')
+                .insert(articlesToInsert);
+
+            if (artError) throw artError;
+        }
+
+        if (DEFAULT_COMMENTS.length > 0) {
+            // Insert all default comments
+            const commentsToInsert = DEFAULT_COMMENTS.map(c => ({
+                id: c.id,
+                article_id: c.articleId,
+                author: c.author,
+                text: c.text,
+                date: c.date
+            }));
+
+            const { error: commError } = await supabaseClient
+                .from('comments')
+                .insert(commentsToInsert);
+
+            if (commError) throw commError;
+        }
+
+        console.log("Supabase seeding completed successfully.");
+    } catch (err) {
+        console.error("Error seeding Supabase:", err);
+    }
+}
+
+let isSeeding = false;
+async function loadData() {
+    // Clean up old default articles from LocalStorage if they exist
+    const testArticleIds = ["manset-1", "kitap-1", "deneme-1", "roportaj-1", "siir-1", "oyku-1", "kose-yazilari-1", "haber-1", "yarismalar-1", "deneme-2", "siir-2", "oyku-2"];
+    try {
+        const saved = localStorage.getItem("murekkep_articles_v2");
+        if (saved) {
+            let parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+                const filtered = parsed.filter(art => !testArticleIds.includes(art.id));
+                if (filtered.length !== parsed.length) {
+                    localStorage.setItem("murekkep_articles_v2", JSON.stringify(filtered));
+                }
+            }
+        }
+        const cached = localStorage.getItem("murekkep_supabase_cache");
+        if (cached) {
+            let parsed = JSON.parse(cached);
+            if (parsed && parsed.articles && Array.isArray(parsed.articles)) {
+                const filtered = parsed.articles.filter(art => !testArticleIds.includes(art.id));
+                if (filtered.length !== parsed.articles.length) {
+                    parsed.articles = filtered;
+                    localStorage.setItem("murekkep_supabase_cache", JSON.stringify(parsed));
+                }
+            }
+        }
+    } catch (e) {
+        console.warn("Failed to clean up test articles from LocalStorage:", e);
+    }
+
+    // Clear stale local articles cache to ensure pure Supabase sync
+    try {
+        localStorage.removeItem("murekkep_articles_v2");
+        localStorage.removeItem("murekkep_supabase_cache");
+    } catch (e) {}
+
+    let localArticles = [];
+
+    if (isSupabaseConnected) {
+        try {
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error("Supabase request timeout")), 5000)
+            );
+
+            // Fetch all articles from Supabase
+            const fetchArticlesPromise = supabaseClient
+                .from('articles')
+                .select('*')
+                .order('created_at', { ascending: true });
+
+            const { data: dbArticles, error: artError } = await Promise.race([
+                fetchArticlesPromise, 
+                timeoutPromise
+            ]);
+            
+            if (artError) throw artError;
+
+            // Fetch comments
+            let dbComments = [];
+            try {
+                const fetchCommentsPromise = supabaseClient
+                    .from('comments')
+                    .select('*');
+
+                const { data, error: commError } = await Promise.race([
+                    fetchCommentsPromise, 
+                    timeoutPromise
+                ]);
+                if (!commError && data) dbComments = data;
+            } catch (e) {
+                console.warn("Comments fetch error:", e);
+            }
+
+            comments = dbComments.map(c => ({
+                id: c.id,
+                articleId: c.article_id,
+                author: c.author,
+                text: c.text,
+                date: c.date
+            }));
+
+            if (dbArticles && dbArticles.length > 0) {
+                articles = dbArticles.map(art => ({
+                    id: art.id,
+                    title: art.title,
+                    subtitle: art.subtitle,
+                    author: art.author,
+                    author_email: art.author_email || null,
+                    user_id: art.user_id || null,
+                    category: art.category,
+                    image: art.image,
+                    date: art.date,
+                    created_at: art.created_at || new Date().toISOString(),
+                    readTime: art.read_time,
+                    claps: art.claps || 0,
+                    corner_name: art.corner_name || null,
+                    content: art.content || null
+                }));
+            } else {
+                articles = [];
+            }
+
+            // Save fresh articles to LocalStorage and Cache
+            try {
+                localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+                const cachePayload = {
+                    timestamp: Date.now(),
+                    articles: articles,
+                    comments: comments
+                };
+                localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
+            } catch (e) {}
+
+            console.log(`Loaded ${articles.length} articles and ${comments.length} comments strictly from Supabase.`);
+        } catch (err) {
+            console.error("Error loading data from Supabase:", err);
+            isSupabaseConnected = false;
+            updateSupabaseUI();
+            loadLocalStorageFallback();
+        }
+    } else {
+        loadLocalStorageFallback();
+    }
+
+    // Refresh the newspaper view and pagination
+    currentPage = 1;
+    if (currentCategoryFilter === "all") {
+        renderNewspaperGrid();
+    } else {
+        renderCategoryFeed(currentCategoryFilter);
+    }
+
+    // Check for deep links on initial page load (fetch/fallback)
+    checkDeepLink();
+}
+
+function loadLocalStorageFallback() {
+    try {
+        const savedArticles = localStorage.getItem("murekkep_articles_v2");
+        if (savedArticles) {
+            const parsed = JSON.parse(savedArticles);
+            // Filter out old seed test ids
+            const testIds = ["art_manset_01", "art_siir_01", "art_bio_01", "art_bio_02", "art_bio_03", "art_oyku_01", "art_kitap_01", "art_haber_01", "manset-1", "kitap-1", "deneme-1", "roportaj-1", "siir-1", "oyku-1", "kose-yazilari-1", "haber-1", "yarismalar-1", "deneme-2", "siir-2", "oyku-2"];
+            articles = Array.isArray(parsed) ? parsed.filter(a => !testIds.includes(a.id)) : [];
+            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+        } else {
+            articles = [];
+        }
+    } catch (e) {
+        articles = [];
+    }
+
+    try {
+        const savedComments = localStorage.getItem("murekkep_comments_v2");
+        if (savedComments) {
+            comments = JSON.parse(savedComments);
+        } else {
+            comments = JSON.parse(JSON.stringify(DEFAULT_COMMENTS || []));
+            localStorage.setItem("murekkep_comments_v2", JSON.stringify(comments));
+        }
+    } catch (e) {
+        comments = [];
+    }
+}
+
+// DOM Elements
+
+// =============================================
+// NEWSPAPER BROADSHEET ENGINE
+// =============================================
+
 function getCategoriesList() {
     const builtIn = [
         { id: "siir", name: "Şiir Köşesi" },
@@ -221,7 +555,6 @@ function getCategoriesList() {
 }
 
 // IO Functions for User Notifications
-let userNotifications = [];
 
 async function loadNotifications() {
     if (!currentUser) {
@@ -445,7 +778,6 @@ function renderNotifications() {
 }
 
 // IO Functions for Custom Author Profiles
-let authorProfiles = {};
 
 async function loadAuthorProfiles() {
     if (isSupabaseConnected && supabaseClient) {
@@ -493,10 +825,6 @@ async function saveAuthorProfiles() {
 }
 
 // IO Functions for User Roles and Access Control
-const DEFAULT_USER_ROLES = [
-    { email: "murekkep@admin.com", username: "Mürekkep", role: "admin" }
-];
-let userRoles = [];
 
 async function loadUserRoles() {
     if (isSupabaseConnected && supabaseClient) {
@@ -1962,837 +2290,1219 @@ window.removeCustomCategory = async function(catId) {
 };
 
 // =============================================
-// CONTENT MODERATION & SECURITY SYSTEM
-// =============================================
 
-const BANNED_WORDS = [
-    "amk", "amına", "göt", "piç", "siktir", "sik", "orospu", "yavşak", "pezevenk", "kahpe", "bok", "çüş", "kaltak", "gerzek", "salak", "aptal", "şerefsiz", "it", "kancık", "götlek", "amcık", "meme", "taşşak", "yarak", "yarrak", "sokayım", "sokam", "sikiş", "sokarım", "pic"
-];
+const mainGrid = document.getElementById("newspaper-main-grid");
+const themeToggleBtn = document.getElementById("theme-toggle");
+const writeToggleBtn = document.getElementById("write-toggle");
+const editorOverlay = document.getElementById("editor-overlay");
+const closeEditorBtn = document.getElementById("close-editor");
+const publishForm = document.getElementById("publish-form");
+const readingOverlay = document.getElementById("reading-overlay");
+const closeReadingBtn = document.getElementById("close-reading");
+const readingProgress = document.getElementById("reading-progress");
 
-function containsProfanity(text) {
-    return false;
+// Article Detail DOM
+const detailCategory = document.getElementById("article-detail-category");
+const detailTitle = document.getElementById("article-detail-title");
+const detailSubtitle = document.getElementById("article-detail-subtitle");
+const detailAuthor = document.getElementById("article-detail-author");
+const detailAvatarContainer = document.getElementById("article-detail-avatar-container");
+const detailDate = document.getElementById("article-detail-date");
+const detailReadtime = document.getElementById("article-detail-readtime");
+const detailClapCount = document.getElementById("article-clap-count");
+const detailClapBtn = document.getElementById("article-clap-btn");
+const detailImage = document.getElementById("article-detail-image");
+const detailContent = document.getElementById("article-detail-content");
+const commentForm = document.getElementById("comment-form");
+const commentAuthorInput = document.getElementById("comment-author-input");
+const commentTextInput = document.getElementById("comment-text-input");
+const commentsListContainer = document.getElementById("comments-list-container");
+const commentsTotalCountEl = document.getElementById("comments-total-count");
+const commentsDrawer = document.getElementById("comments-drawer");
+const commentsDrawerBackdrop = document.getElementById("comments-drawer-backdrop");
+const closeCommentsDrawerBtn = document.getElementById("close-comments-drawer");
+const commentsTriggerBar = document.getElementById("comments-trigger-bar");
+const articleCommentBtn = document.getElementById("article-comment-btn");
+const articleEditorEditBtn = document.getElementById("article-editor-edit-btn");
+let editingArticleId = null;
+
+// SEO State & Management Helpers
+let defaultSEO = {
+    title: document.title,
+    description: "",
+    keywords: "",
+    author: "",
+    ogTitle: "",
+    ogDescription: "",
+    ogUrl: "",
+    ogImage: "",
+    twitterTitle: "",
+    twitterDescription: "",
+    twitterImage: "",
+    canonicalHref: ""
+};
+
+// Backup default SEO tags once DOM is fully loaded or when script runs
+function backupDefaultSEO() {
+    const descMeta = document.querySelector('meta[name="description"]');
+    const keyMeta = document.querySelector('meta[name="keywords"]');
+    const authMeta = document.querySelector('meta[name="author"]');
+    const ogTitleMeta = document.querySelector('meta[property="og:title"]');
+    const ogDescMeta = document.querySelector('meta[property="og:description"]');
+    const ogUrlMeta = document.querySelector('meta[property="og:url"]');
+    const ogImgMeta = document.querySelector('meta[property="og:image"]');
+    const twTitleMeta = document.querySelector('meta[name="twitter:title"]');
+    const twDescMeta = document.querySelector('meta[name="twitter:description"]');
+    const twImgMeta = document.querySelector('meta[name="twitter:image"]');
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
+
+    defaultSEO.title = document.title;
+    defaultSEO.description = descMeta ? descMeta.getAttribute("content") : "";
+    defaultSEO.keywords = keyMeta ? keyMeta.getAttribute("content") : "";
+    defaultSEO.author = authMeta ? authMeta.getAttribute("content") : "";
+    defaultSEO.ogTitle = ogTitleMeta ? ogTitleMeta.getAttribute("content") : "";
+    defaultSEO.ogDescription = ogDescMeta ? ogDescMeta.getAttribute("content") : "";
+    defaultSEO.ogUrl = ogUrlMeta ? ogUrlMeta.getAttribute("content") : "";
+    defaultSEO.ogImage = ogImgMeta ? ogImgMeta.getAttribute("content") : "";
+    defaultSEO.twitterTitle = twTitleMeta ? twTitleMeta.getAttribute("content") : "";
+    defaultSEO.twitterDescription = twDescMeta ? twDescMeta.getAttribute("content") : "";
+    defaultSEO.twitterImage = twImgMeta ? twImgMeta.getAttribute("content") : "";
+    defaultSEO.canonicalHref = canonicalLink ? canonicalLink.getAttribute("href") : "https://murekkepgzt.com";
 }
 
-function getArticleReports(id) {
-    const reportsMap = JSON.parse(localStorage.getItem("murekkep_article_reports") || "{}");
-    return reportsMap[id] || 0;
-}
+// Call backup function immediately
+backupDefaultSEO();
 
-function reportArticle(id) {
-    const reportsMap = JSON.parse(localStorage.getItem("murekkep_article_reports") || "{}");
-    reportsMap[id] = (reportsMap[id] || 0) + 1;
-    localStorage.setItem("murekkep_article_reports", JSON.stringify(reportsMap));
-    return reportsMap[id];
-}
+// Check for deep links on initial page load (supporting both query param & hash for social sharing)
+function checkDeepLink() {
+    const urlParams = new URLSearchParams(window.location.search);
+    let targetArticleId = urlParams.get('article');
 
-function resetArticleReports(id) {
-    const reportsMap = JSON.parse(localStorage.getItem("murekkep_article_reports") || "{}");
-    reportsMap[id] = 0;
-    localStorage.setItem("murekkep_article_reports", JSON.stringify(reportsMap));
-}
+    if (!targetArticleId && window.location.hash) {
+        const hashVal = window.location.hash.replace('#', '').trim();
+        if (hashVal.startsWith('art_') || hashVal.startsWith('art-') || hashVal.length > 3) {
+            targetArticleId = hashVal;
+        }
+    }
 
-function getCommentReports(id) {
-    const reportsMap = JSON.parse(localStorage.getItem("murekkep_comment_reports") || "{}");
-    return reportsMap[id] || 0;
-}
-
-function reportComment(id) {
-    const reportsMap = JSON.parse(localStorage.getItem("murekkep_comment_reports") || "{}");
-    reportsMap[id] = (reportsMap[id] || 0) + 1;
-    localStorage.setItem("murekkep_comment_reports", JSON.stringify(reportsMap));
-    return reportsMap[id];
-}
-
-function resetCommentReports(id) {
-    const reportsMap = JSON.parse(localStorage.getItem("murekkep_comment_reports") || "{}");
-    reportsMap[id] = 0;
-    localStorage.setItem("murekkep_comment_reports", JSON.stringify(reportsMap));
-}
-
-let isEditorModeActive = false;
-
-function updateEditorBannerUI() {
-    const banner = document.getElementById("editor-mode-banner");
-    const toggleBtn = document.getElementById("settings-editor-toggle");
-    if (isEditorModeActive && currentUser && currentUser.isEditor) {
-        if (banner) banner.classList.remove("hidden");
-        if (toggleBtn) toggleBtn.classList.add("active");
-    } else {
-        if (banner) banner.classList.add("hidden");
-        if (toggleBtn) toggleBtn.classList.remove("active");
-        isEditorModeActive = false;
+    if (targetArticleId) {
+        setTimeout(() => {
+            openArticle(targetArticleId);
+        }, 150);
     }
 }
 
-const SUPABASE_URL = "https://xhgtipmmahtoshypngdm.supabase.co"; 
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZ3RpcG1tYWh0b3NoeXBuZ2RtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMDQyMzYsImV4cCI6MjA5Nzc4MDIzNn0.Z1eYqrrU8U62kDf0G8zUEBguXt4h0HviZJBIEJvH588";
+function updateSEOMetadata(article) {
+    const descMeta = document.querySelector('meta[name="description"]');
+    const keyMeta = document.querySelector('meta[name="keywords"]');
+    const authMeta = document.querySelector('meta[name="author"]');
+    const ogTitleMeta = document.querySelector('meta[property="og:title"]');
+    const ogDescMeta = document.querySelector('meta[property="og:description"]');
+    const ogUrlMeta = document.querySelector('meta[property="og:url"]');
+    const ogImgMeta = document.querySelector('meta[property="og:image"]');
+    const twTitleMeta = document.querySelector('meta[name="twitter:title"]');
+    const twDescMeta = document.querySelector('meta[name="twitter:description"]');
+    const twImgMeta = document.querySelector('meta[name="twitter:image"]');
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
 
-let supabaseClient = null;
-let isSupabaseConnected = false;
+    if (article) {
+        const titleText = `${article.title} - Mürekkep Gazetesi`;
+        const descText = article.subtitle || article.title;
+        const authorText = article.author;
+        const keywordsText = `mürekkep, edebiyat, ${article.category}, ${article.author}, ${article.title.toLowerCase().replace(/[^a-z0-9ıışğçöü ]/gi, '').split(' ').join(', ')}`;
+        const articleUrl = `${window.location.origin}${window.location.pathname}?article=${article.id}`;
+        
+        let absImgUrl = article.image || 'assets/typewriter_birds.webp';
+        if (absImgUrl && !absImgUrl.startsWith('http')) {
+            absImgUrl = `${window.location.origin}/${absImgUrl}`;
+        }
 
-let currentUser = null;
-let savedArticleIds = [];
+        // Update Document Title
+        document.title = titleText;
 
-const CACHE_KEY = "murekkep_supabase_cache";
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+        // Update standard Meta Tags
+        if (descMeta) descMeta.setAttribute("content", descText);
+        if (keyMeta) keyMeta.setAttribute("content", keywordsText);
+        if (authMeta) authMeta.setAttribute("content", authorText);
 
-function clearSupabaseCache() {
-    localStorage.removeItem(CACHE_KEY);
-    console.log("Supabase client cache cleared.");
-}
+        // Update Open Graph (Facebook, WhatsApp, etc.)
+        if (ogTitleMeta) ogTitleMeta.setAttribute("content", titleText);
+        if (ogDescMeta) ogDescMeta.setAttribute("content", descText);
+        if (ogUrlMeta) ogUrlMeta.setAttribute("content", articleUrl);
+        if (ogImgMeta) ogImgMeta.setAttribute("content", absImgUrl);
 
-function updateSupabaseUI() {
-    const statusText = document.getElementById("supabase-status-text");
-    const configBtn = document.getElementById("supabase-config-btn");
-    if (!statusText || !configBtn) return;
+        // Update Twitter Cards
+        if (twTitleMeta) twTitleMeta.setAttribute("content", titleText);
+        if (twDescMeta) twDescMeta.setAttribute("content", descText);
+        if (twImgMeta) twImgMeta.setAttribute("content", absImgUrl);
 
-    if (isSupabaseConnected) {
-        statusText.innerText = "Supabase: Bağlı";
-        configBtn.style.backgroundColor = "rgba(46, 125, 50, 0.1)";
-        configBtn.style.color = "#2e7d32";
-        configBtn.style.borderColor = "#2e7d32";
+        // Update Canonical Link
+        if (canonicalLink) canonicalLink.setAttribute("href", articleUrl);
+
+        // Update structured data (JSON-LD)
+        updateJSONLD(article);
     } else {
-        statusText.innerText = "Supabase: Çevrimdışı";
-        configBtn.style.backgroundColor = "";
-        configBtn.style.color = "";
-        configBtn.style.borderColor = "var(--border-color)";
+        // Restore defaults
+        document.title = defaultSEO.title;
+        if (descMeta) descMeta.setAttribute("content", defaultSEO.description);
+        if (keyMeta) keyMeta.setAttribute("content", defaultSEO.keywords);
+        if (authMeta) authMeta.setAttribute("content", defaultSEO.author);
+        
+        if (ogTitleMeta) ogTitleMeta.setAttribute("content", defaultSEO.ogTitle);
+        if (ogDescMeta) ogDescMeta.setAttribute("content", defaultSEO.ogDescription);
+        if (ogUrlMeta) ogUrlMeta.setAttribute("content", defaultSEO.ogUrl);
+        if (ogImgMeta) ogImgMeta.setAttribute("content", defaultSEO.ogImage);
+
+        if (twTitleMeta) twTitleMeta.setAttribute("content", defaultSEO.twitterTitle);
+        if (twDescMeta) twDescMeta.setAttribute("content", defaultSEO.twitterDescription);
+        if (twImgMeta) twImgMeta.setAttribute("content", defaultSEO.twitterImage);
+
+        if (canonicalLink) canonicalLink.setAttribute("href", defaultSEO.canonicalHref);
+
+        // Revert to default JSON-LD structure
+        updateJSONLD(null);
     }
 }
 
-// Premium Toast Notification
-function showToast(message) {
-    const alertDiv = document.createElement("div");
-    alertDiv.style.position = "fixed";
-    alertDiv.style.bottom = "30px";
-    alertDiv.style.right = "30px";
-    alertDiv.style.backgroundColor = "var(--accent-color)";
-    alertDiv.style.color = "#ffffff";
-    alertDiv.style.padding = "16px 24px";
-    alertDiv.style.borderRadius = "30px";
-    alertDiv.style.fontFamily = "var(--font-ui)";
-    alertDiv.style.fontWeight = "600";
-    alertDiv.style.boxShadow = "0 8px 30px rgba(0,0,0,0.15)";
-    alertDiv.style.zIndex = "2000";
-    alertDiv.style.animation = "slideUp 0.3s ease";
-    alertDiv.innerText = message;
+function updateJSONLD(article) {
+    let script = document.getElementById('seo-json-ld');
+    if (script) script.remove();
+
+    script = document.createElement('script');
+    script.id = 'seo-json-ld';
+    script.type = 'application/ld+json';
+
+    if (article) {
+        let absImgUrl = article.image || 'assets/typewriter_birds.webp';
+        if (absImgUrl && !absImgUrl.startsWith('http')) {
+            absImgUrl = `${window.location.origin}/${absImgUrl}`;
+        }
+        
+        script.text = JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "NewsArticle",
+            "headline": article.title,
+            "description": article.subtitle || article.title,
+            "image": [absImgUrl],
+            "datePublished": article.date,
+            "author": [{
+                "@type": "Person",
+                "name": article.author,
+                "url": `${window.location.origin}/#author-${encodeURIComponent(article.author)}`
+            }],
+            "publisher": {
+                "@type": "Organization",
+                "name": "Mürekkep Gazetesi",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": `${window.location.origin}/assets/logo.jpg`
+                }
+            },
+            "mainEntityOfPage": `${window.location.origin}/?article=${article.id}`
+        });
+    } else {
+        script.text = JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "NewsMediaOrganization",
+            "name": "Mürekkep Gazetesi",
+            "url": "https://murekkepgzt.com",
+            "logo": "https://murekkepgzt.com/assets/logo.jpg",
+            "sameAs": [
+                "https://twitter.com/murekkepgazetesi",
+                "https://instagram.com/murekkepgazetesi"
+            ]
+        });
+    }
+    document.head.appendChild(script);
+}
+
+// Auth DOM Elements
+const authOverlay = document.getElementById("auth-overlay");
+const closeAuthBtn = document.getElementById("close-auth");
+const loginToggleBtn = document.getElementById("login-toggle");
+const logoutBtn = document.getElementById("logout-btn");
+const userProfileSection = document.getElementById("user-profile-section");
+const userDisplayName = document.getElementById("user-display-name");
+const userAvatarCircle = document.getElementById("user-avatar-circle");
+const profileAvatarBtn = document.getElementById("profile-avatar-btn");
+const profileDropdownMenu = document.getElementById("profile-dropdown-menu");
+const dropdownAvatarLarge = document.getElementById("dropdown-avatar-large");
+const dropdownUserName = document.getElementById("dropdown-user-name");
+const dropdownUserEmail = document.getElementById("dropdown-user-email");
+const dropdownBookmarksBtn = document.getElementById("dropdown-bookmarks-btn");
+const dropdownSettingsBtn = document.getElementById("dropdown-settings-btn");
+const loginForm = document.getElementById("login-form");
+const registerForm = document.getElementById("register-form");
+const tabLogin = document.getElementById("tab-login");
+const tabRegister = document.getElementById("tab-register");
+const bookmarksTab = document.getElementById("bookmarks-tab");
+const articleSaveBtn = document.getElementById("article-save-btn");
+
+// Profile dropdown open/close
+function toggleProfileDropdown(forceClose = false) {
+    if (!profileDropdownMenu || !profileAvatarBtn) return;
+    const isOpen = !profileDropdownMenu.classList.contains("hidden");
+    if (forceClose || isOpen) {
+        profileDropdownMenu.classList.add("hidden");
+        profileAvatarBtn.setAttribute("aria-expanded", "false");
+    } else {
+        profileDropdownMenu.classList.remove("hidden");
+        profileAvatarBtn.setAttribute("aria-expanded", "true");
+        
+        // Close notifications dropdown if open
+        const notifMenu = document.getElementById("notifications-dropdown-menu");
+        if (notifMenu) notifMenu.classList.add("hidden");
+        const notifBtn = document.getElementById("notifications-btn");
+        if (notifBtn) notifBtn.setAttribute("aria-expanded", "false");
+    }
+}
+
+
+// Current active article ID inside modal
+let currentPage = 1;
+// Shared state for sequential slot filling
+let _slotArticleIdx = 0;
+let _pageArticles = [];
+let _slotArticleMap = {};
+
+// Function to sort articles by claps descending
+function getSortedArticles() {
+    return articles.slice().sort((a, b) => b.claps - a.claps);
+}
+
+// Visitor and Page statistics tracking
+async function trackPageVisit(pageName, articleId = null, category = null) {
+    try {
+        // 1. Unique Visitor Check
+        let visitorUuid = localStorage.getItem("murekkep_visitor_uuid");
+        let isAbsoluteUnique = false;
+        if (!visitorUuid) {
+            visitorUuid = 'visitor_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem("murekkep_visitor_uuid", visitorUuid);
+            isAbsoluteUnique = true;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        let lastVisitDate = localStorage.getItem("murekkep_last_visit_date");
+        let isDailyUnique = false;
+        if (lastVisitDate !== today) {
+            localStorage.setItem("murekkep_last_visit_date", today);
+            isDailyUnique = true;
+        }
+
+        // 2. Detect Device
+        const ua = navigator.userAgent;
+        let device = "desktop";
+        if (/Mobi|Android|iPhone|iPad|Windows Phone/i.test(ua)) {
+            if (/iPad|tablet/i.test(ua)) {
+                device = "tablet";
+            } else {
+                device = "mobile";
+            }
+        }
+
+        // 3. Detect Browser
+        let browser = "other";
+        if (/chrome|crios/i.test(ua) && !/edge|edg/i.test(ua) && !/opr/i.test(ua)) {
+            browser = "chrome";
+        } else if (/firefox|iceweasel/i.test(ua)) {
+            browser = "firefox";
+        } else if (/safari/i.test(ua) && !/chrome|crios/i.test(ua)) {
+            browser = "safari";
+        } else if (/edge|edg/i.test(ua)) {
+            browser = "edge";
+        }
+
+
+
+        // 5. Load existing statistics
+        let stats = null;
+        if (isSupabaseConnected && supabaseClient) {
+            try {
+                const { data } = await supabaseClient
+                    .from('site_settings')
+                    .select('value')
+                    .eq('key', 'site_statistics')
+                    .maybeSingle();
+                if (data && data.value) {
+                    stats = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+                }
+            } catch (e) {
+                console.warn("Failed to load stats from Supabase:", e);
+            }
+        }
+
+        if (!stats) {
+            try {
+                const saved = localStorage.getItem("murekkep_site_statistics");
+                if (saved) stats = JSON.parse(saved);
+            } catch (e) {}
+        }
+
+        // Initialize default stats if not exists
+        if (!stats || typeof stats !== 'object') {
+            stats = {
+                totalPageViews: 0,
+                totalUniqueVisitors: 0,
+                categoryViews: {
+                    manset: 0, siir: 0, oyku: 0, deneme: 0, kitap: 0, roportaj: 0, "kose-yazilari": 0, haber: 0, yarismalar: 0
+                },
+                articleViews: {},
+                deviceStats: { desktop: 0, mobile: 0, tablet: 0 },
+                browserStats: { chrome: 0, firefox: 0, safari: 0, edge: 0, other: 0 },
+                dailyStats: {},
+                recentVisits: []
+            };
+        }
+
+        // 6. Update Stats Counters
+        stats.totalPageViews = (stats.totalPageViews || 0) + 1;
+        if (isAbsoluteUnique) {
+            stats.totalUniqueVisitors = (stats.totalUniqueVisitors || 0) + 1;
+        }
+
+        // Update Device & Browser
+        if (!stats.deviceStats) stats.deviceStats = { desktop: 0, mobile: 0, tablet: 0 };
+        stats.deviceStats[device] = (stats.deviceStats[device] || 0) + 1;
+
+        if (!stats.browserStats) stats.browserStats = { chrome: 0, firefox: 0, safari: 0, edge: 0, other: 0 };
+        stats.browserStats[browser] = (stats.browserStats[browser] || 0) + 1;
+
+        // Category & Article views if specified
+        if (category) {
+            if (!stats.categoryViews) stats.categoryViews = {};
+            stats.categoryViews[category] = (stats.categoryViews[category] || 0) + 1;
+        }
+        if (articleId) {
+            if (!stats.articleViews) stats.articleViews = {};
+            stats.articleViews[articleId] = (stats.articleViews[articleId] || 0) + 1;
+        }
+
+        // Update Daily stats
+        if (!stats.dailyStats) stats.dailyStats = {};
+        if (!stats.dailyStats[today]) {
+            stats.dailyStats[today] = { pageViews: 0, uniqueVisitors: 0 };
+        }
+        stats.dailyStats[today].pageViews = (stats.dailyStats[today].pageViews || 0) + 1;
+        if (isDailyUnique) {
+            stats.dailyStats[today].uniqueVisitors = (stats.dailyStats[today].uniqueVisitors || 0) + 1;
+        }
+
+        // Clean up old daily stats (keep last 30 days)
+        const dailyKeys = Object.keys(stats.dailyStats).sort();
+        if (dailyKeys.length > 30) {
+            for (let i = 0; i < dailyKeys.length - 30; i++) {
+                delete stats.dailyStats[dailyKeys[i]];
+            }
+        }
+
+        // Update Recent Visits Log
+        if (!stats.recentVisits) stats.recentVisits = [];
+        stats.recentVisits.unshift({
+            timestamp: new Date().toISOString(),
+            page: pageName,
+            device: device,
+            browser: browser
+        });
+
+        // Keep last 50 visits only
+        if (stats.recentVisits.length > 50) {
+            stats.recentVisits = stats.recentVisits.slice(0, 50);
+        }
+
+        // 7. Save Stats
+        localStorage.setItem("murekkep_site_statistics", JSON.stringify(stats));
+
+        if (isSupabaseConnected && supabaseClient) {
+            try {
+                await supabaseClient
+                    .from('site_settings')
+                    .upsert({ key: 'site_statistics', value: stats });
+            } catch (e) {
+                console.error("Failed to save stats to Supabase:", e);
+            }
+        }
+    } catch (e) {
+        console.error("Error tracking statistics:", e);
+    }
+}
+
+// Functions
+
+// Helper to truncate text to prevent cards from overflowing in the grid
+function truncateText(text, maxLength) {
+    if (!text) return "";
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength).trim() + "...";
+}
+
+// Calculate Read Time
+function calculateReadTime(text) {
+    const wordsPerMinute = 200;
+    const cleanText = text.replace(/<[^>]*>/g, ""); // strip HTML
+    const wordCount = cleanText.split(/\s+/).length;
+    const minutes = Math.ceil(wordCount / wordsPerMinute);
+    return `${minutes} dk okuma`;
+}
+
+// Generate unique ID
+function generateId() {
+    return 'art_' + Math.random().toString(36).substr(2, 9);
+}
+
+// Format Date
+function formatDate(date) {
+    const options = { day: 'numeric', month: 'long', year: 'numeric' };
+    return date.toLocaleDateString('tr-TR', options);
+}
+
+// Get latest article for a category slot
+function getLatestByCategory(cat) {
+    const filtered = articles.filter(a => a.category === cat);
+    return filtered[filtered.length - 1] || null;
+}
+
+// Helper to render dynamic card styles or beautiful placeholder calls
+function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLabel) {
+    if (!art) {
+        // Render a beautiful print-style placeholder for empty slot
+        return `
+            <div class="article-card empty-slot-placeholder" style="border: 1px dashed var(--border-light); padding: 25px; text-align: center; border-radius: 8px; background-color: var(--bg-secondary); margin-bottom: 20px;">
+                <span class="card-category" style="color: var(--text-secondary); opacity: 0.7;">BOŞ SÜTUN</span>
+                <h4 style="font-family: var(--font-header); font-size: 1.15rem; margin: 15px 0 10px; color: var(--text-secondary);">Yeni Kalemler Aranıyor</h4>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 15px;">Bu sütun boş kalmıştır. Edebiyat hareketine katılmak için hemen bir yazı kaleme alın!</p>
+                <button onclick="document.getElementById('write-toggle').click()" style="background-color: transparent; border: 1px solid var(--border-color); color: var(--text-primary); font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700; padding: 6px 12px; border-radius: 15px; cursor: pointer; text-transform: uppercase;">Yazı Ekle</button>
+            </div>
+        `;
+    }
+
+    // Moderation check
+    const reports = getArticleReports(art.id);
+    if (reports >= 3 && !isEditorModeActive) {
+        return `
+            <div class="moderated-content-placeholder" style="margin-bottom: 20px;">
+                <svg viewBox="0 0 24 24" style="width: 28px; height: 28px; fill: var(--accent-color); margin-bottom: 8px; display: inline-block;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                <h4 style="font-family: var(--font-header); font-size: 1rem; margin-bottom: 4px; color: var(--text-primary);">Sütun İncelemede</h4>
+                <p style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4; max-width: 300px; margin: 0 auto;">Bu içerik okur şikayetleri sebebiyle geçici olarak editör incelemesine alınmıştır.</p>
+            </div>
+        `;
+    }
+
+    const image = art.image && art.image !== "undefined" ? art.image : "assets/typewriter_birds.webp";
+    const subtitle = art.subtitle && art.subtitle !== "undefined" ? art.subtitle : "";
+    const author = art.author && art.author !== "undefined" ? art.author : "Mürekkep Yazarı";
+    const rankBadge = getAuthorRankBadgeHtml(author);
+    const followersVal = getAuthorFollowerCount(author);
+    const followersBadge = `<span style="font-size: 0.68rem; font-weight: normal; color: var(--text-secondary); opacity: 0.75; margin-left: 5px; display: inline-flex; align-items: center; gap: 2px;" title="${author} yazarının takipçi sayısı">👥 ${followersVal}</span>`;
+    const authorHtml = `<span onclick="event.stopPropagation(); window.openAuthorProfile('${author.replace(/'/g, "\\'")}')" style="cursor: pointer; text-decoration: underline; text-underline-offset: 2px; transition: color 0.2s; display: inline-flex; align-items: center; gap: 2px; flex-wrap: wrap;" onmouseover="this.style.color='var(--accent-color)'" onmouseout="this.style.color=''" title="Yazar Künyesini Göster">${author}${rankBadge}</span>${followersBadge}`;
+    const cleanCatName = (art.category || "").trim().toLowerCase();
+    const catMap = {
+        "siir": "ŞİİR",
+        "oyku": "ÖYKÜ",
+        "deneme": "DENEME",
+        "kitap": "KİTAP İNCELEMESİ",
+        "roportaj": "YAZAR RÖPORTAJI",
+        "kose-yazilari": "KÖŞE YAZISI",
+        "haber": "EDEBİYAT HABERLERİ",
+        "yarismalar": "YARIŞMA"
+    };
+    const categoryLabel = art.corner_name ? art.corner_name.toUpperCase() : (catMap[cleanCatName] || defaultCategoryLabel);
+
+    let cardHTML = "";
+
+    if (styleType === 'headline') {
+        const displayLead = truncateText(subtitle, 200);
+        cardHTML = `
+            <article class="article-card headline-card" data-id="${art.id}" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                <h2 class="card-title" style="font-family: var(--font-header); font-size: 2rem; font-weight: 900; line-height: 1.15; letter-spacing: -0.5px; margin-bottom: 8px; text-align: center;">${art.title}</h2>
+                <p class="card-lead" style="font-family: var(--font-body); font-size: 0.95rem; line-height: 1.45; text-align: center; color: var(--text-secondary); margin-bottom: 15px; max-width: 90%; margin-left: auto; margin-right: auto;">${displayLead}</p>
+                <div class="card-image-box" style="width: 100%; height: 260px; overflow: hidden; border: 1px solid var(--border-light); border-radius: 4px; margin-bottom: 10px;">
+                    <img src="${image}" alt="${art.title}" class="card-image" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
+                </div>
+            </article>
+        `;
+    } else {
+        const displaySubtitle = truncateText(subtitle, 140);
+
+        if (styleType === 'siir' || art.category === 'siir') {
+            const poemLines = art.content
+                ? art.content
+                    .replace(/<br\s*\/?>/gi, "\n")
+                    .replace(/<\/p>/gi, "\n")
+                    .replace(/<\/div>/gi, "\n")
+                    .replace(/<[^>]*>/g, "")
+                    .split("\n")
+                    .map(line => line.trim())
+                    .filter(Boolean)
+                    .slice(0, 4)
+                    .join("<br>")
+                : subtitle;
+            const poemImage = art.image && art.image !== "undefined" ? art.image : "assets/poetry_flowers.webp";
+            cardHTML = `
+                <article class="article-card poem-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
+                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.35rem; font-weight: 900; margin: 6px 0 2px 0;">${art.title}</h3>
+                    <span class="card-author" style="font-family: var(--font-ui); font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 12px; font-weight: 500;">${authorHtml}</span>
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; width: 100%;">
+                        <div class="poem-excerpt" style="font-family: var(--font-body); font-size: 0.85rem; line-height: 1.45; font-style: italic; color: var(--text-primary); flex: 1;">${poemLines}</div>
+                        <div class="card-image-box" style="width: 100px; height: 110px; flex-shrink: 0; border: none; margin: 0; padding: 0;">
+                            <img src="${poemImage}" alt="Edebi Görsel" class="card-image" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror=null;this.src='assets/poetry_flowers.webp';">
+                        </div>
+                    </div>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; text-align: left; padding-top: 8px;">► OKU</span>
+                </article>
+            `;
+        } else if (styleType === 'roportaj' || art.category === 'roportaj') {
+            // Render as horizontal card style
+            const roportajImage = art.image && art.image !== "undefined" ? art.image : "assets/author_zeynep.webp";
+            cardHTML = `
+                <article class="article-card article-card-horizontal" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
+                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.25rem; font-weight: 900; margin: 6px 0 12px 0;">${art.title}</h3>
+                    <div style="display: flex; gap: 12px; align-items: flex-start; width: 100%; height: 100%;">
+                        <div class="card-image-box" style="width: 80px; height: 90px; flex-shrink: 0; border: 1px solid var(--border-light); margin: 0;">
+                            <img src="${roportajImage}" alt="${art.title}" class="card-image" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
+                        </div>
+                        <div class="card-text" style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%;">
+                            <p class="card-preview" style="font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; margin: 0 0 6px 0;">${displaySubtitle}</p>
+                            <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block; margin-top: auto; padding-top: 8px;">► OKU</span>
+                        </div>
+                    </div>
+                </article>
+            `;
+        } else if (styleType === 'kose' || art.category === 'kose-yazilari') {
+            // Render as columnist card style
+            const koseImage = art.image && art.image !== "undefined" ? art.image : "assets/author_mehmet.webp";
+            cardHTML = `
+                <article class="article-card columnist-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
+                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.15rem; font-weight: 900; margin: 6px 0 2px 0;">${art.title}</h3>
+                    <span class="card-author" style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--text-secondary); display: block; margin-bottom: 10px; font-weight: 500;">${authorHtml}</span>
+                    <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
+                        <p class="card-preview" style="font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; flex: 1; margin: 0;">${displaySubtitle}</p>
+                        <div class="columnist-avatar-box" style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; border: 1px solid var(--border-light); flex-shrink: 0; margin: 0;">
+                            <img src="${koseImage}" alt="${author}" class="columnist-avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                    </div>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; padding-top: 8px;">► OKU</span>
+                </article>
+            `;
+        } else if (styleType === 'haber' || art.category === 'haber') {
+            // Render as news item list card
+            const newsArticles = articles.filter(a => a.category === 'haber').slice(0, 3);
+            let newsItemsHTML = "";
+            if (newsArticles.length > 0) {
+                newsArticles.forEach(na => {
+                    newsItemsHTML += `<div class="news-item" style="font-size: 0.78rem; color: var(--text-primary); font-family: var(--font-body); line-height: 1.4; margin-bottom: 8px; border-bottom: 1px dotted var(--border-light); padding-bottom: 6px; cursor: pointer;" onclick="openArticle('${na.id}')">• ${na.title}</div>`;
+                });
+            } else {
+                newsItemsHTML = `
+                    <div class="news-item" style="font-size: 0.78rem; color: var(--text-primary); font-family: var(--font-body); line-height: 1.4; margin-bottom: 6px;">• İstanbul Kitap Fuarı Kapılarını Açtı</div>
+                    <div class="news-item" style="font-size: 0.78rem; color: var(--text-primary); font-family: var(--font-body); line-height: 1.4; margin-bottom: 6px;">• 2024 Cevdet Kudret Edebiyat Ödülleri Sahiplerini Buldu</div>
+                    <div class="news-item" style="font-size: 0.78rem; color: var(--text-primary); font-family: var(--font-body); line-height: 1.4; margin-bottom: 6px;">• Genç Yazarlar İçin Yeni Fon Desteği</div>
+                `;
+            }
+            cardHTML = `
+                <article class="article-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
+                    <div class="news-list" style="margin-top: 10px; margin-bottom: 10px;">
+                        ${newsItemsHTML}
+                    </div>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block; margin-top: auto; padding-top: 8px;">► OKU</span>
+                </article>
+            `;
+        } else if (styleType === 'yarisma' || art.category === 'yarismalar') {
+            // Render as contest card style
+            cardHTML = `
+                <article class="article-card contest-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
+                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.15rem; font-weight: 900; margin: 6px 0 6px 0;">${art.title}</h3>
+                    <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
+                        <div style="flex: 1;">
+                            <div class="contest-theme" style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--accent-color); letter-spacing: 0.5px; margin-bottom: 4px;">Tema: "Serbest Edebi Eser"</div>
+                            <p class="card-preview" style="font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; margin: 0;">${displaySubtitle}</p>
+                        </div>
+                        <svg class="contest-icon" viewBox="0 0 24 24" style="width: 45px; height: 45px; fill: var(--text-secondary); opacity: 0.6; flex-shrink: 0;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                    </div>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; padding-top: 8px;">► OKU</span>
+                </article>
+            `;
+        } else {
+            // Default standard card
+            const isKitap = art.category === 'kitap';
+            cardHTML = `
+                <article class="article-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
+                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.25rem; font-weight: 900; margin: 6px 0 4px 0;">${art.title}</h3>
+                    <span class="card-author" style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--text-secondary); display: block; margin-bottom: 10px; font-weight: 500;">${authorHtml}</span>
+                    <div class="card-image-box" style="width: 100%; height: 110px; overflow: hidden; border: 1px solid var(--border-light); margin-bottom: 10px; border-radius: 4px;">
+                        <img src="${image}" alt="${art.title}" class="card-image" style="width: 100%; height: 100%; object-fit: ${isKitap ? 'contain' : 'cover'}; background-color: ${isKitap ? 'var(--bg-secondary)' : 'transparent'};" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
+                    </div>
+                    <p class="card-preview" style="font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; margin-bottom: 8px;">${displaySubtitle}</p>
+                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block; margin-top: auto; padding-top: 8px;">► OKU</span>
+                </article>
+            `;
+        }
+    }
+
+    // Inject editor controls if Editor Mode is active
+    if (isEditorModeActive) {
+        const isFlagged = reports > 0;
+        if (isFlagged) {
+            cardHTML = cardHTML.replace('class="article-card', 'class="article-card flagged');
+            const badgeHTML = `<div class="flag-badge">⚠️ Şikayet: ${reports}</div>`;
+            cardHTML = cardHTML.replace(/<article[^>]*>/, match => `${match}\n${badgeHTML}`);
+        }
+        const controlsHTML = `
+            <div class="editor-card-controls" onclick="event.stopPropagation();">
+                <button class="btn-editor-action approve" onclick="window.approveArticleClick('${art.id}', event)">Onayla</button>
+                <button class="btn-editor-action delete" onclick="window.deleteArticleClick('${art.id}', event)">Kaldır</button>
+            </div>
+        `;
+        cardHTML = cardHTML.replace('</article>', `${controlsHTML}\n</article>`);
+    }
+
+    return cardHTML;
+}
+
+// Function to handle page flips
+function changePage(page) {
+    currentPage = page;
     
-    document.body.appendChild(alertDiv);
+    // Add flip transition animation to main grid
+    mainGrid.classList.add("page-fade-transition");
+    
+    // Smooth scroll back to top of the newspaper
+    document.querySelector(".newspaper-header").scrollIntoView({ behavior: 'smooth' });
     
     setTimeout(() => {
-        alertDiv.style.opacity = "0";
-        alertDiv.style.transition = "opacity 0.5s ease";
-        setTimeout(() => alertDiv.remove(), 500);
-    }, 3000);
+        renderNewspaperGrid();
+        mainGrid.classList.remove("page-fade-transition");
+    }, 300);
 }
 
-// Authentication Overlay Controls
-function openAuthModal() {
-    if (authOverlay) {
-        authOverlay.classList.remove("hidden");
-        lockBodyScroll();
-        switchAuthTab('login');
-    }
-}
-
-function closeAuthModal() {
-    if (authOverlay) {
-        authOverlay.classList.add("hidden");
-        unlockBodyScroll();
-    }
-}
-
-// =============================================
-// SHARE SYSTEM
-// =============================================
-let shareCurrentTemplate = 'gece';
-let shareCurrentArticle = null;
-let shareIsCustomMode = false;
-
-/** Helper: update the share modal's quote display panel */
-function setShareQuote(text) {
-    const input   = document.getElementById('share-quote-input');
-    if (input)    input.value = text ? text.trim().substring(0, 280) : '';
-    renderShareCard(shareCurrentTemplate);
-}
-
-/** Populate the Spotify-style sentence selector list dynamically */
-function populateShareSentences(article) {
-    const listEl = document.getElementById("share-paragraphs-list");
-    if (!listEl) return;
-    listEl.innerHTML = "";
-
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = article.content;
-    const paragraphs = tempDiv.querySelectorAll("p, blockquote");
-
-    const decodeHTMLEntities = (str) => {
-        const temp = document.createElement("div");
-        temp.innerHTML = str;
-        const decoded = temp.textContent || temp.innerText || "";
-        return decoded.replace(/\s+/g, ' ').trim();
-    };
-
-    const sentences = [];
-    if (article.category === 'siir') {
-        // For poems, preserve line structure and treat each verse as a selectable item
-        const lines = tempDiv.innerHTML
-            .replace(/<br\s*\/?>/gi, "\n")
-            .replace(/<\/p>/gi, "\n")
-            .replace(/<\/div>/gi, "\n")
-            .replace(/<[^>]*>/g, "")
-            .split("\n")
-            .map(line => decodeHTMLEntities(line))
-            .filter(Boolean);
-        lines.forEach(l => sentences.push(l));
-    } else {
-        // For prose, split into sentences by punctuation
-        paragraphs.forEach(p => {
-            const text = decodeHTMLEntities(p.textContent);
-            if (!text) return;
-            
-            const matches = text.match(/[^.!?]+[.!?]+(?=\s|$)/g);
-            if (matches) {
-                matches.forEach(s => {
-                    const cleanS = s.trim();
-                    if (cleanS) sentences.push(cleanS);
-                });
-            } else if (text) {
-                sentences.push(text);
-            }
-        });
-    }
-
-    if (sentences.length === 0) {
-        listEl.innerHTML = `<div style="color:var(--text-secondary); font-size:0.8rem; text-align:center; padding:20px;">Bu makalede seçilebilir cümle bulunamadı.</div>`;
-        return;
-    }
-
-    sentences.forEach((sentenceText, idx) => {
-        const item = document.createElement("button");
-        item.type = "button";
-        item.className = "share-paragraph-item"; // uses existing CSS class for paragraph item
-        item.textContent = sentenceText;
-        item.dataset.index = idx;
-
-        item.addEventListener("click", () => {
-            // Toggle selection
-            item.classList.toggle("selected");
-
-            // Compile selected items (join with newlines for poems, spaces for other articles)
-            const selectedItems = listEl.querySelectorAll(".share-paragraph-item.selected");
-            const separator = (shareCurrentArticle && shareCurrentArticle.category === 'siir') ? "\n" : " ";
-            const compiledText = Array.from(selectedItems)
-                .map(el => el.textContent)
-                .join(separator)
-                .substring(0, 280);
-
-            const quoteInput = document.getElementById("share-quote-input");
-            if (quoteInput) {
-                quoteInput.value = compiledText;
-                quoteInput.dispatchEvent(new Event("input"));
-            }
-        });
-
-        listEl.appendChild(item);
-    });
-}
-
-function openShareModal(articleId, preselectedText) {
-    const article = articles.find(a => a.id === articleId);
-    if (!article) return;
-    shareCurrentArticle = article;
-    shareIsCustomMode = false;
-
-    const overlay = document.getElementById('share-overlay');
-    if (!overlay) return;
-
-    overlay.classList.remove('hidden');
-    lockBodyScroll();
-
-    // Toggle custom fields visibility
-    const customFieldsSection = document.getElementById("share-custom-inputs-section");
-    if (customFieldsSection) customFieldsSection.classList.add("hidden");
-
-    const paragraphPickerSection = overlay.querySelector(".share-paragraph-picker-section");
-    if (paragraphPickerSection) paragraphPickerSection.classList.remove("hidden");
-
-    const modalTitle = overlay.querySelector('.share-modal-title');
-    if (modalTitle) modalTitle.textContent = "Paylaş";
-
-    const quoteLabel = overlay.querySelector('.share-quote-display label');
-    if (quoteLabel) quoteLabel.textContent = "Paylaşılacak Alıntı (İsteğe Bağlı):";
-
-    const quoteInput = document.getElementById("share-quote-input");
-    if (quoteInput) quoteInput.placeholder = "Yukarıdan cümle seçebilir veya alıntıyı buraya kendiniz de yazabilirsiniz...";
-
-    // Populate sentences list
-    populateShareSentences(article);
-
-    // Populate quote: from preselected text only (no auto-fill from subtitle)
-    setShareQuote(preselectedText || '');
-
-    // Auto-select sentence containing the preselected text
-    if (preselectedText) {
-        const cleanPre = preselectedText.trim().toLowerCase();
-        const items = document.querySelectorAll('.share-paragraph-item');
-        items.forEach(item => {
-            if (item.textContent.toLowerCase().includes(cleanPre) || cleanPre.includes(item.textContent.toLowerCase())) {
-                item.classList.add('selected');
-            }
-        });
-    }
-}
-
-function openCustomShareModal() {
-    shareIsCustomMode = true;
-    shareCurrentArticle = {
-        title: "Yeni Bir Başlangıç",
-        author: "Kalem Sahibi",
-        category: "deneme"
-    };
-
-    const overlay = document.getElementById('share-overlay');
-    if (!overlay) return;
-
-    overlay.classList.remove('hidden');
-    lockBodyScroll();
-
-    // Toggle custom fields visibility
-    const customFieldsSection = document.getElementById("share-custom-inputs-section");
-    if (customFieldsSection) customFieldsSection.classList.remove("hidden");
-
-    const paragraphPickerSection = overlay.querySelector(".share-paragraph-picker-section");
-    if (paragraphPickerSection) paragraphPickerSection.classList.add("hidden");
-
-    const modalTitle = overlay.querySelector('.share-modal-title');
-    if (modalTitle) modalTitle.textContent = "Sosyal Medya Kartı Oluştur";
-
-    const quoteLabel = overlay.querySelector('.share-quote-display label');
-    if (quoteLabel) quoteLabel.textContent = "Kart Üzerindeki Metin / Alıntı:";
-
-    const quoteInput = document.getElementById("share-quote-input");
-    if (quoteInput) quoteInput.placeholder = "Kart üzerinde görünmesini istediğiniz cümleyi yazın...";
-
-    // Populate input values to match default mock article
-    const customAuthorInput = document.getElementById("share-custom-author-input");
-    const customCategorySelect = document.getElementById("share-custom-category-input");
-    const customTitleInput = document.getElementById("share-custom-title-input");
-
-    if (customAuthorInput) customAuthorInput.value = shareCurrentArticle.author;
-    if (customCategorySelect) customCategorySelect.value = shareCurrentArticle.category;
-    if (customTitleInput) customTitleInput.value = shareCurrentArticle.title;
-
-    setShareQuote("Kendi cümlenizi buraya yazıp, yukarıdan şablon seçerek sosyal medya kartınızı anında oluşturun.");
-}
-
-function closeShareModal() {
-    const overlay = document.getElementById("share-overlay");
-    if (overlay) {
-        overlay.classList.add("hidden");
-        unlockBodyScroll();
-    }
-}
-
-// Canvas text wrapping helper that respects explicit newlines
-function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
-    const sourceLines = text.split('\n');
-    let currentY = y;
-    const lines = [];
-
-    sourceLines.forEach(srcLine => {
-        const words = srcLine.split(' ');
-        let line = '';
-        
-        for (let n = 0; n < words.length; n++) {
-            const testLine = line + words[n] + ' ';
-            const metrics = ctx.measureText(testLine);
-            if (metrics.width > maxWidth && n > 0) {
-                lines.push({ text: line.trim(), y: currentY });
-                line = words[n] + ' ';
-                currentY += lineHeight;
-            } else {
-                line = testLine;
-            }
-        }
-        lines.push({ text: line.trim(), y: currentY });
-        currentY += lineHeight;
-    });
-
-    lines.forEach(l => ctx.fillText(l.text, x, l.y));
-    return currentY;
-}
-
-// Render a share card on canvas
-function renderShareCard(template) {
-    const canvas = document.getElementById("share-canvas");
-    if (!canvas || !shareCurrentArticle) return;
-    const ctx = canvas.getContext("2d");
-    const W = 1080, H = 1080;
-    canvas.width = W;
-    canvas.height = H;
-
-    const quoteInput = document.getElementById("share-quote-input");
-    const quoteText = (quoteInput && quoteInput.value.trim()) ? quoteInput.value.trim() : "";
-    
-    let articleTitle = "";
-    let authorName = "";
-    let categoryName = "";
-
-    if (shareIsCustomMode) {
-        const customTitleInput = document.getElementById("share-custom-title-input");
-        const customAuthorInput = document.getElementById("share-custom-author-input");
-        const customCategorySelect = document.getElementById("share-custom-category-input");
-
-        articleTitle = (customTitleInput && customTitleInput.value.trim()) ? customTitleInput.value.trim() : "Yeni Bir Başlangıç";
-        authorName = (customAuthorInput && customAuthorInput.value.trim()) ? customAuthorInput.value.trim() : "Kalem Sahibi";
-        categoryName = (customCategorySelect && customCategorySelect.value) ? customCategorySelect.value : "deneme";
-
-        // Keep shareCurrentArticle synced so other components (social sharing etc) get correct values
-        shareCurrentArticle.title = articleTitle;
-        shareCurrentArticle.author = authorName;
-        shareCurrentArticle.category = categoryName;
-    } else {
-        articleTitle = shareCurrentArticle.title || "";
-        authorName = shareCurrentArticle.author || "Mürekkep";
-        categoryName = shareCurrentArticle.category || "deneme";
-    }
-
-    // Template definitions
-    const templates = {
-        gece: {
-            bgColors: ['#0f0f0f', '#1a1a1a'],
-            angle: 0,
-            textColor: '#e2ddd5',
-            accentColor: '#c94040',
-            logoColor: '#e2ddd5',
-            subtleColor: '#666666',
-            borderColor: '#333333',
-            quoteMarkColor: 'rgba(93,26,26,0.6)',
-        },
-        sabah: {
-            bgColors: ['#faf8f5', '#f0ebe0'],
-            angle: 0,
-            textColor: '#111111',
-            accentColor: '#5d1a1a',
-            logoColor: '#111111',
-            subtleColor: '#888888',
-            borderColor: '#d8d2c4',
-            quoteMarkColor: 'rgba(93,26,26,0.15)',
-        },
-        gazete: {
-            bgColors: ['#f3efe6', '#e8e0cc'],
-            angle: 0,
-            textColor: '#2c1a00',
-            accentColor: '#2c1a00',
-            logoColor: '#2c1a00',
-            subtleColor: '#8a7560',
-            borderColor: '#c8b898',
-            quoteMarkColor: 'rgba(44,26,0,0.12)',
-            italic: true,
-        },
-        yangin: {
-            bgColors: ['#1a0000', '#6b0f0f', '#c0390f'],
-            angle: 135,
-            textColor: '#fff8e1',
-            accentColor: '#ff6b35',
-            logoColor: '#fff8e1',
-            subtleColor: '#ff9a70',
-            borderColor: '#ff4500',
-            quoteMarkColor: 'rgba(255,107,53,0.25)',
-        },
-        okyanus: {
-            bgColors: ['#0d1b2a', '#1b4f72', '#2471a3'],
-            angle: 135,
-            textColor: '#e8f4f8',
-            accentColor: '#5dade2',
-            logoColor: '#e8f4f8',
-            subtleColor: '#85c1e9',
-            borderColor: '#2980b9',
-            quoteMarkColor: 'rgba(93,173,226,0.25)',
-        }
-    };
-
-    const t = templates[template] || templates.gece;
-    const pad = 90;
-
-    // ── Background ──
-    if (t.bgColors.length > 1) {
-        let grad;
-        if (t.angle === 135) {
-            grad = ctx.createLinearGradient(0, 0, W, H);
-        } else {
-            grad = ctx.createLinearGradient(0, 0, 0, H);
-        }
-        t.bgColors.forEach((c, i) => grad.addColorStop(i / (t.bgColors.length - 1), c));
-        ctx.fillStyle = grad;
-    } else {
-        ctx.fillStyle = t.bgColors[0];
-    }
-    ctx.fillRect(0, 0, W, H);
-
-    // ── Top border line ──
-    ctx.strokeStyle = t.borderColor;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(pad, 130);
-    ctx.lineTo(W - pad, 130);
-    ctx.stroke();
-
-    // ── Logo / Title ──
-    ctx.fillStyle = t.logoColor;
-    ctx.font = `900 72px 'Cinzel', Georgia, serif`;
-    if (t.italic) ctx.font = `italic 900 72px 'Cinzel', Georgia, serif`;
-    ctx.fillText('MÜREKKEP', pad, 110);
-
-    let lastY = H - 240;
-
-    if (quoteText) {
-        // ── Decorative quote mark (large ❝) ──
-        ctx.fillStyle = t.quoteMarkColor;
-        ctx.font = 'bold 500px serif';
-        ctx.fillText('"', pad - 30, 420);
-
-        // ── Quote text ──
-        ctx.fillStyle = t.textColor;
-        const fontSize = quoteText.length > 120 ? 46 : quoteText.length > 80 ? 54 : 62;
-        ctx.font = `${t.italic ? 'italic ' : ''}${fontSize}px 'Playfair Display', Georgia, serif`;
-        ctx.textBaseline = 'top';
-        lastY = wrapCanvasText(ctx, `"${quoteText}"`, pad, 220, W - pad * 2, fontSize * 1.5);
-    } else {
-        // ── Draw Article Poster/Cover layout in the middle ──
-        ctx.textAlign = 'center';
-        
-        // Category Tag
-        ctx.fillStyle = t.accentColor;
-        ctx.font = `700 32px 'Inter', sans-serif`;
-        ctx.fillText(shareCurrentArticle.category.replace("-", " ").toUpperCase(), W / 2, 360);
-        
-        // Article Title
-        ctx.fillStyle = t.textColor;
-        const titleFontSize = articleTitle.length > 50 ? 52 : articleTitle.length > 30 ? 60 : 70;
-        ctx.font = `900 ${titleFontSize}px 'Cinzel', Georgia, serif`;
-        const titleY = 430;
-        const endTitleY = wrapCanvasText(ctx, articleTitle, W / 2, titleY, W - pad * 2.5, titleFontSize * 1.4);
-        
-        // Subtitle (if fits and space allows)
-        const subtitleText = shareCurrentArticle.subtitle || "";
-        if (subtitleText && endTitleY < 720) {
-            ctx.fillStyle = t.subtleColor;
-            const subFontSize = 36;
-            ctx.font = `italic ${subFontSize}px 'Playfair Display', Georgia, serif`;
-            wrapCanvasText(ctx, subtitleText, W / 2, endTitleY + 30, W - pad * 3, subFontSize * 1.4);
-        }
-        
-        ctx.textAlign = 'left'; // Restore alignment
-        lastY = H - 240;
-    }
-
-    // ── Bottom border line ──
-    const bottomBorderY = Math.min(lastY + 60, H - 220);
-    ctx.strokeStyle = t.borderColor;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(pad, bottomBorderY);
-    ctx.lineTo(W - pad, bottomBorderY);
-    ctx.stroke();
-
-    // ── Accent line ──
-    ctx.strokeStyle = t.accentColor;
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(pad, bottomBorderY + 10);
-    ctx.lineTo(pad + 120, bottomBorderY + 10);
-    ctx.stroke();
-
-    // ── Author name ──
-    ctx.fillStyle = t.subtleColor;
-    ctx.font = `italic 500 36px 'Playfair Display', Georgia, serif`;
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillText(`— ${authorName}`, pad, bottomBorderY + 60);
-
-    // ── Article title (smaller, below author) ──
-    ctx.fillStyle = t.subtleColor;
-    ctx.font = `400 30px 'Lora', Georgia, serif`;
-    const shortTitle = articleTitle.length > 55 ? articleTitle.substring(0, 55) + '…' : articleTitle;
-    ctx.fillText(shortTitle, pad, bottomBorderY + 108);
-
-    // ── Bottom site tag ──
-    ctx.fillStyle = t.accentColor;
-    ctx.font = `700 28px 'Inter', sans-serif`;
-    ctx.textAlign = 'right';
-    ctx.fillText('Devamı ► murekkepgzt.com', W - pad, H - pad);
-    ctx.textAlign = 'left';
-}
-
-// =============================================
-// SPOTIFY-STYLE TEXT SELECTION POPUP
-// =============================================
-
-function initTextSelectionPopup() {
-    const popup = document.getElementById('text-selection-popup');
-    const previewEl = document.getElementById('tsp-preview-text');
-    const shareBtn = document.getElementById('tsp-share-btn');
-    const copyBtn = document.getElementById('tsp-copy-btn');
-    const tweetBtn = document.getElementById('tsp-tweet-btn');
-    if (!popup) return;
-
-    let lastSelectedText = '';
-    let hideTimeout = null;
-
-    function showPopup(selectedText, rect) {
-        lastSelectedText = selectedText.trim();
-        if (!lastSelectedText || lastSelectedText.length < 3) { hidePopup(); return; }
-
-        // Truncate preview to ~80 chars
-        previewEl.textContent = lastSelectedText.length > 80
-            ? '"' + lastSelectedText.substring(0, 80) + '…"'
-            : '"' + lastSelectedText + '"';
-
-        popup.classList.remove('hidden');
-
-        // Position: centered above the selection, clamped inside viewport
-        // popup is position:fixed → use viewport (rect) coords directly
-        const POPUP_W = Math.min(340, window.innerWidth - 24);
-        const POPUP_H = 92;
-        const ARROW_H = 10;
-
-        let left = rect.left + rect.width / 2 - POPUP_W / 2;
-        let top  = rect.top - POPUP_H - ARROW_H;
-
-        // If there's not enough room above, flip below
-        if (top < 8) {
-            top = rect.bottom + ARROW_H;
-        }
-
-        // Clamp horizontally & vertically
-        left = Math.max(12, Math.min(left, window.innerWidth - POPUP_W - 12));
-        top  = Math.max(8, top);
-
-        popup.style.left = left + 'px';
-        popup.style.top  = top + 'px';
-        popup.style.width = POPUP_W + 'px';
-    }
-
-    function hidePopup() {
-        popup.classList.add('hidden');
-        lastSelectedText = '';
-    }
-
-    // ── Listen for selections inside the reading overlay ──────────────────
-    const readingOverlay = document.getElementById('reading-overlay');
-    if (!readingOverlay) return;
-
-    function handleSelectionChange() {
-        clearTimeout(hideTimeout);
-        hideTimeout = setTimeout(() => {
-            const sel = window.getSelection();
-            if (!sel || sel.isCollapsed || !sel.toString().trim()) {
-                hidePopup();
-                return;
-            }
-
-            // Only trigger if selection is inside the reading overlay
-            const anchorNode = sel.anchorNode;
-            if (!readingOverlay.contains(anchorNode)) { hidePopup(); return; }
-
-            try {
-                const range = sel.getRangeAt(0);
-                const rect  = range.getBoundingClientRect();
-                if (rect.width === 0 && rect.height === 0) { hidePopup(); return; }
-                showPopup(sel.toString(), rect);
-            } catch(e) { hidePopup(); }
-        }, 50);
-    }
-
-    document.addEventListener('selectionchange', handleSelectionChange);
-    readingOverlay.addEventListener('scroll', handleSelectionChange);
-
-    // Hide on clicking elsewhere (but not on the popup itself)
-    document.addEventListener('mousedown', (e) => {
-        if (!popup.contains(e.target)) hidePopup();
-    });
-    document.addEventListener('touchstart', (e) => {
-        if (!popup.contains(e.target)) hidePopup();
-    });
-
-    // ESC key hides
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') hidePopup();
-    });
-
-    // ── SHARE button → open share modal with selected text ────────────────
-    shareBtn?.addEventListener('click', () => {
-        if (!lastSelectedText) return;
-        const selectedText = lastSelectedText;
-        hidePopup();
-        window.getSelection()?.removeAllRanges();
-
-        if (!activeArticleId) return;
-        // Open share modal and inject selected text
-        openShareModal(activeArticleId, selectedText);
-    });
-
-    // ── COPY button ───────────────────────────────────────────────────────
-    copyBtn?.addEventListener('click', () => {
-        if (!lastSelectedText) return;
-        const textToCopy = `"${lastSelectedText}"`;
-        navigator.clipboard.writeText(textToCopy)
-            .then(() => showToast('📋 Alıntı kopyalandı!'))
-            .catch(() => showToast('Kopyalama başarısız.'));
-        hidePopup();
-        window.getSelection()?.removeAllRanges();
-    });
-
-    // ── TWEET button ──────────────────────────────────────────────────────
-    tweetBtn?.addEventListener('click', () => {
-        if (!lastSelectedText) return;
-        const art = articles.find(a => a.id === activeArticleId);
-        const author = art ? `— ${art.author}` : '';
-        const tweet = `"${lastSelectedText.substring(0, 200)}" ${author} #Mürekkep\nmurekkepgzt.com`;
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweet)}`, '_blank');
-        hidePopup();
-        window.getSelection()?.removeAllRanges();
-    });
-}
-
-// =============================================
-// SHARE SYSTEM
-// =============================================
-
-function initShareOverlay() {
-    const overlay = document.getElementById("share-overlay");
-    const closeBtn = document.getElementById("close-share");
-    const quoteInput = document.getElementById("share-quote-input");
-    const thumbs = document.querySelectorAll(".share-template-thumb");
-
-    // Close button
-    if (closeBtn) closeBtn.addEventListener("click", closeShareModal);
-
-    // Backdrop click
-    if (overlay) {
-        overlay.addEventListener("click", (e) => {
-            if (e.target === overlay) closeShareModal();
-        });
-    }
-
-    // Clear quote button
-    document.getElementById('share-quote-clear')?.addEventListener('click', () => {
-        setShareQuote('');
-    });
-
-    // Template thumb selection
-    thumbs.forEach(thumb => {
-        thumb.addEventListener("click", () => {
-            thumbs.forEach(t => t.classList.remove("active"));
-            thumb.classList.add("active");
-            shareCurrentTemplate = thumb.getAttribute("data-template");
-            renderShareCard(shareCurrentTemplate);
-        });
-    });
-
-    // Live re-render as user edits quote
-    if (quoteInput) {
-        quoteInput.addEventListener("input", () => {
-            renderShareCard(shareCurrentTemplate);
-        });
-    }
-
-    // Live re-render for custom card inputs
-    const customAuthorInput = document.getElementById("share-custom-author-input");
-    const customTitleInput = document.getElementById("share-custom-title-input");
-    const customCategorySelect = document.getElementById("share-custom-category-input");
-
-    [customAuthorInput, customTitleInput].forEach(input => {
-        if (input) {
-            input.addEventListener("input", () => {
-                if (shareIsCustomMode) renderShareCard(shareCurrentTemplate);
+function ensureLayoutSlotIds() {
+    if (!layoutConfig) return;
+    let changed = false;
+    ['col1', 'col2', 'col3'].forEach(colKey => {
+        if (layoutConfig[colKey]) {
+            layoutConfig[colKey].forEach((slot, idx) => {
+                if (!slot.id) {
+                    slot.id = `slot_${colKey}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                    changed = true;
+                }
             });
         }
     });
+    if (changed) {
+        saveLayoutConfig();
+    }
+}
 
-    if (customCategorySelect) {
-        customCategorySelect.addEventListener("change", () => {
-            if (shareIsCustomMode) renderShareCard(shareCurrentTemplate);
-        });
+function updateHeaderMeta() {
+    const headerDateIndicator = document.getElementById("header-date-indicator");
+    const pageIndicator = document.getElementById("header-page-indicator");
+    
+    // Calculate dynamically
+    const baseDate = new Date("2026-07-13");
+    const now = new Date();
+    
+    // 1. Calculate Issue Number (Sayı) - increases every week
+    const diffTime = Math.max(0, now - baseDate);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const issueNum = Math.floor(diffDays / 7) + 1;
+    const issueStr = String(issueNum).padStart(2, '0');
+    
+    // 2. Calculate Turkish Month & Year
+    const TurkishMonths = [
+        "OCAK", "ŞUBAT", "MART", "NİSAN", "MAYIS", "HAZİRAN",
+        "TEMMUZ", "AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK"
+    ];
+    const monthName = TurkishMonths[now.getMonth()];
+    const year = now.getFullYear();
+    
+    if (headerDateIndicator) {
+        headerDateIndicator.innerText = `${monthName} ${year}`;
+    }
+    
+    if (pageIndicator) {
+        pageIndicator.innerText = `SAYI: ${issueStr} / SAYFA: ${String(currentPage).padStart(2, '0')}`;
+    }
+}
+
+// RENDER NEWSPAPER FRONT-PAGE GRID (EDITORIAL BROADSIDE LAYOUT)
+// Helper: Open write modal pre-selected for a specific category
+// Helper: Update dynamic slot form sections based on selected category
+function updateSlotFormSections(categoryKey) {
+    const secGununSozu = document.getElementById("slot-section-gunun-sozu");
+    const secLugat = document.getElementById("slot-section-lugat");
+    const secSiir = document.getElementById("slot-section-siir");
+    const secStandard = document.getElementById("slot-section-standard");
+
+    [secGununSozu, secLugat, secSiir, secStandard].forEach(s => {
+        if (s) s.classList.add("hidden");
+    });
+
+    const studioHeader = document.querySelector(".editor-studio-header h2");
+    const studioDesc = document.querySelector(".editor-studio-header p");
+
+    if (categoryKey === "gunun-sozu") {
+        if (secGununSozu) secGununSozu.classList.remove("hidden");
+        if (studioHeader) studioHeader.innerText = "📜 Günün Sözü / Vecize Yayınla";
+        if (studioDesc) studioDesc.innerText = "Gazetenin sol sütunundaki Günün Sözü kutusunda yayınlanacak vecizeyi ve sahibini yazın.";
+        
+        const qText = document.getElementById("quote-text-input");
+        const qAuth = document.getElementById("quote-author-input");
+        if (qText && !qText.value && editorNoteData.quote) qText.value = editorNoteData.quote;
+        if (qAuth && !qAuth.value && editorNoteData.desc) qAuth.value = editorNoteData.desc;
+    } else if (categoryKey === "lugat") {
+        if (secLugat) secLugat.classList.remove("hidden");
+        if (studioHeader) studioHeader.innerText = "📖 Edebi Lûgat • Günün Kelimesi";
+        if (studioDesc) studioDesc.innerText = "Gazetenin sağ sütunundaki Günün Kelimesi ve köken izahını güncelleyin.";
+        
+        const wTitle = document.getElementById("word-title-input");
+        const wOrigin = document.getElementById("word-origin-input");
+        const wMean = document.getElementById("word-meaning-input");
+        const wEx = document.getElementById("word-example-input");
+        if (wTitle && !wTitle.value && dailyWordData.word) wTitle.value = dailyWordData.word;
+        if (wOrigin && !wOrigin.value && dailyWordData.origin) wOrigin.value = dailyWordData.origin;
+        if (wMean && !wMean.value && dailyWordData.meaning) wMean.value = dailyWordData.meaning;
+        if (wEx && !wEx.value && dailyWordData.example) wEx.value = dailyWordData.example;
+    } else if (categoryKey === "siir") {
+        if (secSiir) secSiir.classList.remove("hidden");
+        if (studioHeader) studioHeader.innerText = "📜 Günün Şiiri Yayınla";
+        if (studioDesc) studioDesc.innerText = "Gazetenin sağ sütunundaki Günün Şiiri kutusunda yayınlanacak şiiri yazın.";
+    } else {
+        if (secStandard) secStandard.classList.remove("hidden");
+        if (studioHeader) studioHeader.innerText = categoryKey === "manset" ? "🌟 Ana Manşet Haberi Yaz" : "🖋️ Editöryal Yazı Yayınla";
+        if (studioDesc) studioDesc.innerText = "Eserinizi kaleme alın ve Mürekkep gazetesinin seçtiğiniz slotunda yayınlayın.";
+    }
+}
+
+// RENDER NEWSPAPER FRONT-PAGE GRID (EDITORIAL BROADSIDE LAYOUT)
+// Helper: Open write modal pre-selected for a specific category
+window.openWriteModalForCategory = function(categoryKey) {
+    const writeToggle = document.getElementById("write-toggle");
+    if (writeToggle) writeToggle.click();
+    const catSelect = document.getElementById("post-category");
+    if (catSelect && categoryKey) {
+        catSelect.value = categoryKey;
+    }
+    updateSlotFormSections(categoryKey || (catSelect ? catSelect.value : "deneme"));
+
+    const editorOverlay = document.getElementById("editor-overlay");
+    if (editorOverlay) {
+        editorOverlay.scrollTop = 0;
+    }
+};
+
+// RENDER NEWSPAPER FRONT-PAGE GRID (MÜREKKEP PROFESYONEL MİZANPAJ)
+function renderNewspaperGrid() {
+    mainGrid.className = "newspaper-grid";
+    mainGrid.style.display = "block";
+
+    reconcileUserArticles();
+    updateHeaderMeta();
+
+    const allArts = getSortedArticles();
+
+    // 1. Identify Main Lead Story (Ana Manşet)
+    let leadArt = allArts.find(a => a.category === "manset" || a.corner_name === "MANŞET" || a.corner_name === "Haftanın Manşeti" || a.corner_name === "Kapak Dosyası")
+               || allArts.find(a => a.category === "deneme" || a.category === "haber")
+               || allArts[0]
+               || null;
+
+    // 2. Identify categorized corners without duplicating lead
+    const usedIds = new Set();
+    if (leadArt) usedIds.add(leadArt.id);
+
+    let essayArt1 = allArts.find(a => (a.category === "kose-yazilari" || a.category === "deneme") && !usedIds.has(a.id));
+    if (essayArt1) usedIds.add(essayArt1.id);
+
+    let essayArt2 = allArts.find(a => (a.category === "deneme" || a.category === "biyografi") && !usedIds.has(a.id));
+    if (essayArt2) usedIds.add(essayArt2.id);
+
+    let youthArt = allArts.find(a => (a.category === "oyku" || a.category === "deneme" || a.category === "genc-kalemler") && !usedIds.has(a.id));
+    if (youthArt) usedIds.add(youthArt.id);
+
+    let storyArt = allArts.find(a => a.category === "oyku" && !usedIds.has(a.id));
+    if (storyArt) usedIds.add(storyArt.id);
+
+    let bookArt = allArts.find(a => a.category === "kitap" && !usedIds.has(a.id));
+    if (bookArt) usedIds.add(bookArt.id);
+
+    let poemArt = allArts.find(a => a.category === "siir" && !usedIds.has(a.id));
+    if (poemArt) usedIds.add(poemArt.id);
+
+    let cultureMedeniyetArt = allArts.find(a => (a.category === "haber" || a.category === "biyografi" || a.category === "roportaj") && !usedIds.has(a.id));
+    if (cultureMedeniyetArt) usedIds.add(cultureMedeniyetArt.id);
+
+    let artEstetikArt = allArts.find(a => (a.category === "haber" || a.category === "yarismalar" || a.category === "deneme") && !usedIds.has(a.id));
+    if (artEstetikArt) usedIds.add(artEstetikArt.id);
+
+    // ─── A. SOL SÜTUN (KÖŞE YAZILARI, GÜNÜN SÖZÜ & GENÇ KALEMLER) ───
+    const colLeftHTML = `
+        <aside class="broadsheet-col-left">
+            <div class="editorial-slot-card" ${essayArt1 ? `data-id="${essayArt1.id}"` : `onclick="window.openWriteModalForCategory('kose-yazilari')"`}>
+                <span class="slot-kicker">✒️ KÖŞE YAZISI</span>
+                <h3 class="slot-title">${essayArt1 ? essayArt1.title : 'Edebiyatta Samimiyet ve Üslup'}</h3>
+                <p class="slot-excerpt">${essayArt1 ? truncateText(essayArt1.subtitle || (essayArt1.content ? essayArt1.content.replace(/<[^>]*>/g, '') : ''), 125) : 'Kelimelerin ardındaki samimiyet, yazarın ruhunu okura açtığı en şeffaf aynadır.'}</p>
+                <div class="slot-byline">
+                    <span>✍️ ${essayArt1 ? essayArt1.author : 'Yayın Kurulu'}</span>
+                    <span>${essayArt1 ? (essayArt1.date || 'Ağustos 2026') : 'Mürekkep'}</span>
+                </div>
+            </div>
+
+            <div class="editorial-slot-card" ${essayArt2 ? `data-id="${essayArt2.id}"` : `onclick="window.openWriteModalForCategory('deneme')"`}>
+                <span class="slot-kicker">🖋️ DENEME & ELEŞTİRİ</span>
+                <h3 class="slot-title">${essayArt2 ? essayArt2.title : 'Sanatın Gayesi ve Anlam Arayışı'}</h3>
+                <p class="slot-excerpt">${essayArt2 ? truncateText(essayArt2.subtitle || (essayArt2.content ? essayArt2.content.replace(/<[^>]*>/g, '') : ''), 125) : 'Felsefe ile edebiyatın kesiştiği noktada varoluşsal sancıların sözcüklerle dindirilmesi.'}</p>
+                <div class="slot-byline">
+                    <span>✍️ ${essayArt2 ? essayArt2.author : 'Mürekkep Tenkit'}</span>
+                    <span>${essayArt2 ? (essayArt2.date || 'Ağustos 2026') : 'İnceleme'}</span>
+                </div>
+            </div>
+
+            <!-- Günün Sözü Kartı (Editörler Tıklayıp Değiştirebilir) -->
+            <div class="editorial-slot-card" style="background: var(--bg-secondary); border-top: 4px solid var(--accent-color);" onclick="window.openWriteModalForCategory('gunun-sozu')">
+                <span class="slot-kicker">📜 GÜNÜN SÖZÜ</span>
+                <p class="slot-quote-text">“${editorNoteData.quote || 'Bir dizesi eksik kalmış bir şiir gibi gezinir insan; ta ki hakikatin kelimesini bulana kadar.'}”</p>
+                <div class="slot-byline">
+                    <span>— ${editorNoteData.desc || 'Ahmet Hamdi Tanpınar'}</span>
+                    <span style="font-size: 0.68rem; color: var(--accent-color); font-weight: 800;">EDEBİ HAFIZA</span>
+                </div>
+            </div>
+
+            <!-- Günün Sözünün Altındaki Ek Slot: Genç Kalemler & Anlatı -->
+            <div class="editorial-slot-card" ${youthArt ? `data-id="${youthArt.id}"` : `onclick="window.openWriteModalForCategory('genc-kalemler')"`}>
+                <span class="slot-kicker">📖 GENÇ KALEMLER & ANLATI</span>
+                <h3 class="slot-title">${youthArt ? youthArt.title : 'Kuşların Kanadında Saklı Şehir'}</h3>
+                <p class="slot-excerpt">${youthArt ? truncateText(youthArt.subtitle || (youthArt.content ? youthArt.content.replace(/<[^>]*>/g, '') : ''), 120) : 'Taş sokakların yankısında büyüyen düşler, genç bir yazarın satırlarında yeniden hayat buluyor.'}</p>
+                <div class="slot-byline">
+                    <span>✍️ ${youthArt ? youthArt.author : 'Genç Yazar'}</span>
+                    <span>${youthArt ? (youthArt.date || 'Ağustos 2026') : '+ Yazı Gönder'}</span>
+                </div>
+            </div>
+        </aside>
+    `;
+
+    // ─── B. ORTA SÜTUN (TEK VE GÜÇLÜ ANA MANŞET + ALT İKİLİ IZGARA) ───
+    let mainLeadHTML = "";
+    if (leadArt) {
+        const leadImg = leadArt.image || "assets/typewriter_birds.webp";
+        const leadKicker = leadArt.corner_name || "EDEBİYAT & DÜŞÜNCE • HAFTANIN MANŞETİ";
+        const leadSubdeck = leadArt.subtitle || "İnsanlığın derin sancısı ve edebiyatın ruhu; hakikati kelimelere dökebilme cesaretinde yatar.";
+        const leadTextRaw = leadArt.content ? leadArt.content.replace(/<[^>]*>/g, ' ') : leadSubdeck;
+        const textCol1 = truncateText(leadTextRaw, 220);
+        const textCol2 = truncateText(leadTextRaw.slice(220) || leadSubdeck, 200);
+
+        mainLeadHTML = `
+            <article class="lead-headline-box" data-id="${leadArt.id}">
+                <span class="lead-kicker-tag">${leadKicker}</span>
+                <h2 class="lead-main-title">${leadArt.title}</h2>
+                <div class="lead-byline-bar">
+                    <span>YAZAR: ${leadArt.author.toUpperCase()} — İSTANBUL</span> • <span>${leadArt.date || 'AĞUSTOS 2026'}</span>
+                </div>
+                
+                <div class="lead-image-frame">
+                    <img src="${leadImg}" alt="${leadArt.title}" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
+                </div>
+                <span class="lead-image-caption">Fotoğraf: Mürekkep Arşivi • Kelimelerin ve edebiyatın ebedi tınısı çağları aşıyor.</span>
+
+                <div class="lead-columns-text">
+                    <p class="drop-cap-text">${textCol1}</p>
+                    <div>
+                        <p>${textCol2}</p>
+                        <span class="lead-readmore">► Yazının Tamamını Oku</span>
+                    </div>
+                </div>
+            </article>
+        `;
+    } else {
+        mainLeadHTML = `
+            <article class="lead-headline-box" onclick="window.openWriteModalForCategory('manset')">
+                <span class="lead-kicker-tag">EDEBİYAT & DÜŞÜNCE • HAFTANIN MANŞETİ</span>
+                <h2 class="lead-main-title">YAPAY ZEKA ÇAĞINDA İNSAN, EDEBİYAT VE ANLAM ARAYIŞI</h2>
+                <div class="lead-byline-bar">
+                    <span>MÜREKKEP EDEBİ HEYETİ — İSTANBUL</span> • <span>AĞUSTOS 2026</span>
+                </div>
+                
+                <div class="lead-image-frame">
+                    <img src="assets/typewriter_birds.webp" alt="Mürekkep Manşet">
+                </div>
+                <span class="lead-image-caption">Fotoğraf: Mürekkep Matbuatı • Kelimelerin hafızası çağa direniyor.</span>
+
+                <div class="lead-columns-text">
+                    <p class="drop-cap-text">Zamanın yıpratıcı ve aceleci akışına karşı direnen tek sığınak, kelimelerin ebedi tınısıdır. Sayfalar arasında kaybolan her dize insan ruhuna açılan bir kapıdır.</p>
+                    <div>
+                        <p>Mürekkep Gazetesi'nin bu sayısında genç kalemlerin fikir tahlillerini okurlarımızla buluşturuyoruz.</p>
+                        <span class="lead-readmore">+ Manşet Yazısı Yayınla</span>
+                    </div>
+                </div>
+            </article>
+        `;
     }
 
-    // Connect trigger buttons for custom card creator
-    document.getElementById("create-card-toggle")?.addEventListener("click", () => {
-        openCustomShareModal();
-    });
+    const subleadHTML = `
+        <div class="sublead-grid-row">
+            <div class="editorial-slot-card" ${storyArt ? `data-id="${storyArt.id}"` : `onclick="window.openWriteModalForCategory('oyku')"`}>
+                <span class="slot-kicker">📖 ÖYKÜ & ANLATI</span>
+                <h3 class="slot-title">${storyArt ? storyArt.title : 'Karanfil ve Yağmur Kokusu'}</h3>
+                <p class="slot-excerpt">${storyArt ? truncateText(storyArt.subtitle || (storyArt.content ? storyArt.content.replace(/<[^>]*>/g, '') : ''), 120) : 'Eski bir konağın gıcırdayan merdivenlerinde durdu ihtiyar. Sararmış mektuba son kez baktı...'}</p>
+                <div class="slot-byline">
+                    <span>Yazan: ${storyArt ? storyArt.author : 'Mürekkep Yazar'}</span>
+                </div>
+            </div>
 
-    document.getElementById("footer-create-card-btn")?.addEventListener("click", (e) => {
-        e.preventDefault();
-        openCustomShareModal();
-    });
+            <div class="editorial-slot-card" ${bookArt ? `data-id="${bookArt.id}"` : `onclick="window.openWriteModalForCategory('kitap')"`}>
+                <span class="slot-kicker">📚 KİTAPLIK & TENKİT</span>
+                <h3 class="slot-title">${bookArt ? bookArt.title : 'Kuyucaklı Yusuf Tahlili'}</h3>
+                <p class="slot-excerpt">${bookArt ? truncateText(bookArt.subtitle || (bookArt.content ? bookArt.content.replace(/<[^>]*>/g, '') : ''), 120) : 'Anadolu insanının saf ve hırçın doğasını ustalıkla işleyen eserin edebi tahlili.'}</p>
+                <div class="slot-byline">
+                    <span>İnceleyen: ${bookArt ? bookArt.author : 'Mürekkep Tenkit'}</span>
+                </div>
+            </div>
+        </div>
+    `;
 
-    // WhatsApp share
-    document.getElementById("share-whatsapp")?.addEventListener("click", () => {
-        if (!shareCurrentArticle) return;
-        const q = quoteInput?.value.trim() || shareCurrentArticle.subtitle || shareCurrentArticle.title;
-        const text = `"${q}"\n\n— ${shareCurrentArticle.author}\n📖 ${shareCurrentArticle.title}\n\nmurekkepgzt.com`;
-        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
-    });
+    const colCenterHTML = `
+        <main class="broadsheet-col-center">
+            ${mainLeadHTML}
+            ${subleadHTML}
+        </main>
+    `;
 
-    // Twitter/X share
-    document.getElementById("share-twitter")?.addEventListener("click", () => {
-        if (!shareCurrentArticle) return;
-        const q = quoteInput?.value.trim() || shareCurrentArticle.subtitle || shareCurrentArticle.title;
-        const text = `"${q}"\n\n— ${shareCurrentArticle.author} | #Mürekkep`;
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
-    });
+    // ─── C. SAĞ SÜTUN (GÜNÜN ŞİİRİ, KÜLTÜR & MEDENİYET, LÛGAT) ───
+    const colRightHTML = `
+        <aside class="broadsheet-col-right">
+            <div class="poem-slot-card" ${poemArt ? `data-id="${poemArt.id}"` : `onclick="window.openWriteModalForCategory('siir')"`}>
+                <span class="slot-kicker" style="justify-content: center;">📜 GÜNÜN ŞİİRİ</span>
+                <strong class="poem-title">${poemArt ? poemArt.title : 'Kelimelerin Sükûtu'}</strong>
+                <div class="poem-stanzas">
+                    ${poemArt ? (poemArt.content ? poemArt.content.replace(/<[^>]*>/g, '\n').split('\n').filter(Boolean).slice(0, 5).join('<br>') : poemArt.subtitle) : 'Kelimeler yorulur, susar geceler,<br>Yalnızlığın kıyısında açar bir çiçek.<br>Ne giden döner geri, ne kalan kalır,<br>Yalnızca bir şiir kalır yadigar.'}
+                </div>
+                <span class="poem-poet">${poemArt ? `ŞAİR: ${poemArt.author}` : '+ Şiir Başvurusu Yap'}</span>
+            </div>
 
-    // Instagram — download image
-    document.getElementById("share-instagram")?.addEventListener("click", () => {
-        const canvas = document.getElementById("share-canvas");
-        if (!canvas) return;
-        const link = document.createElement("a");
-        link.download = `murekkep-paylasim.png`;
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-        showToast("📥 Görsel indirildi! Instagram'da paylaşabilirsiniz.");
-    });
+            <!-- Edebiyat Söyleşileri yerine Kültür & Medeniyet Slotu -->
+            <div class="editorial-slot-card" ${cultureMedeniyetArt ? `data-id="${cultureMedeniyetArt.id}"` : `onclick="window.openWriteModalForCategory('haber')"`}>
+                <span class="slot-kicker">🏛️ KÜLTÜR & MEDENİYET</span>
+                <h3 class="slot-title">${cultureMedeniyetArt ? cultureMedeniyetArt.title : 'Mazi ile İstikbal Arasında Türk Şiiri'}</h3>
+                <p class="slot-excerpt">${cultureMedeniyetArt ? truncateText(cultureMedeniyetArt.subtitle || (cultureMedeniyetArt.content ? cultureMedeniyetArt.content.replace(/<[^>]*>/g, '') : ''), 120) : '“Kültürel hafızamızın kökleri, klasik metinlerimiz ile çağdaş düşüncenin sentezinde yeşeriyor.”'}</p>
+                <div class="slot-byline">
+                    <span>${cultureMedeniyetArt ? `Hazırlayan: ${cultureMedeniyetArt.author}` : 'Mürekkep Kültür Servisi'}</span>
+                </div>
+            </div>
 
-    // Copy link
-    document.getElementById("share-copy-link")?.addEventListener("click", () => {
-        const url = window.location.href.split("?")[0];
-        navigator.clipboard.writeText(url).then(() => {
-            showToast("🔗 Link kopyalandı!");
-        }).catch(() => {
-            showToast("Link: " + url);
+            <!-- Edebi Lûgat / Anlamını Bilmediğimiz Kelimeler Köşesi (Editörler Değiştirebilir) -->
+            <div class="editorial-slot-card" style="background: var(--bg-secondary); border-top: 4px solid var(--accent-color);" onclick="window.openWriteModalForCategory('lugat')">
+                <span class="slot-kicker">📖 EDEBİ LÛGAT • GÜNÜN KELİMESİ</span>
+                <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 4px 0 2px;">
+                    <h3 class="slot-title" style="font-size: 1.22rem; letter-spacing: 0.5px; color: var(--accent-color); margin: 0;">${dailyWordData.word || 'Tahassür'}</h3>
+                    <span style="font-family: var(--font-ui); font-size: 0.68rem; font-weight: 700; color: var(--text-secondary);">${dailyWordData.origin || '[Arapça • İsim]'}</span>
+                </div>
+                <p class="slot-excerpt" style="-webkit-line-clamp: 2; margin-bottom: 4px; font-weight: 600; color: var(--text-primary);">
+                    ${dailyWordData.meaning || 'Kavuşulması istenen şeye veya geçmişe duyulan derin özlem, hasret ve hüzünlü iç çekiş.'}
+                </p>
+                <p class="slot-excerpt" style="-webkit-line-clamp: 2; font-style: italic; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 6px;">
+                    ${dailyWordData.example || '“Gözlerinde eski günlerin tahassürü, dilinde yarım kalmış bir türkü vardı.”'}
+                </p>
+                <div class="slot-byline">
+                    <span>Lûgat-ı Mürekkep</span>
+                    <span style="font-size: 0.68rem; color: var(--accent-color); font-weight: 800;">HAFTALIK KELİME</span>
+                </div>
+            </div>
+        </aside>
+    `;
+
+    // Assembly Complete Broadsheet Layout
+    mainGrid.innerHTML = `
+        <div class="broadsheet-layout-container">
+            ${colLeftHTML}
+            ${colCenterHTML}
+            ${colRightHTML}
+        </div>
+    `;
+
+    // Attach click handlers to all actionable items - Directly opens article
+    mainGrid.querySelectorAll("[data-id]").forEach(item => {
+        item.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const articleId = item.getAttribute("data-id");
+            if (articleId) openArticle(articleId);
         });
-    });
-
-    // Native share image
-    document.getElementById("share-native-image")?.addEventListener("click", () => {
-        const canvas = document.getElementById("share-canvas");
-        if (!canvas) return;
-
-        canvas.toBlob((blob) => {
-            if (!blob) return;
-            const file = new File([blob], 'murekkep-paylasim.png', { type: 'image/png' });
-            
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                navigator.share({
-                    files: [file],
-                    title: 'Mürekkep Alıntı',
-                    text: 'Mürekkep Gazetesi\'nden edebi bir alıntı paylaştı.'
-                }).catch(err => {
-                    console.log("Paylaşım iptal edildi veya hata oluştu:", err);
-                });
-            } else {
-                // Fallback: Download the image
-                const link = document.createElement("a");
-                link.download = `murekkep-paylasim.png`;
-                link.href = canvas.toDataURL("image/png");
-                link.click();
-                showToast("📥 Cihazınız doğrudan görsel paylaşımını desteklemediği için indirildi.");
-            }
-        }, 'image/png');
     });
 }
 
-// Settings Modal
+// Mobile Quick Action Modal Handlers (Smart iPhone Pop-up)
+let activeMobileArticleId = null;
+
+function openMobileActionModal(articleId) {
+    activeMobileArticleId = articleId;
+    const modal = document.getElementById("mobile-action-modal");
+    if (modal) modal.classList.add("active");
+}
+
+function closeMobileActionModal(e) {
+    if (e) e.stopPropagation();
+    const modal = document.getElementById("mobile-action-modal");
+    if (modal) modal.classList.remove("active");
+}
+
+// Bind mobile action buttons
+document.addEventListener("DOMContentLoaded", () => {
+    const actShare = document.getElementById("mobile-act-share");
+    const actPdf = document.getElementById("mobile-act-pdf");
+    const actListen = document.getElementById("mobile-act-listen");
+    const actComment = document.getElementById("mobile-act-comment");
+
+    if (actShare) {
+        actShare.addEventListener("click", () => {
+            closeMobileActionModal();
+            if (activeMobileArticleId) {
+                openArticle(activeMobileArticleId);
+                setTimeout(() => {
+                    if (window.openCustomShareModal) window.openCustomShareModal();
+                }, 300);
+            }
+        });
+    }
+
+    if (actPdf) {
+        actPdf.addEventListener("click", () => {
+            closeMobileActionModal();
+            window.print();
+        });
+    }
+
+    if (actListen) {
+        actListen.addEventListener("click", () => {
+            closeMobileActionModal();
+            if (activeMobileArticleId) {
+                openArticle(activeMobileArticleId);
+                setTimeout(() => {
+                    const audioBtn = document.getElementById("audio-toggle-btn");
+                    if (audioBtn) audioBtn.click();
+                }, 300);
+            }
+        });
+    }
+
+    if (actComment) {
+        actComment.addEventListener("click", () => {
+            closeMobileActionModal();
+            if (activeMobileArticleId) {
+                openArticle(activeMobileArticleId);
+                setTimeout(() => {
+                    const commentBtn = document.getElementById("detail-comment-btn");
+                    if (commentBtn) commentBtn.click();
+                }, 300);
+            }
+        });
+    }
+});
+
+
+// RENDER FEED LIST VIEW FOR CATEGORIES
+function renderCategoryFeed(category) {
+    mainGrid.className = "newspaper-grid feed-view-active";
+    mainGrid.style.display = "block";
+
+    reconcileUserArticles();
+
+    // Map category aliases
+    let filteredArticles = [];
+    if (category === "bookmarks") {
+        filteredArticles = articles.filter(a => savedArticleIds.includes(a.id));
+    } else if (category === "biyografi") {
+        filteredArticles = articles.filter(a => a.category === "biyografi" || a.category === "kose-yazilari");
+    } else if (category === "kose-yazilari") {
+        filteredArticles = articles.filter(a => a.category === "kose-yazilari" || a.category === "biyografi");
+    } else {
+        filteredArticles = articles.filter(a => a.category === category);
+    }
+
+    const catTitles = {
+        "siir": "ŞİİR KÖŞESİ",
+        "biyografi": "YAZAR BİYOGRAFİLERİ & EDEBİ PORTRELER",
+        "kose-yazilari": "YAZAR BİYOGRAFİLERİ & EDEBİ PORTRELER",
+        "oyku": "ÖYKÜ & ANLATI",
+        "deneme": "DENEME & ELEŞTİRİ",
+        "kitap": "KİTAPLIK & TAHLİL",
+        "roportaj": "SÖYLEŞİ & RÖPORTAJ",
+        "haber": "KÜLTÜR-SANAT GÜNDEMİ",
+        "yarismalar": "YARIŞMALAR & DUYURULAR",
+        "bookmarks": "KAYDEDİLENLER"
+    };
+
+    const displayTitle = catTitles[category] || category.toUpperCase();
+
+    if (filteredArticles.length === 0) {
+        mainGrid.innerHTML = `
+            <div class="category-feed-container" style="max-width: 860px; margin: 0 auto; width: 100%; padding: 40px 0;">
+                <header style="border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 30px; text-align: center;">
+                    <h2 style="font-family: var(--font-header); font-size: 2.2rem; font-weight: 800; text-transform: uppercase;">${displayTitle}</h2>
+                </header>
+                <div style="text-align: center; padding: 40px 20px; font-family: var(--font-body);">
+                    <p style="color: var(--text-secondary); font-size: 1.1rem;">Bu köşede henüz yayınlanmış bir eser bulunmamaktadır.</p>
+                    <button onclick="document.getElementById('write-toggle').click()" style="margin-top: 20px; background-color: var(--accent-color); color: #fff; border: none; padding: 10px 24px; border-radius: 20px; font-family: var(--font-ui); font-weight: 600; cursor: pointer;">Yayın Kuruluna Yazı Gönder</button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    let listHTML = "";
+    filteredArticles.slice().reverse().forEach(art => {
+        const artImg = art.image || "assets/typewriter_birds.webp";
+        const excerpt = truncateText(art.subtitle || (art.content ? art.content.replace(/<[^>]*>/g, '') : ''), 200);
+
+        listHTML += `
+            <article class="feed-item-card" data-id="${art.id}" style="display: flex; gap: 24px; border-bottom: 1px solid var(--border-light); padding: 24px 0; cursor: pointer; align-items: center; transition: transform 0.2s ease;">
+                <div style="flex: 1;">
+                    <span style="font-family: var(--font-ui); font-size: 0.72rem; font-weight: 800; color: var(--accent-color); text-transform: uppercase; letter-spacing: 1px;">${displayTitle}</span>
+                    <h3 style="font-family: var(--font-header); font-size: 1.65rem; font-weight: 800; line-height: 1.25; margin: 6px 0 8px 0; color: var(--text-primary);">${art.title}</h3>
+                    <p style="font-family: var(--font-body); font-size: 0.95rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">${excerpt}</p>
+                    <div style="display: flex; gap: 12px; align-items: center; font-size: 0.76rem; color: var(--text-secondary);">
+                        <span style="font-weight: 700; color: var(--text-primary);">✍️ ${art.author}</span>
+                        <span>•</span>
+                        <span>${art.date || 'Ağustos 2026'}</span>
+                        <span>•</span>
+                        <span>👏 ${art.claps || 0} Alkış</span>
+                    </div>
+                </div>
+                <div style="width: 140px; height: 110px; border: 1px solid var(--border-light); padding: 2px; background: var(--bg-primary); flex-shrink: 0; border-radius: 4px; overflow: hidden;">
+                    <img src="${artImg}" alt="${art.title}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
+                </div>
+            </article>
+        `;
+    });
+
+    mainGrid.innerHTML = `
+        <div class="category-feed-container" style="max-width: 900px; margin: 0 auto; width: 100%;">
+            <header style="border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="font-family: var(--font-header); font-size: 2rem; font-weight: 900; text-transform: uppercase;">${displayTitle}</h2>
+                <button onclick="window.filterCategory('all')" style="background: none; border: 1px solid var(--border-color); font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700; padding: 6px 14px; border-radius: 16px; cursor: pointer; color: var(--text-primary);">◀ Gazeteye Dön</button>
+            </header>
+            <div class="feed-list">${listHTML}</div>
+        </div>
+    `;
+
+    mainGrid.querySelectorAll("[data-id]").forEach(item => {
+        item.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const articleId = item.getAttribute("data-id");
+            if (articleId) openArticle(articleId);
+        });
+    });
+}
+
+// Open Medium Reader Modal
+
+// =============================================
+// AUTHENTICATION & USER MANAGEMENT
+// =============================================
+
 function openSettingsModal() {
     const settingsOverlay = document.getElementById("settings-overlay");
     if (!settingsOverlay) return;
@@ -4000,1449 +4710,11 @@ function handlePasswordRecovery() {
 }
 
 
-function initSupabase() {
-    const url = SUPABASE_URL || localStorage.getItem("murekkep_supabase_url");
-    const key = SUPABASE_ANON_KEY || localStorage.getItem("murekkep_supabase_key");
 
-    if (url && key && window.supabase) {
-        try {
-            supabaseClient = window.supabase.createClient(url, key);
-            isSupabaseConnected = true;
-            console.log("Supabase connection initialized successfully.");
-        } catch (err) {
-            console.error("Failed to initialize Supabase client:", err);
-            isSupabaseConnected = false;
-        }
-    } else {
-        isSupabaseConnected = false;
-        console.warn("Supabase credentials not found. Falling back to LocalStorage.");
-    }
-    updateSupabaseUI();
-}
+// =============================================
+// ARTICLE READER & COMMENTS ENGINE
+// =============================================
 
-async function seedSupabase() {
-    try {
-        if (DEFAULT_ARTICLES.length > 0) {
-            // Insert all default articles
-            const articlesToInsert = DEFAULT_ARTICLES.map(art => ({
-                id: art.id,
-                title: art.title,
-                subtitle: art.subtitle,
-                author: art.author,
-                category: art.category,
-                image: art.image,
-                date: art.date,
-                read_time: art.readTime,
-                claps: art.claps,
-                content: art.content
-            }));
-
-            const { error: artError } = await supabaseClient
-                .from('articles')
-                .insert(articlesToInsert);
-
-            if (artError) throw artError;
-        }
-
-        if (DEFAULT_COMMENTS.length > 0) {
-            // Insert all default comments
-            const commentsToInsert = DEFAULT_COMMENTS.map(c => ({
-                id: c.id,
-                article_id: c.articleId,
-                author: c.author,
-                text: c.text,
-                date: c.date
-            }));
-
-            const { error: commError } = await supabaseClient
-                .from('comments')
-                .insert(commentsToInsert);
-
-            if (commError) throw commError;
-        }
-
-        console.log("Supabase seeding completed successfully.");
-    } catch (err) {
-        console.error("Error seeding Supabase:", err);
-    }
-}
-
-let isSeeding = false;
-async function loadData() {
-    // Clean up old default articles from LocalStorage if they exist
-    const testArticleIds = ["manset-1", "kitap-1", "deneme-1", "roportaj-1", "siir-1", "oyku-1", "kose-yazilari-1", "haber-1", "yarismalar-1", "deneme-2", "siir-2", "oyku-2"];
-    try {
-        const saved = localStorage.getItem("murekkep_articles_v2");
-        if (saved) {
-            let parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) {
-                const filtered = parsed.filter(art => !testArticleIds.includes(art.id));
-                if (filtered.length !== parsed.length) {
-                    localStorage.setItem("murekkep_articles_v2", JSON.stringify(filtered));
-                }
-            }
-        }
-        const cached = localStorage.getItem("murekkep_supabase_cache");
-        if (cached) {
-            let parsed = JSON.parse(cached);
-            if (parsed && parsed.articles && Array.isArray(parsed.articles)) {
-                const filtered = parsed.articles.filter(art => !testArticleIds.includes(art.id));
-                if (filtered.length !== parsed.articles.length) {
-                    parsed.articles = filtered;
-                    localStorage.setItem("murekkep_supabase_cache", JSON.stringify(parsed));
-                }
-            }
-        }
-    } catch (e) {
-        console.warn("Failed to clean up test articles from LocalStorage:", e);
-    }
-
-    // Clear stale local articles cache to ensure pure Supabase sync
-    try {
-        localStorage.removeItem("murekkep_articles_v2");
-        localStorage.removeItem("murekkep_supabase_cache");
-    } catch (e) {}
-
-    let localArticles = [];
-
-    if (isSupabaseConnected) {
-        try {
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error("Supabase request timeout")), 5000)
-            );
-
-            // Fetch all articles from Supabase
-            const fetchArticlesPromise = supabaseClient
-                .from('articles')
-                .select('*')
-                .order('created_at', { ascending: true });
-
-            const { data: dbArticles, error: artError } = await Promise.race([
-                fetchArticlesPromise, 
-                timeoutPromise
-            ]);
-            
-            if (artError) throw artError;
-
-            // Fetch comments
-            let dbComments = [];
-            try {
-                const fetchCommentsPromise = supabaseClient
-                    .from('comments')
-                    .select('*');
-
-                const { data, error: commError } = await Promise.race([
-                    fetchCommentsPromise, 
-                    timeoutPromise
-                ]);
-                if (!commError && data) dbComments = data;
-            } catch (e) {
-                console.warn("Comments fetch error:", e);
-            }
-
-            comments = dbComments.map(c => ({
-                id: c.id,
-                articleId: c.article_id,
-                author: c.author,
-                text: c.text,
-                date: c.date
-            }));
-
-            if (dbArticles && dbArticles.length > 0) {
-                articles = dbArticles.map(art => ({
-                    id: art.id,
-                    title: art.title,
-                    subtitle: art.subtitle,
-                    author: art.author,
-                    author_email: art.author_email || null,
-                    user_id: art.user_id || null,
-                    category: art.category,
-                    image: art.image,
-                    date: art.date,
-                    created_at: art.created_at || new Date().toISOString(),
-                    readTime: art.read_time,
-                    claps: art.claps || 0,
-                    corner_name: art.corner_name || null,
-                    content: art.content || null
-                }));
-            } else {
-                articles = [];
-            }
-
-            // Save fresh articles to LocalStorage and Cache
-            try {
-                localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
-                const cachePayload = {
-                    timestamp: Date.now(),
-                    articles: articles,
-                    comments: comments
-                };
-                localStorage.setItem(CACHE_KEY, JSON.stringify(cachePayload));
-            } catch (e) {}
-
-            console.log(`Loaded ${articles.length} articles and ${comments.length} comments strictly from Supabase.`);
-        } catch (err) {
-            console.error("Error loading data from Supabase:", err);
-            isSupabaseConnected = false;
-            updateSupabaseUI();
-            loadLocalStorageFallback();
-        }
-    } else {
-        loadLocalStorageFallback();
-    }
-
-    // Refresh the newspaper view and pagination
-    currentPage = 1;
-    if (currentCategoryFilter === "all") {
-        renderNewspaperGrid();
-    } else {
-        renderCategoryFeed(currentCategoryFilter);
-    }
-
-    // Check for deep links on initial page load (fetch/fallback)
-    checkDeepLink();
-}
-
-function loadLocalStorageFallback() {
-    try {
-        const savedArticles = localStorage.getItem("murekkep_articles_v2");
-        if (savedArticles) {
-            const parsed = JSON.parse(savedArticles);
-            // Filter out old seed test ids
-            const testIds = ["art_manset_01", "art_siir_01", "art_bio_01", "art_bio_02", "art_bio_03", "art_oyku_01", "art_kitap_01", "art_haber_01", "manset-1", "kitap-1", "deneme-1", "roportaj-1", "siir-1", "oyku-1", "kose-yazilari-1", "haber-1", "yarismalar-1", "deneme-2", "siir-2", "oyku-2"];
-            articles = Array.isArray(parsed) ? parsed.filter(a => !testIds.includes(a.id)) : [];
-            localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
-        } else {
-            articles = [];
-        }
-    } catch (e) {
-        articles = [];
-    }
-
-    try {
-        const savedComments = localStorage.getItem("murekkep_comments_v2");
-        if (savedComments) {
-            comments = JSON.parse(savedComments);
-        } else {
-            comments = JSON.parse(JSON.stringify(DEFAULT_COMMENTS || []));
-            localStorage.setItem("murekkep_comments_v2", JSON.stringify(comments));
-        }
-    } catch (e) {
-        comments = [];
-    }
-}
-
-// DOM Elements
-const mainGrid = document.getElementById("newspaper-main-grid");
-const themeToggleBtn = document.getElementById("theme-toggle");
-const writeToggleBtn = document.getElementById("write-toggle");
-const editorOverlay = document.getElementById("editor-overlay");
-const closeEditorBtn = document.getElementById("close-editor");
-const publishForm = document.getElementById("publish-form");
-const readingOverlay = document.getElementById("reading-overlay");
-const closeReadingBtn = document.getElementById("close-reading");
-const readingProgress = document.getElementById("reading-progress");
-
-// Article Detail DOM
-const detailCategory = document.getElementById("article-detail-category");
-const detailTitle = document.getElementById("article-detail-title");
-const detailSubtitle = document.getElementById("article-detail-subtitle");
-const detailAuthor = document.getElementById("article-detail-author");
-const detailAvatarContainer = document.getElementById("article-detail-avatar-container");
-const detailDate = document.getElementById("article-detail-date");
-const detailReadtime = document.getElementById("article-detail-readtime");
-const detailClapCount = document.getElementById("article-clap-count");
-const detailClapBtn = document.getElementById("article-clap-btn");
-const detailImage = document.getElementById("article-detail-image");
-const detailContent = document.getElementById("article-detail-content");
-const commentForm = document.getElementById("comment-form");
-const commentAuthorInput = document.getElementById("comment-author-input");
-const commentTextInput = document.getElementById("comment-text-input");
-const commentsListContainer = document.getElementById("comments-list-container");
-const commentsTotalCountEl = document.getElementById("comments-total-count");
-const commentsDrawer = document.getElementById("comments-drawer");
-const commentsDrawerBackdrop = document.getElementById("comments-drawer-backdrop");
-const closeCommentsDrawerBtn = document.getElementById("close-comments-drawer");
-const commentsTriggerBar = document.getElementById("comments-trigger-bar");
-const articleCommentBtn = document.getElementById("article-comment-btn");
-const articleEditorEditBtn = document.getElementById("article-editor-edit-btn");
-let editingArticleId = null;
-
-// SEO State & Management Helpers
-let isAppBooted = false;
-let defaultSEO = {
-    title: document.title,
-    description: "",
-    keywords: "",
-    author: "",
-    ogTitle: "",
-    ogDescription: "",
-    ogUrl: "",
-    ogImage: "",
-    twitterTitle: "",
-    twitterDescription: "",
-    twitterImage: "",
-    canonicalHref: ""
-};
-
-// Backup default SEO tags once DOM is fully loaded or when script runs
-function backupDefaultSEO() {
-    const descMeta = document.querySelector('meta[name="description"]');
-    const keyMeta = document.querySelector('meta[name="keywords"]');
-    const authMeta = document.querySelector('meta[name="author"]');
-    const ogTitleMeta = document.querySelector('meta[property="og:title"]');
-    const ogDescMeta = document.querySelector('meta[property="og:description"]');
-    const ogUrlMeta = document.querySelector('meta[property="og:url"]');
-    const ogImgMeta = document.querySelector('meta[property="og:image"]');
-    const twTitleMeta = document.querySelector('meta[name="twitter:title"]');
-    const twDescMeta = document.querySelector('meta[name="twitter:description"]');
-    const twImgMeta = document.querySelector('meta[name="twitter:image"]');
-    const canonicalLink = document.querySelector('link[rel="canonical"]');
-
-    defaultSEO.title = document.title;
-    defaultSEO.description = descMeta ? descMeta.getAttribute("content") : "";
-    defaultSEO.keywords = keyMeta ? keyMeta.getAttribute("content") : "";
-    defaultSEO.author = authMeta ? authMeta.getAttribute("content") : "";
-    defaultSEO.ogTitle = ogTitleMeta ? ogTitleMeta.getAttribute("content") : "";
-    defaultSEO.ogDescription = ogDescMeta ? ogDescMeta.getAttribute("content") : "";
-    defaultSEO.ogUrl = ogUrlMeta ? ogUrlMeta.getAttribute("content") : "";
-    defaultSEO.ogImage = ogImgMeta ? ogImgMeta.getAttribute("content") : "";
-    defaultSEO.twitterTitle = twTitleMeta ? twTitleMeta.getAttribute("content") : "";
-    defaultSEO.twitterDescription = twDescMeta ? twDescMeta.getAttribute("content") : "";
-    defaultSEO.twitterImage = twImgMeta ? twImgMeta.getAttribute("content") : "";
-    defaultSEO.canonicalHref = canonicalLink ? canonicalLink.getAttribute("href") : "https://murekkepgzt.com";
-}
-
-// Call backup function immediately
-backupDefaultSEO();
-
-// Check for deep links on initial page load (supporting both query param & hash for social sharing)
-function checkDeepLink() {
-    const urlParams = new URLSearchParams(window.location.search);
-    let targetArticleId = urlParams.get('article');
-
-    if (!targetArticleId && window.location.hash) {
-        const hashVal = window.location.hash.replace('#', '').trim();
-        if (hashVal.startsWith('art_') || hashVal.startsWith('art-') || hashVal.length > 3) {
-            targetArticleId = hashVal;
-        }
-    }
-
-    if (targetArticleId) {
-        setTimeout(() => {
-            openArticle(targetArticleId);
-        }, 150);
-    }
-}
-
-function updateSEOMetadata(article) {
-    const descMeta = document.querySelector('meta[name="description"]');
-    const keyMeta = document.querySelector('meta[name="keywords"]');
-    const authMeta = document.querySelector('meta[name="author"]');
-    const ogTitleMeta = document.querySelector('meta[property="og:title"]');
-    const ogDescMeta = document.querySelector('meta[property="og:description"]');
-    const ogUrlMeta = document.querySelector('meta[property="og:url"]');
-    const ogImgMeta = document.querySelector('meta[property="og:image"]');
-    const twTitleMeta = document.querySelector('meta[name="twitter:title"]');
-    const twDescMeta = document.querySelector('meta[name="twitter:description"]');
-    const twImgMeta = document.querySelector('meta[name="twitter:image"]');
-    const canonicalLink = document.querySelector('link[rel="canonical"]');
-
-    if (article) {
-        const titleText = `${article.title} - Mürekkep Gazetesi`;
-        const descText = article.subtitle || article.title;
-        const authorText = article.author;
-        const keywordsText = `mürekkep, edebiyat, ${article.category}, ${article.author}, ${article.title.toLowerCase().replace(/[^a-z0-9ıışğçöü ]/gi, '').split(' ').join(', ')}`;
-        const articleUrl = `${window.location.origin}${window.location.pathname}?article=${article.id}`;
-        
-        let absImgUrl = article.image || 'assets/typewriter_birds.webp';
-        if (absImgUrl && !absImgUrl.startsWith('http')) {
-            absImgUrl = `${window.location.origin}/${absImgUrl}`;
-        }
-
-        // Update Document Title
-        document.title = titleText;
-
-        // Update standard Meta Tags
-        if (descMeta) descMeta.setAttribute("content", descText);
-        if (keyMeta) keyMeta.setAttribute("content", keywordsText);
-        if (authMeta) authMeta.setAttribute("content", authorText);
-
-        // Update Open Graph (Facebook, WhatsApp, etc.)
-        if (ogTitleMeta) ogTitleMeta.setAttribute("content", titleText);
-        if (ogDescMeta) ogDescMeta.setAttribute("content", descText);
-        if (ogUrlMeta) ogUrlMeta.setAttribute("content", articleUrl);
-        if (ogImgMeta) ogImgMeta.setAttribute("content", absImgUrl);
-
-        // Update Twitter Cards
-        if (twTitleMeta) twTitleMeta.setAttribute("content", titleText);
-        if (twDescMeta) twDescMeta.setAttribute("content", descText);
-        if (twImgMeta) twImgMeta.setAttribute("content", absImgUrl);
-
-        // Update Canonical Link
-        if (canonicalLink) canonicalLink.setAttribute("href", articleUrl);
-
-        // Update structured data (JSON-LD)
-        updateJSONLD(article);
-    } else {
-        // Restore defaults
-        document.title = defaultSEO.title;
-        if (descMeta) descMeta.setAttribute("content", defaultSEO.description);
-        if (keyMeta) keyMeta.setAttribute("content", defaultSEO.keywords);
-        if (authMeta) authMeta.setAttribute("content", defaultSEO.author);
-        
-        if (ogTitleMeta) ogTitleMeta.setAttribute("content", defaultSEO.ogTitle);
-        if (ogDescMeta) ogDescMeta.setAttribute("content", defaultSEO.ogDescription);
-        if (ogUrlMeta) ogUrlMeta.setAttribute("content", defaultSEO.ogUrl);
-        if (ogImgMeta) ogImgMeta.setAttribute("content", defaultSEO.ogImage);
-
-        if (twTitleMeta) twTitleMeta.setAttribute("content", defaultSEO.twitterTitle);
-        if (twDescMeta) twDescMeta.setAttribute("content", defaultSEO.twitterDescription);
-        if (twImgMeta) twImgMeta.setAttribute("content", defaultSEO.twitterImage);
-
-        if (canonicalLink) canonicalLink.setAttribute("href", defaultSEO.canonicalHref);
-
-        // Revert to default JSON-LD structure
-        updateJSONLD(null);
-    }
-}
-
-function updateJSONLD(article) {
-    let script = document.getElementById('seo-json-ld');
-    if (script) script.remove();
-
-    script = document.createElement('script');
-    script.id = 'seo-json-ld';
-    script.type = 'application/ld+json';
-
-    if (article) {
-        let absImgUrl = article.image || 'assets/typewriter_birds.webp';
-        if (absImgUrl && !absImgUrl.startsWith('http')) {
-            absImgUrl = `${window.location.origin}/${absImgUrl}`;
-        }
-        
-        script.text = JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "NewsArticle",
-            "headline": article.title,
-            "description": article.subtitle || article.title,
-            "image": [absImgUrl],
-            "datePublished": article.date,
-            "author": [{
-                "@type": "Person",
-                "name": article.author,
-                "url": `${window.location.origin}/#author-${encodeURIComponent(article.author)}`
-            }],
-            "publisher": {
-                "@type": "Organization",
-                "name": "Mürekkep Gazetesi",
-                "logo": {
-                    "@type": "ImageObject",
-                    "url": `${window.location.origin}/assets/logo.jpg`
-                }
-            },
-            "mainEntityOfPage": `${window.location.origin}/?article=${article.id}`
-        });
-    } else {
-        script.text = JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "NewsMediaOrganization",
-            "name": "Mürekkep Gazetesi",
-            "url": "https://murekkepgzt.com",
-            "logo": "https://murekkepgzt.com/assets/logo.jpg",
-            "sameAs": [
-                "https://twitter.com/murekkepgazetesi",
-                "https://instagram.com/murekkepgazetesi"
-            ]
-        });
-    }
-    document.head.appendChild(script);
-}
-
-// Auth DOM Elements
-const authOverlay = document.getElementById("auth-overlay");
-const closeAuthBtn = document.getElementById("close-auth");
-const loginToggleBtn = document.getElementById("login-toggle");
-const logoutBtn = document.getElementById("logout-btn");
-const userProfileSection = document.getElementById("user-profile-section");
-const userDisplayName = document.getElementById("user-display-name");
-const userAvatarCircle = document.getElementById("user-avatar-circle");
-const profileAvatarBtn = document.getElementById("profile-avatar-btn");
-const profileDropdownMenu = document.getElementById("profile-dropdown-menu");
-const dropdownAvatarLarge = document.getElementById("dropdown-avatar-large");
-const dropdownUserName = document.getElementById("dropdown-user-name");
-const dropdownUserEmail = document.getElementById("dropdown-user-email");
-const dropdownBookmarksBtn = document.getElementById("dropdown-bookmarks-btn");
-const dropdownSettingsBtn = document.getElementById("dropdown-settings-btn");
-const loginForm = document.getElementById("login-form");
-const registerForm = document.getElementById("register-form");
-const tabLogin = document.getElementById("tab-login");
-const tabRegister = document.getElementById("tab-register");
-const bookmarksTab = document.getElementById("bookmarks-tab");
-const articleSaveBtn = document.getElementById("article-save-btn");
-
-// Profile dropdown open/close
-function toggleProfileDropdown(forceClose = false) {
-    if (!profileDropdownMenu || !profileAvatarBtn) return;
-    const isOpen = !profileDropdownMenu.classList.contains("hidden");
-    if (forceClose || isOpen) {
-        profileDropdownMenu.classList.add("hidden");
-        profileAvatarBtn.setAttribute("aria-expanded", "false");
-    } else {
-        profileDropdownMenu.classList.remove("hidden");
-        profileAvatarBtn.setAttribute("aria-expanded", "true");
-        
-        // Close notifications dropdown if open
-        const notifMenu = document.getElementById("notifications-dropdown-menu");
-        if (notifMenu) notifMenu.classList.add("hidden");
-        const notifBtn = document.getElementById("notifications-btn");
-        if (notifBtn) notifBtn.setAttribute("aria-expanded", "false");
-    }
-}
-
-
-// Current active article ID inside modal
-let activeArticleId = null;
-let currentCategoryFilter = "all";
-let currentPage = 1;
-// Shared state for sequential slot filling
-let _slotArticleIdx = 0;
-let _pageArticles = [];
-let _slotArticleMap = {};
-
-// Function to sort articles by claps descending
-function getSortedArticles() {
-    return articles.slice().sort((a, b) => b.claps - a.claps);
-}
-
-// Visitor and Page statistics tracking
-async function trackPageVisit(pageName, articleId = null, category = null) {
-    try {
-        // 1. Unique Visitor Check
-        let visitorUuid = localStorage.getItem("murekkep_visitor_uuid");
-        let isAbsoluteUnique = false;
-        if (!visitorUuid) {
-            visitorUuid = 'visitor_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-            localStorage.setItem("murekkep_visitor_uuid", visitorUuid);
-            isAbsoluteUnique = true;
-        }
-
-        const today = new Date().toISOString().split('T')[0];
-        let lastVisitDate = localStorage.getItem("murekkep_last_visit_date");
-        let isDailyUnique = false;
-        if (lastVisitDate !== today) {
-            localStorage.setItem("murekkep_last_visit_date", today);
-            isDailyUnique = true;
-        }
-
-        // 2. Detect Device
-        const ua = navigator.userAgent;
-        let device = "desktop";
-        if (/Mobi|Android|iPhone|iPad|Windows Phone/i.test(ua)) {
-            if (/iPad|tablet/i.test(ua)) {
-                device = "tablet";
-            } else {
-                device = "mobile";
-            }
-        }
-
-        // 3. Detect Browser
-        let browser = "other";
-        if (/chrome|crios/i.test(ua) && !/edge|edg/i.test(ua) && !/opr/i.test(ua)) {
-            browser = "chrome";
-        } else if (/firefox|iceweasel/i.test(ua)) {
-            browser = "firefox";
-        } else if (/safari/i.test(ua) && !/chrome|crios/i.test(ua)) {
-            browser = "safari";
-        } else if (/edge|edg/i.test(ua)) {
-            browser = "edge";
-        }
-
-
-
-        // 5. Load existing statistics
-        let stats = null;
-        if (isSupabaseConnected && supabaseClient) {
-            try {
-                const { data } = await supabaseClient
-                    .from('site_settings')
-                    .select('value')
-                    .eq('key', 'site_statistics')
-                    .maybeSingle();
-                if (data && data.value) {
-                    stats = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
-                }
-            } catch (e) {
-                console.warn("Failed to load stats from Supabase:", e);
-            }
-        }
-
-        if (!stats) {
-            try {
-                const saved = localStorage.getItem("murekkep_site_statistics");
-                if (saved) stats = JSON.parse(saved);
-            } catch (e) {}
-        }
-
-        // Initialize default stats if not exists
-        if (!stats || typeof stats !== 'object') {
-            stats = {
-                totalPageViews: 0,
-                totalUniqueVisitors: 0,
-                categoryViews: {
-                    manset: 0, siir: 0, oyku: 0, deneme: 0, kitap: 0, roportaj: 0, "kose-yazilari": 0, haber: 0, yarismalar: 0
-                },
-                articleViews: {},
-                deviceStats: { desktop: 0, mobile: 0, tablet: 0 },
-                browserStats: { chrome: 0, firefox: 0, safari: 0, edge: 0, other: 0 },
-                dailyStats: {},
-                recentVisits: []
-            };
-        }
-
-        // 6. Update Stats Counters
-        stats.totalPageViews = (stats.totalPageViews || 0) + 1;
-        if (isAbsoluteUnique) {
-            stats.totalUniqueVisitors = (stats.totalUniqueVisitors || 0) + 1;
-        }
-
-        // Update Device & Browser
-        if (!stats.deviceStats) stats.deviceStats = { desktop: 0, mobile: 0, tablet: 0 };
-        stats.deviceStats[device] = (stats.deviceStats[device] || 0) + 1;
-
-        if (!stats.browserStats) stats.browserStats = { chrome: 0, firefox: 0, safari: 0, edge: 0, other: 0 };
-        stats.browserStats[browser] = (stats.browserStats[browser] || 0) + 1;
-
-        // Category & Article views if specified
-        if (category) {
-            if (!stats.categoryViews) stats.categoryViews = {};
-            stats.categoryViews[category] = (stats.categoryViews[category] || 0) + 1;
-        }
-        if (articleId) {
-            if (!stats.articleViews) stats.articleViews = {};
-            stats.articleViews[articleId] = (stats.articleViews[articleId] || 0) + 1;
-        }
-
-        // Update Daily stats
-        if (!stats.dailyStats) stats.dailyStats = {};
-        if (!stats.dailyStats[today]) {
-            stats.dailyStats[today] = { pageViews: 0, uniqueVisitors: 0 };
-        }
-        stats.dailyStats[today].pageViews = (stats.dailyStats[today].pageViews || 0) + 1;
-        if (isDailyUnique) {
-            stats.dailyStats[today].uniqueVisitors = (stats.dailyStats[today].uniqueVisitors || 0) + 1;
-        }
-
-        // Clean up old daily stats (keep last 30 days)
-        const dailyKeys = Object.keys(stats.dailyStats).sort();
-        if (dailyKeys.length > 30) {
-            for (let i = 0; i < dailyKeys.length - 30; i++) {
-                delete stats.dailyStats[dailyKeys[i]];
-            }
-        }
-
-        // Update Recent Visits Log
-        if (!stats.recentVisits) stats.recentVisits = [];
-        stats.recentVisits.unshift({
-            timestamp: new Date().toISOString(),
-            page: pageName,
-            device: device,
-            browser: browser
-        });
-
-        // Keep last 50 visits only
-        if (stats.recentVisits.length > 50) {
-            stats.recentVisits = stats.recentVisits.slice(0, 50);
-        }
-
-        // 7. Save Stats
-        localStorage.setItem("murekkep_site_statistics", JSON.stringify(stats));
-
-        if (isSupabaseConnected && supabaseClient) {
-            try {
-                await supabaseClient
-                    .from('site_settings')
-                    .upsert({ key: 'site_statistics', value: stats });
-            } catch (e) {
-                console.error("Failed to save stats to Supabase:", e);
-            }
-        }
-    } catch (e) {
-        console.error("Error tracking statistics:", e);
-    }
-}
-
-// Functions
-
-// Helper to truncate text to prevent cards from overflowing in the grid
-function truncateText(text, maxLength) {
-    if (!text) return "";
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength).trim() + "...";
-}
-
-// Calculate Read Time
-function calculateReadTime(text) {
-    const wordsPerMinute = 200;
-    const cleanText = text.replace(/<[^>]*>/g, ""); // strip HTML
-    const wordCount = cleanText.split(/\s+/).length;
-    const minutes = Math.ceil(wordCount / wordsPerMinute);
-    return `${minutes} dk okuma`;
-}
-
-// Generate unique ID
-function generateId() {
-    return 'art_' + Math.random().toString(36).substr(2, 9);
-}
-
-// Format Date
-function formatDate(date) {
-    const options = { day: 'numeric', month: 'long', year: 'numeric' };
-    return date.toLocaleDateString('tr-TR', options);
-}
-
-// Get latest article for a category slot
-function getLatestByCategory(cat) {
-    const filtered = articles.filter(a => a.category === cat);
-    return filtered[filtered.length - 1] || null;
-}
-
-// Helper to render dynamic card styles or beautiful placeholder calls
-function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLabel) {
-    if (!art) {
-        // Render a beautiful print-style placeholder for empty slot
-        return `
-            <div class="article-card empty-slot-placeholder" style="border: 1px dashed var(--border-light); padding: 25px; text-align: center; border-radius: 8px; background-color: var(--bg-secondary); margin-bottom: 20px;">
-                <span class="card-category" style="color: var(--text-secondary); opacity: 0.7;">BOŞ SÜTUN</span>
-                <h4 style="font-family: var(--font-header); font-size: 1.15rem; margin: 15px 0 10px; color: var(--text-secondary);">Yeni Kalemler Aranıyor</h4>
-                <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 15px;">Bu sütun boş kalmıştır. Edebiyat hareketine katılmak için hemen bir yazı kaleme alın!</p>
-                <button onclick="document.getElementById('write-toggle').click()" style="background-color: transparent; border: 1px solid var(--border-color); color: var(--text-primary); font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700; padding: 6px 12px; border-radius: 15px; cursor: pointer; text-transform: uppercase;">Yazı Ekle</button>
-            </div>
-        `;
-    }
-
-    // Moderation check
-    const reports = getArticleReports(art.id);
-    if (reports >= 3 && !isEditorModeActive) {
-        return `
-            <div class="moderated-content-placeholder" style="margin-bottom: 20px;">
-                <svg viewBox="0 0 24 24" style="width: 28px; height: 28px; fill: var(--accent-color); margin-bottom: 8px; display: inline-block;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                <h4 style="font-family: var(--font-header); font-size: 1rem; margin-bottom: 4px; color: var(--text-primary);">Sütun İncelemede</h4>
-                <p style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4; max-width: 300px; margin: 0 auto;">Bu içerik okur şikayetleri sebebiyle geçici olarak editör incelemesine alınmıştır.</p>
-            </div>
-        `;
-    }
-
-    const image = art.image && art.image !== "undefined" ? art.image : "assets/typewriter_birds.webp";
-    const subtitle = art.subtitle && art.subtitle !== "undefined" ? art.subtitle : "";
-    const author = art.author && art.author !== "undefined" ? art.author : "Mürekkep Yazarı";
-    const rankBadge = getAuthorRankBadgeHtml(author);
-    const followersVal = getAuthorFollowerCount(author);
-    const followersBadge = `<span style="font-size: 0.68rem; font-weight: normal; color: var(--text-secondary); opacity: 0.75; margin-left: 5px; display: inline-flex; align-items: center; gap: 2px;" title="${author} yazarının takipçi sayısı">👥 ${followersVal}</span>`;
-    const authorHtml = `<span onclick="event.stopPropagation(); window.openAuthorProfile('${author.replace(/'/g, "\\'")}')" style="cursor: pointer; text-decoration: underline; text-underline-offset: 2px; transition: color 0.2s; display: inline-flex; align-items: center; gap: 2px; flex-wrap: wrap;" onmouseover="this.style.color='var(--accent-color)'" onmouseout="this.style.color=''" title="Yazar Künyesini Göster">${author}${rankBadge}</span>${followersBadge}`;
-    const cleanCatName = (art.category || "").trim().toLowerCase();
-    const catMap = {
-        "siir": "ŞİİR",
-        "oyku": "ÖYKÜ",
-        "deneme": "DENEME",
-        "kitap": "KİTAP İNCELEMESİ",
-        "roportaj": "YAZAR RÖPORTAJI",
-        "kose-yazilari": "KÖŞE YAZISI",
-        "haber": "EDEBİYAT HABERLERİ",
-        "yarismalar": "YARIŞMA"
-    };
-    const categoryLabel = art.corner_name ? art.corner_name.toUpperCase() : (catMap[cleanCatName] || defaultCategoryLabel);
-
-    let cardHTML = "";
-
-    if (styleType === 'headline') {
-        const displayLead = truncateText(subtitle, 200);
-        cardHTML = `
-            <article class="article-card headline-card" data-id="${art.id}" style="display: block; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
-                <h2 class="card-title" style="font-family: var(--font-header); font-size: 2rem; font-weight: 900; line-height: 1.15; letter-spacing: -0.5px; margin-bottom: 8px; text-align: center;">${art.title}</h2>
-                <p class="card-lead" style="font-family: var(--font-body); font-size: 0.95rem; line-height: 1.45; text-align: center; color: var(--text-secondary); margin-bottom: 15px; max-width: 90%; margin-left: auto; margin-right: auto;">${displayLead}</p>
-                <div class="card-image-box" style="width: 100%; height: 260px; overflow: hidden; border: 1px solid var(--border-light); border-radius: 4px; margin-bottom: 10px;">
-                    <img src="${image}" alt="${art.title}" class="card-image" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
-                </div>
-            </article>
-        `;
-    } else {
-        const displaySubtitle = truncateText(subtitle, 140);
-
-        if (styleType === 'siir' || art.category === 'siir') {
-            const poemLines = art.content
-                ? art.content
-                    .replace(/<br\s*\/?>/gi, "\n")
-                    .replace(/<\/p>/gi, "\n")
-                    .replace(/<\/div>/gi, "\n")
-                    .replace(/<[^>]*>/g, "")
-                    .split("\n")
-                    .map(line => line.trim())
-                    .filter(Boolean)
-                    .slice(0, 4)
-                    .join("<br>")
-                : subtitle;
-            const poemImage = art.image && art.image !== "undefined" ? art.image : "assets/poetry_flowers.webp";
-            cardHTML = `
-                <article class="article-card poem-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
-                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
-                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.35rem; font-weight: 900; margin: 6px 0 2px 0;">${art.title}</h3>
-                    <span class="card-author" style="font-family: var(--font-ui); font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 12px; font-weight: 500;">${authorHtml}</span>
-                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; width: 100%;">
-                        <div class="poem-excerpt" style="font-family: var(--font-body); font-size: 0.85rem; line-height: 1.45; font-style: italic; color: var(--text-primary); flex: 1;">${poemLines}</div>
-                        <div class="card-image-box" style="width: 100px; height: 110px; flex-shrink: 0; border: none; margin: 0; padding: 0;">
-                            <img src="${poemImage}" alt="Edebi Görsel" class="card-image" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror=null;this.src='assets/poetry_flowers.webp';">
-                        </div>
-                    </div>
-                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; text-align: left; padding-top: 8px;">► OKU</span>
-                </article>
-            `;
-        } else if (styleType === 'roportaj' || art.category === 'roportaj') {
-            // Render as horizontal card style
-            const roportajImage = art.image && art.image !== "undefined" ? art.image : "assets/author_zeynep.webp";
-            cardHTML = `
-                <article class="article-card article-card-horizontal" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
-                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
-                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.25rem; font-weight: 900; margin: 6px 0 12px 0;">${art.title}</h3>
-                    <div style="display: flex; gap: 12px; align-items: flex-start; width: 100%; height: 100%;">
-                        <div class="card-image-box" style="width: 80px; height: 90px; flex-shrink: 0; border: 1px solid var(--border-light); margin: 0;">
-                            <img src="${roportajImage}" alt="${art.title}" class="card-image" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
-                        </div>
-                        <div class="card-text" style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%;">
-                            <p class="card-preview" style="font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; margin: 0 0 6px 0;">${displaySubtitle}</p>
-                            <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block; margin-top: auto; padding-top: 8px;">► OKU</span>
-                        </div>
-                    </div>
-                </article>
-            `;
-        } else if (styleType === 'kose' || art.category === 'kose-yazilari') {
-            // Render as columnist card style
-            const koseImage = art.image && art.image !== "undefined" ? art.image : "assets/author_mehmet.webp";
-            cardHTML = `
-                <article class="article-card columnist-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
-                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
-                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.15rem; font-weight: 900; margin: 6px 0 2px 0;">${art.title}</h3>
-                    <span class="card-author" style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--text-secondary); display: block; margin-bottom: 10px; font-weight: 500;">${authorHtml}</span>
-                    <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
-                        <p class="card-preview" style="font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; flex: 1; margin: 0;">${displaySubtitle}</p>
-                        <div class="columnist-avatar-box" style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; border: 1px solid var(--border-light); flex-shrink: 0; margin: 0;">
-                            <img src="${koseImage}" alt="${author}" class="columnist-avatar" style="width: 100%; height: 100%; object-fit: cover;">
-                        </div>
-                    </div>
-                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; padding-top: 8px;">► OKU</span>
-                </article>
-            `;
-        } else if (styleType === 'haber' || art.category === 'haber') {
-            // Render as news item list card
-            const newsArticles = articles.filter(a => a.category === 'haber').slice(0, 3);
-            let newsItemsHTML = "";
-            if (newsArticles.length > 0) {
-                newsArticles.forEach(na => {
-                    newsItemsHTML += `<div class="news-item" style="font-size: 0.78rem; color: var(--text-primary); font-family: var(--font-body); line-height: 1.4; margin-bottom: 8px; border-bottom: 1px dotted var(--border-light); padding-bottom: 6px; cursor: pointer;" onclick="openArticle('${na.id}')">• ${na.title}</div>`;
-                });
-            } else {
-                newsItemsHTML = `
-                    <div class="news-item" style="font-size: 0.78rem; color: var(--text-primary); font-family: var(--font-body); line-height: 1.4; margin-bottom: 6px;">• İstanbul Kitap Fuarı Kapılarını Açtı</div>
-                    <div class="news-item" style="font-size: 0.78rem; color: var(--text-primary); font-family: var(--font-body); line-height: 1.4; margin-bottom: 6px;">• 2024 Cevdet Kudret Edebiyat Ödülleri Sahiplerini Buldu</div>
-                    <div class="news-item" style="font-size: 0.78rem; color: var(--text-primary); font-family: var(--font-body); line-height: 1.4; margin-bottom: 6px;">• Genç Yazarlar İçin Yeni Fon Desteği</div>
-                `;
-            }
-            cardHTML = `
-                <article class="article-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
-                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
-                    <div class="news-list" style="margin-top: 10px; margin-bottom: 10px;">
-                        ${newsItemsHTML}
-                    </div>
-                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block; margin-top: auto; padding-top: 8px;">► OKU</span>
-                </article>
-            `;
-        } else if (styleType === 'yarisma' || art.category === 'yarismalar') {
-            // Render as contest card style
-            cardHTML = `
-                <article class="article-card contest-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
-                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
-                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.15rem; font-weight: 900; margin: 6px 0 6px 0;">${art.title}</h3>
-                    <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
-                        <div style="flex: 1;">
-                            <div class="contest-theme" style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--accent-color); letter-spacing: 0.5px; margin-bottom: 4px;">Tema: "Serbest Edebi Eser"</div>
-                            <p class="card-preview" style="font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; margin: 0;">${displaySubtitle}</p>
-                        </div>
-                        <svg class="contest-icon" viewBox="0 0 24 24" style="width: 45px; height: 45px; fill: var(--text-secondary); opacity: 0.6; flex-shrink: 0;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                    </div>
-                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; margin-top: auto; display: block; padding-top: 8px;">► OKU</span>
-                </article>
-            `;
-        } else {
-            // Default standard card
-            const isKitap = art.category === 'kitap';
-            cardHTML = `
-                <article class="article-card" data-id="${art.id}" style="display: flex; flex-direction: column; height: 100%; box-sizing: border-box; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
-                    <span class="card-category" style="color: var(--accent-color); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">${categoryLabel}</span>
-                    <h3 class="card-title" style="font-family: var(--font-header); font-size: 1.25rem; font-weight: 900; margin: 6px 0 4px 0;">${art.title}</h3>
-                    <span class="card-author" style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--text-secondary); display: block; margin-bottom: 10px; font-weight: 500;">${authorHtml}</span>
-                    <div class="card-image-box" style="width: 100%; height: 110px; overflow: hidden; border: 1px solid var(--border-light); margin-bottom: 10px; border-radius: 4px;">
-                        <img src="${image}" alt="${art.title}" class="card-image" style="width: 100%; height: 100%; object-fit: ${isKitap ? 'contain' : 'cover'}; background-color: ${isKitap ? 'var(--bg-secondary)' : 'transparent'};" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
-                    </div>
-                    <p class="card-preview" style="font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; margin-bottom: 8px;">${displaySubtitle}</p>
-                    <span class="card-readmore" style="color: var(--accent-color); font-weight: bold; font-size: 0.75rem; display: block; margin-top: auto; padding-top: 8px;">► OKU</span>
-                </article>
-            `;
-        }
-    }
-
-    // Inject editor controls if Editor Mode is active
-    if (isEditorModeActive) {
-        const isFlagged = reports > 0;
-        if (isFlagged) {
-            cardHTML = cardHTML.replace('class="article-card', 'class="article-card flagged');
-            const badgeHTML = `<div class="flag-badge">⚠️ Şikayet: ${reports}</div>`;
-            cardHTML = cardHTML.replace(/<article[^>]*>/, match => `${match}\n${badgeHTML}`);
-        }
-        const controlsHTML = `
-            <div class="editor-card-controls" onclick="event.stopPropagation();">
-                <button class="btn-editor-action approve" onclick="window.approveArticleClick('${art.id}', event)">Onayla</button>
-                <button class="btn-editor-action delete" onclick="window.deleteArticleClick('${art.id}', event)">Kaldır</button>
-            </div>
-        `;
-        cardHTML = cardHTML.replace('</article>', `${controlsHTML}\n</article>`);
-    }
-
-    return cardHTML;
-}
-
-// Function to handle page flips
-function changePage(page) {
-    currentPage = page;
-    
-    // Add flip transition animation to main grid
-    mainGrid.classList.add("page-fade-transition");
-    
-    // Smooth scroll back to top of the newspaper
-    document.querySelector(".newspaper-header").scrollIntoView({ behavior: 'smooth' });
-    
-    setTimeout(() => {
-        renderNewspaperGrid();
-        mainGrid.classList.remove("page-fade-transition");
-    }, 300);
-}
-
-function ensureLayoutSlotIds() {
-    if (!layoutConfig) return;
-    let changed = false;
-    ['col1', 'col2', 'col3'].forEach(colKey => {
-        if (layoutConfig[colKey]) {
-            layoutConfig[colKey].forEach((slot, idx) => {
-                if (!slot.id) {
-                    slot.id = `slot_${colKey}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-                    changed = true;
-                }
-            });
-        }
-    });
-    if (changed) {
-        saveLayoutConfig();
-    }
-}
-
-function updateHeaderMeta() {
-    const headerDateIndicator = document.getElementById("header-date-indicator");
-    const pageIndicator = document.getElementById("header-page-indicator");
-    
-    // Calculate dynamically
-    const baseDate = new Date("2026-07-13");
-    const now = new Date();
-    
-    // 1. Calculate Issue Number (Sayı) - increases every week
-    const diffTime = Math.max(0, now - baseDate);
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    const issueNum = Math.floor(diffDays / 7) + 1;
-    const issueStr = String(issueNum).padStart(2, '0');
-    
-    // 2. Calculate Turkish Month & Year
-    const TurkishMonths = [
-        "OCAK", "ŞUBAT", "MART", "NİSAN", "MAYIS", "HAZİRAN",
-        "TEMMUZ", "AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK"
-    ];
-    const monthName = TurkishMonths[now.getMonth()];
-    const year = now.getFullYear();
-    
-    if (headerDateIndicator) {
-        headerDateIndicator.innerText = `${monthName} ${year}`;
-    }
-    
-    if (pageIndicator) {
-        pageIndicator.innerText = `SAYI: ${issueStr} / SAYFA: ${String(currentPage).padStart(2, '0')}`;
-    }
-}
-
-// RENDER NEWSPAPER FRONT-PAGE GRID (EDITORIAL BROADSIDE LAYOUT)
-// Helper: Open write modal pre-selected for a specific category
-// Helper: Update dynamic slot form sections based on selected category
-function updateSlotFormSections(categoryKey) {
-    const secGununSozu = document.getElementById("slot-section-gunun-sozu");
-    const secLugat = document.getElementById("slot-section-lugat");
-    const secSiir = document.getElementById("slot-section-siir");
-    const secStandard = document.getElementById("slot-section-standard");
-
-    [secGununSozu, secLugat, secSiir, secStandard].forEach(s => {
-        if (s) s.classList.add("hidden");
-    });
-
-    const studioHeader = document.querySelector(".editor-studio-header h2");
-    const studioDesc = document.querySelector(".editor-studio-header p");
-
-    if (categoryKey === "gunun-sozu") {
-        if (secGununSozu) secGununSozu.classList.remove("hidden");
-        if (studioHeader) studioHeader.innerText = "📜 Günün Sözü / Vecize Yayınla";
-        if (studioDesc) studioDesc.innerText = "Gazetenin sol sütunundaki Günün Sözü kutusunda yayınlanacak vecizeyi ve sahibini yazın.";
-        
-        const qText = document.getElementById("quote-text-input");
-        const qAuth = document.getElementById("quote-author-input");
-        if (qText && !qText.value && editorNoteData.quote) qText.value = editorNoteData.quote;
-        if (qAuth && !qAuth.value && editorNoteData.desc) qAuth.value = editorNoteData.desc;
-    } else if (categoryKey === "lugat") {
-        if (secLugat) secLugat.classList.remove("hidden");
-        if (studioHeader) studioHeader.innerText = "📖 Edebi Lûgat • Günün Kelimesi";
-        if (studioDesc) studioDesc.innerText = "Gazetenin sağ sütunundaki Günün Kelimesi ve köken izahını güncelleyin.";
-        
-        const wTitle = document.getElementById("word-title-input");
-        const wOrigin = document.getElementById("word-origin-input");
-        const wMean = document.getElementById("word-meaning-input");
-        const wEx = document.getElementById("word-example-input");
-        if (wTitle && !wTitle.value && dailyWordData.word) wTitle.value = dailyWordData.word;
-        if (wOrigin && !wOrigin.value && dailyWordData.origin) wOrigin.value = dailyWordData.origin;
-        if (wMean && !wMean.value && dailyWordData.meaning) wMean.value = dailyWordData.meaning;
-        if (wEx && !wEx.value && dailyWordData.example) wEx.value = dailyWordData.example;
-    } else if (categoryKey === "siir") {
-        if (secSiir) secSiir.classList.remove("hidden");
-        if (studioHeader) studioHeader.innerText = "📜 Günün Şiiri Yayınla";
-        if (studioDesc) studioDesc.innerText = "Gazetenin sağ sütunundaki Günün Şiiri kutusunda yayınlanacak şiiri yazın.";
-    } else {
-        if (secStandard) secStandard.classList.remove("hidden");
-        if (studioHeader) studioHeader.innerText = categoryKey === "manset" ? "🌟 Ana Manşet Haberi Yaz" : "🖋️ Editöryal Yazı Yayınla";
-        if (studioDesc) studioDesc.innerText = "Eserinizi kaleme alın ve Mürekkep gazetesinin seçtiğiniz slotunda yayınlayın.";
-    }
-}
-
-// RENDER NEWSPAPER FRONT-PAGE GRID (EDITORIAL BROADSIDE LAYOUT)
-// Helper: Open write modal pre-selected for a specific category
-window.openWriteModalForCategory = function(categoryKey) {
-    const writeToggle = document.getElementById("write-toggle");
-    if (writeToggle) writeToggle.click();
-    const catSelect = document.getElementById("post-category");
-    if (catSelect && categoryKey) {
-        catSelect.value = categoryKey;
-    }
-    updateSlotFormSections(categoryKey || (catSelect ? catSelect.value : "deneme"));
-
-    const editorOverlay = document.getElementById("editor-overlay");
-    if (editorOverlay) {
-        editorOverlay.scrollTop = 0;
-    }
-};
-
-// RENDER NEWSPAPER FRONT-PAGE GRID (MÜREKKEP PROFESYONEL MİZANPAJ)
-function renderNewspaperGrid() {
-    mainGrid.className = "newspaper-grid";
-    mainGrid.style.display = "block";
-
-    reconcileUserArticles();
-    updateHeaderMeta();
-
-    const allArts = getSortedArticles();
-
-    // 1. Identify Main Lead Story (Ana Manşet)
-    let leadArt = allArts.find(a => a.category === "manset" || a.corner_name === "MANŞET" || a.corner_name === "Haftanın Manşeti" || a.corner_name === "Kapak Dosyası")
-               || allArts.find(a => a.category === "deneme" || a.category === "haber")
-               || allArts[0]
-               || null;
-
-    // 2. Identify categorized corners without duplicating lead
-    const usedIds = new Set();
-    if (leadArt) usedIds.add(leadArt.id);
-
-    let essayArt1 = allArts.find(a => (a.category === "kose-yazilari" || a.category === "deneme") && !usedIds.has(a.id));
-    if (essayArt1) usedIds.add(essayArt1.id);
-
-    let essayArt2 = allArts.find(a => (a.category === "deneme" || a.category === "biyografi") && !usedIds.has(a.id));
-    if (essayArt2) usedIds.add(essayArt2.id);
-
-    let youthArt = allArts.find(a => (a.category === "oyku" || a.category === "deneme" || a.category === "genc-kalemler") && !usedIds.has(a.id));
-    if (youthArt) usedIds.add(youthArt.id);
-
-    let storyArt = allArts.find(a => a.category === "oyku" && !usedIds.has(a.id));
-    if (storyArt) usedIds.add(storyArt.id);
-
-    let bookArt = allArts.find(a => a.category === "kitap" && !usedIds.has(a.id));
-    if (bookArt) usedIds.add(bookArt.id);
-
-    let poemArt = allArts.find(a => a.category === "siir" && !usedIds.has(a.id));
-    if (poemArt) usedIds.add(poemArt.id);
-
-    let cultureMedeniyetArt = allArts.find(a => (a.category === "haber" || a.category === "biyografi" || a.category === "roportaj") && !usedIds.has(a.id));
-    if (cultureMedeniyetArt) usedIds.add(cultureMedeniyetArt.id);
-
-    let artEstetikArt = allArts.find(a => (a.category === "haber" || a.category === "yarismalar" || a.category === "deneme") && !usedIds.has(a.id));
-    if (artEstetikArt) usedIds.add(artEstetikArt.id);
-
-    // ─── A. SOL SÜTUN (KÖŞE YAZILARI, GÜNÜN SÖZÜ & GENÇ KALEMLER) ───
-    const colLeftHTML = `
-        <aside class="broadsheet-col-left">
-            <div class="editorial-slot-card" ${essayArt1 ? `data-id="${essayArt1.id}"` : `onclick="window.openWriteModalForCategory('kose-yazilari')"`}>
-                <span class="slot-kicker">✒️ KÖŞE YAZISI</span>
-                <h3 class="slot-title">${essayArt1 ? essayArt1.title : 'Edebiyatta Samimiyet ve Üslup'}</h3>
-                <p class="slot-excerpt">${essayArt1 ? truncateText(essayArt1.subtitle || (essayArt1.content ? essayArt1.content.replace(/<[^>]*>/g, '') : ''), 125) : 'Kelimelerin ardındaki samimiyet, yazarın ruhunu okura açtığı en şeffaf aynadır.'}</p>
-                <div class="slot-byline">
-                    <span>✍️ ${essayArt1 ? essayArt1.author : 'Yayın Kurulu'}</span>
-                    <span>${essayArt1 ? (essayArt1.date || 'Ağustos 2026') : 'Mürekkep'}</span>
-                </div>
-            </div>
-
-            <div class="editorial-slot-card" ${essayArt2 ? `data-id="${essayArt2.id}"` : `onclick="window.openWriteModalForCategory('deneme')"`}>
-                <span class="slot-kicker">🖋️ DENEME & ELEŞTİRİ</span>
-                <h3 class="slot-title">${essayArt2 ? essayArt2.title : 'Sanatın Gayesi ve Anlam Arayışı'}</h3>
-                <p class="slot-excerpt">${essayArt2 ? truncateText(essayArt2.subtitle || (essayArt2.content ? essayArt2.content.replace(/<[^>]*>/g, '') : ''), 125) : 'Felsefe ile edebiyatın kesiştiği noktada varoluşsal sancıların sözcüklerle dindirilmesi.'}</p>
-                <div class="slot-byline">
-                    <span>✍️ ${essayArt2 ? essayArt2.author : 'Mürekkep Tenkit'}</span>
-                    <span>${essayArt2 ? (essayArt2.date || 'Ağustos 2026') : 'İnceleme'}</span>
-                </div>
-            </div>
-
-            <!-- Günün Sözü Kartı (Editörler Tıklayıp Değiştirebilir) -->
-            <div class="editorial-slot-card" style="background: var(--bg-secondary); border-top: 4px solid var(--accent-color);" onclick="window.openWriteModalForCategory('gunun-sozu')">
-                <span class="slot-kicker">📜 GÜNÜN SÖZÜ</span>
-                <p class="slot-quote-text">“${editorNoteData.quote || 'Bir dizesi eksik kalmış bir şiir gibi gezinir insan; ta ki hakikatin kelimesini bulana kadar.'}”</p>
-                <div class="slot-byline">
-                    <span>— ${editorNoteData.desc || 'Ahmet Hamdi Tanpınar'}</span>
-                    <span style="font-size: 0.68rem; color: var(--accent-color); font-weight: 800;">EDEBİ HAFIZA</span>
-                </div>
-            </div>
-
-            <!-- Günün Sözünün Altındaki Ek Slot: Genç Kalemler & Anlatı -->
-            <div class="editorial-slot-card" ${youthArt ? `data-id="${youthArt.id}"` : `onclick="window.openWriteModalForCategory('genc-kalemler')"`}>
-                <span class="slot-kicker">📖 GENÇ KALEMLER & ANLATI</span>
-                <h3 class="slot-title">${youthArt ? youthArt.title : 'Kuşların Kanadında Saklı Şehir'}</h3>
-                <p class="slot-excerpt">${youthArt ? truncateText(youthArt.subtitle || (youthArt.content ? youthArt.content.replace(/<[^>]*>/g, '') : ''), 120) : 'Taş sokakların yankısında büyüyen düşler, genç bir yazarın satırlarında yeniden hayat buluyor.'}</p>
-                <div class="slot-byline">
-                    <span>✍️ ${youthArt ? youthArt.author : 'Genç Yazar'}</span>
-                    <span>${youthArt ? (youthArt.date || 'Ağustos 2026') : '+ Yazı Gönder'}</span>
-                </div>
-            </div>
-        </aside>
-    `;
-
-    // ─── B. ORTA SÜTUN (TEK VE GÜÇLÜ ANA MANŞET + ALT İKİLİ IZGARA) ───
-    let mainLeadHTML = "";
-    if (leadArt) {
-        const leadImg = leadArt.image || "assets/typewriter_birds.webp";
-        const leadKicker = leadArt.corner_name || "EDEBİYAT & DÜŞÜNCE • HAFTANIN MANŞETİ";
-        const leadSubdeck = leadArt.subtitle || "İnsanlığın derin sancısı ve edebiyatın ruhu; hakikati kelimelere dökebilme cesaretinde yatar.";
-        const leadTextRaw = leadArt.content ? leadArt.content.replace(/<[^>]*>/g, ' ') : leadSubdeck;
-        const textCol1 = truncateText(leadTextRaw, 220);
-        const textCol2 = truncateText(leadTextRaw.slice(220) || leadSubdeck, 200);
-
-        mainLeadHTML = `
-            <article class="lead-headline-box" data-id="${leadArt.id}">
-                <span class="lead-kicker-tag">${leadKicker}</span>
-                <h2 class="lead-main-title">${leadArt.title}</h2>
-                <div class="lead-byline-bar">
-                    <span>YAZAR: ${leadArt.author.toUpperCase()} — İSTANBUL</span> • <span>${leadArt.date || 'AĞUSTOS 2026'}</span>
-                </div>
-                
-                <div class="lead-image-frame">
-                    <img src="${leadImg}" alt="${leadArt.title}" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
-                </div>
-                <span class="lead-image-caption">Fotoğraf: Mürekkep Arşivi • Kelimelerin ve edebiyatın ebedi tınısı çağları aşıyor.</span>
-
-                <div class="lead-columns-text">
-                    <p class="drop-cap-text">${textCol1}</p>
-                    <div>
-                        <p>${textCol2}</p>
-                        <span class="lead-readmore">► Yazının Tamamını Oku</span>
-                    </div>
-                </div>
-            </article>
-        `;
-    } else {
-        mainLeadHTML = `
-            <article class="lead-headline-box" onclick="window.openWriteModalForCategory('manset')">
-                <span class="lead-kicker-tag">EDEBİYAT & DÜŞÜNCE • HAFTANIN MANŞETİ</span>
-                <h2 class="lead-main-title">YAPAY ZEKA ÇAĞINDA İNSAN, EDEBİYAT VE ANLAM ARAYIŞI</h2>
-                <div class="lead-byline-bar">
-                    <span>MÜREKKEP EDEBİ HEYETİ — İSTANBUL</span> • <span>AĞUSTOS 2026</span>
-                </div>
-                
-                <div class="lead-image-frame">
-                    <img src="assets/typewriter_birds.webp" alt="Mürekkep Manşet">
-                </div>
-                <span class="lead-image-caption">Fotoğraf: Mürekkep Matbuatı • Kelimelerin hafızası çağa direniyor.</span>
-
-                <div class="lead-columns-text">
-                    <p class="drop-cap-text">Zamanın yıpratıcı ve aceleci akışına karşı direnen tek sığınak, kelimelerin ebedi tınısıdır. Sayfalar arasında kaybolan her dize insan ruhuna açılan bir kapıdır.</p>
-                    <div>
-                        <p>Mürekkep Gazetesi'nin bu sayısında genç kalemlerin fikir tahlillerini okurlarımızla buluşturuyoruz.</p>
-                        <span class="lead-readmore">+ Manşet Yazısı Yayınla</span>
-                    </div>
-                </div>
-            </article>
-        `;
-    }
-
-    const subleadHTML = `
-        <div class="sublead-grid-row">
-            <div class="editorial-slot-card" ${storyArt ? `data-id="${storyArt.id}"` : `onclick="window.openWriteModalForCategory('oyku')"`}>
-                <span class="slot-kicker">📖 ÖYKÜ & ANLATI</span>
-                <h3 class="slot-title">${storyArt ? storyArt.title : 'Karanfil ve Yağmur Kokusu'}</h3>
-                <p class="slot-excerpt">${storyArt ? truncateText(storyArt.subtitle || (storyArt.content ? storyArt.content.replace(/<[^>]*>/g, '') : ''), 120) : 'Eski bir konağın gıcırdayan merdivenlerinde durdu ihtiyar. Sararmış mektuba son kez baktı...'}</p>
-                <div class="slot-byline">
-                    <span>Yazan: ${storyArt ? storyArt.author : 'Mürekkep Yazar'}</span>
-                </div>
-            </div>
-
-            <div class="editorial-slot-card" ${bookArt ? `data-id="${bookArt.id}"` : `onclick="window.openWriteModalForCategory('kitap')"`}>
-                <span class="slot-kicker">📚 KİTAPLIK & TENKİT</span>
-                <h3 class="slot-title">${bookArt ? bookArt.title : 'Kuyucaklı Yusuf Tahlili'}</h3>
-                <p class="slot-excerpt">${bookArt ? truncateText(bookArt.subtitle || (bookArt.content ? bookArt.content.replace(/<[^>]*>/g, '') : ''), 120) : 'Anadolu insanının saf ve hırçın doğasını ustalıkla işleyen eserin edebi tahlili.'}</p>
-                <div class="slot-byline">
-                    <span>İnceleyen: ${bookArt ? bookArt.author : 'Mürekkep Tenkit'}</span>
-                </div>
-            </div>
-        </div>
-    `;
-
-    const colCenterHTML = `
-        <main class="broadsheet-col-center">
-            ${mainLeadHTML}
-            ${subleadHTML}
-        </main>
-    `;
-
-    // ─── C. SAĞ SÜTUN (GÜNÜN ŞİİRİ, KÜLTÜR & MEDENİYET, LÛGAT) ───
-    const colRightHTML = `
-        <aside class="broadsheet-col-right">
-            <div class="poem-slot-card" ${poemArt ? `data-id="${poemArt.id}"` : `onclick="window.openWriteModalForCategory('siir')"`}>
-                <span class="slot-kicker" style="justify-content: center;">📜 GÜNÜN ŞİİRİ</span>
-                <strong class="poem-title">${poemArt ? poemArt.title : 'Kelimelerin Sükûtu'}</strong>
-                <div class="poem-stanzas">
-                    ${poemArt ? (poemArt.content ? poemArt.content.replace(/<[^>]*>/g, '\n').split('\n').filter(Boolean).slice(0, 5).join('<br>') : poemArt.subtitle) : 'Kelimeler yorulur, susar geceler,<br>Yalnızlığın kıyısında açar bir çiçek.<br>Ne giden döner geri, ne kalan kalır,<br>Yalnızca bir şiir kalır yadigar.'}
-                </div>
-                <span class="poem-poet">${poemArt ? `ŞAİR: ${poemArt.author}` : '+ Şiir Başvurusu Yap'}</span>
-            </div>
-
-            <!-- Edebiyat Söyleşileri yerine Kültür & Medeniyet Slotu -->
-            <div class="editorial-slot-card" ${cultureMedeniyetArt ? `data-id="${cultureMedeniyetArt.id}"` : `onclick="window.openWriteModalForCategory('haber')"`}>
-                <span class="slot-kicker">🏛️ KÜLTÜR & MEDENİYET</span>
-                <h3 class="slot-title">${cultureMedeniyetArt ? cultureMedeniyetArt.title : 'Mazi ile İstikbal Arasında Türk Şiiri'}</h3>
-                <p class="slot-excerpt">${cultureMedeniyetArt ? truncateText(cultureMedeniyetArt.subtitle || (cultureMedeniyetArt.content ? cultureMedeniyetArt.content.replace(/<[^>]*>/g, '') : ''), 120) : '“Kültürel hafızamızın kökleri, klasik metinlerimiz ile çağdaş düşüncenin sentezinde yeşeriyor.”'}</p>
-                <div class="slot-byline">
-                    <span>${cultureMedeniyetArt ? `Hazırlayan: ${cultureMedeniyetArt.author}` : 'Mürekkep Kültür Servisi'}</span>
-                </div>
-            </div>
-
-            <!-- Edebi Lûgat / Anlamını Bilmediğimiz Kelimeler Köşesi (Editörler Değiştirebilir) -->
-            <div class="editorial-slot-card" style="background: var(--bg-secondary); border-top: 4px solid var(--accent-color);" onclick="window.openWriteModalForCategory('lugat')">
-                <span class="slot-kicker">📖 EDEBİ LÛGAT • GÜNÜN KELİMESİ</span>
-                <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 4px 0 2px;">
-                    <h3 class="slot-title" style="font-size: 1.22rem; letter-spacing: 0.5px; color: var(--accent-color); margin: 0;">${dailyWordData.word || 'Tahassür'}</h3>
-                    <span style="font-family: var(--font-ui); font-size: 0.68rem; font-weight: 700; color: var(--text-secondary);">${dailyWordData.origin || '[Arapça • İsim]'}</span>
-                </div>
-                <p class="slot-excerpt" style="-webkit-line-clamp: 2; margin-bottom: 4px; font-weight: 600; color: var(--text-primary);">
-                    ${dailyWordData.meaning || 'Kavuşulması istenen şeye veya geçmişe duyulan derin özlem, hasret ve hüzünlü iç çekiş.'}
-                </p>
-                <p class="slot-excerpt" style="-webkit-line-clamp: 2; font-style: italic; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 6px;">
-                    ${dailyWordData.example || '“Gözlerinde eski günlerin tahassürü, dilinde yarım kalmış bir türkü vardı.”'}
-                </p>
-                <div class="slot-byline">
-                    <span>Lûgat-ı Mürekkep</span>
-                    <span style="font-size: 0.68rem; color: var(--accent-color); font-weight: 800;">HAFTALIK KELİME</span>
-                </div>
-            </div>
-        </aside>
-    `;
-
-    // Assembly Complete Broadsheet Layout
-    mainGrid.innerHTML = `
-        <div class="broadsheet-layout-container">
-            ${colLeftHTML}
-            ${colCenterHTML}
-            ${colRightHTML}
-        </div>
-    `;
-
-    // Attach click handlers to all actionable items - Directly opens article
-    mainGrid.querySelectorAll("[data-id]").forEach(item => {
-        item.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const articleId = item.getAttribute("data-id");
-            if (articleId) openArticle(articleId);
-        });
-    });
-}
-
-// Mobile Quick Action Modal Handlers (Smart iPhone Pop-up)
-let activeMobileArticleId = null;
-
-function openMobileActionModal(articleId) {
-    activeMobileArticleId = articleId;
-    const modal = document.getElementById("mobile-action-modal");
-    if (modal) modal.classList.add("active");
-}
-
-function closeMobileActionModal(e) {
-    if (e) e.stopPropagation();
-    const modal = document.getElementById("mobile-action-modal");
-    if (modal) modal.classList.remove("active");
-}
-
-// Bind mobile action buttons
-document.addEventListener("DOMContentLoaded", () => {
-    const actShare = document.getElementById("mobile-act-share");
-    const actPdf = document.getElementById("mobile-act-pdf");
-    const actListen = document.getElementById("mobile-act-listen");
-    const actComment = document.getElementById("mobile-act-comment");
-
-    if (actShare) {
-        actShare.addEventListener("click", () => {
-            closeMobileActionModal();
-            if (activeMobileArticleId) {
-                openArticle(activeMobileArticleId);
-                setTimeout(() => {
-                    if (window.openCustomShareModal) window.openCustomShareModal();
-                }, 300);
-            }
-        });
-    }
-
-    if (actPdf) {
-        actPdf.addEventListener("click", () => {
-            closeMobileActionModal();
-            window.print();
-        });
-    }
-
-    if (actListen) {
-        actListen.addEventListener("click", () => {
-            closeMobileActionModal();
-            if (activeMobileArticleId) {
-                openArticle(activeMobileArticleId);
-                setTimeout(() => {
-                    const audioBtn = document.getElementById("audio-toggle-btn");
-                    if (audioBtn) audioBtn.click();
-                }, 300);
-            }
-        });
-    }
-
-    if (actComment) {
-        actComment.addEventListener("click", () => {
-            closeMobileActionModal();
-            if (activeMobileArticleId) {
-                openArticle(activeMobileArticleId);
-                setTimeout(() => {
-                    const commentBtn = document.getElementById("detail-comment-btn");
-                    if (commentBtn) commentBtn.click();
-                }, 300);
-            }
-        });
-    }
-});
-
-
-// RENDER FEED LIST VIEW FOR CATEGORIES
-function renderCategoryFeed(category) {
-    mainGrid.className = "newspaper-grid feed-view-active";
-    mainGrid.style.display = "block";
-
-    reconcileUserArticles();
-
-    // Map category aliases
-    let filteredArticles = [];
-    if (category === "bookmarks") {
-        filteredArticles = articles.filter(a => savedArticleIds.includes(a.id));
-    } else if (category === "biyografi") {
-        filteredArticles = articles.filter(a => a.category === "biyografi" || a.category === "kose-yazilari");
-    } else if (category === "kose-yazilari") {
-        filteredArticles = articles.filter(a => a.category === "kose-yazilari" || a.category === "biyografi");
-    } else {
-        filteredArticles = articles.filter(a => a.category === category);
-    }
-
-    const catTitles = {
-        "siir": "ŞİİR KÖŞESİ",
-        "biyografi": "YAZAR BİYOGRAFİLERİ & EDEBİ PORTRELER",
-        "kose-yazilari": "YAZAR BİYOGRAFİLERİ & EDEBİ PORTRELER",
-        "oyku": "ÖYKÜ & ANLATI",
-        "deneme": "DENEME & ELEŞTİRİ",
-        "kitap": "KİTAPLIK & TAHLİL",
-        "roportaj": "SÖYLEŞİ & RÖPORTAJ",
-        "haber": "KÜLTÜR-SANAT GÜNDEMİ",
-        "yarismalar": "YARIŞMALAR & DUYURULAR",
-        "bookmarks": "KAYDEDİLENLER"
-    };
-
-    const displayTitle = catTitles[category] || category.toUpperCase();
-
-    if (filteredArticles.length === 0) {
-        mainGrid.innerHTML = `
-            <div class="category-feed-container" style="max-width: 860px; margin: 0 auto; width: 100%; padding: 40px 0;">
-                <header style="border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 30px; text-align: center;">
-                    <h2 style="font-family: var(--font-header); font-size: 2.2rem; font-weight: 800; text-transform: uppercase;">${displayTitle}</h2>
-                </header>
-                <div style="text-align: center; padding: 40px 20px; font-family: var(--font-body);">
-                    <p style="color: var(--text-secondary); font-size: 1.1rem;">Bu köşede henüz yayınlanmış bir eser bulunmamaktadır.</p>
-                    <button onclick="document.getElementById('write-toggle').click()" style="margin-top: 20px; background-color: var(--accent-color); color: #fff; border: none; padding: 10px 24px; border-radius: 20px; font-family: var(--font-ui); font-weight: 600; cursor: pointer;">Yayın Kuruluna Yazı Gönder</button>
-                </div>
-            </div>
-        `;
-        return;
-    }
-
-    let listHTML = "";
-    filteredArticles.slice().reverse().forEach(art => {
-        const artImg = art.image || "assets/typewriter_birds.webp";
-        const excerpt = truncateText(art.subtitle || (art.content ? art.content.replace(/<[^>]*>/g, '') : ''), 200);
-
-        listHTML += `
-            <article class="feed-item-card" data-id="${art.id}" style="display: flex; gap: 24px; border-bottom: 1px solid var(--border-light); padding: 24px 0; cursor: pointer; align-items: center; transition: transform 0.2s ease;">
-                <div style="flex: 1;">
-                    <span style="font-family: var(--font-ui); font-size: 0.72rem; font-weight: 800; color: var(--accent-color); text-transform: uppercase; letter-spacing: 1px;">${displayTitle}</span>
-                    <h3 style="font-family: var(--font-header); font-size: 1.65rem; font-weight: 800; line-height: 1.25; margin: 6px 0 8px 0; color: var(--text-primary);">${art.title}</h3>
-                    <p style="font-family: var(--font-body); font-size: 0.95rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 12px;">${excerpt}</p>
-                    <div style="display: flex; gap: 12px; align-items: center; font-size: 0.76rem; color: var(--text-secondary);">
-                        <span style="font-weight: 700; color: var(--text-primary);">✍️ ${art.author}</span>
-                        <span>•</span>
-                        <span>${art.date || 'Ağustos 2026'}</span>
-                        <span>•</span>
-                        <span>👏 ${art.claps || 0} Alkış</span>
-                    </div>
-                </div>
-                <div style="width: 140px; height: 110px; border: 1px solid var(--border-light); padding: 2px; background: var(--bg-primary); flex-shrink: 0; border-radius: 4px; overflow: hidden;">
-                    <img src="${artImg}" alt="${art.title}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='assets/typewriter_birds.webp';">
-                </div>
-            </article>
-        `;
-    });
-
-    mainGrid.innerHTML = `
-        <div class="category-feed-container" style="max-width: 900px; margin: 0 auto; width: 100%;">
-            <header style="border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="font-family: var(--font-header); font-size: 2rem; font-weight: 900; text-transform: uppercase;">${displayTitle}</h2>
-                <button onclick="window.filterCategory('all')" style="background: none; border: 1px solid var(--border-color); font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700; padding: 6px 14px; border-radius: 16px; cursor: pointer; color: var(--text-primary);">◀ Gazeteye Dön</button>
-            </header>
-            <div class="feed-list">${listHTML}</div>
-        </div>
-    `;
-
-    mainGrid.querySelectorAll("[data-id]").forEach(item => {
-        item.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const articleId = item.getAttribute("data-id");
-            if (articleId) openArticle(articleId);
-        });
-    });
-}
-
-// Open Medium Reader Modal
 async function openArticle(id) {
     const article = articles.find(a => a.id === id);
     if (!article) return;
@@ -5478,13 +4750,27 @@ async function openArticle(id) {
     detailImage.src = article.image || 'assets/typewriter_birds.webp';
     detailImage.onerror = function() { this.onerror=null; this.src='assets/typewriter_birds.webp'; };
     
+    // Sync Medium sticky top navbar & side rail
+    const rtnStickyTitle = document.getElementById("rtn-sticky-title");
+    const rtnStickyAuthor = document.getElementById("rtn-sticky-author");
+    if (rtnStickyTitle) rtnStickyTitle.innerText = article.title;
+    if (rtnStickyAuthor) rtnStickyAuthor.innerText = `• ${article.author}`;
+
+    const sideClapCount = document.getElementById("side-clap-count");
+    const sideCommentsCount = document.getElementById("side-comments-count");
+    const sideClapBtn = document.getElementById("side-clap-btn");
+    if (sideClapCount) sideClapCount.innerText = article.claps || 0;
+    if (sideCommentsCount) sideCommentsCount.innerText = (article.comments ? article.comments.length : 0);
+
     // Check if clapped previously
     const storageKey = currentUser ? `clapped_articles_${currentUser.id}` : null;
     const clappedArticles = storageKey ? JSON.parse(localStorage.getItem(storageKey) || "[]") : [];
     if (clappedArticles.includes(id)) {
         detailClapBtn.classList.add("clapped");
+        if (sideClapBtn) sideClapBtn.classList.add("clapped");
     } else {
         detailClapBtn.classList.remove("clapped");
+        if (sideClapBtn) sideClapBtn.classList.remove("clapped");
     }
 
     // Set author avatar dynamically using our customization system
@@ -5997,6 +5283,33 @@ function closeCommentsDrawer() {
 
 // EVENT LISTENERS
 
+// Side Rail Action Button Wiring
+const sideClapBtnEl = document.getElementById("side-clap-btn");
+const sideCommentBtnEl = document.getElementById("side-comment-btn");
+const sideSaveBtnEl = document.getElementById("side-save-btn");
+const sideShareBtnEl = document.getElementById("side-share-btn");
+
+sideClapBtnEl?.addEventListener("click", () => {
+    detailClapBtn?.click();
+    const sideClapCountEl = document.getElementById("side-clap-count");
+    if (sideClapCountEl && detailClapCount) sideClapCountEl.innerText = detailClapCount.innerText;
+    if (detailClapBtn && detailClapBtn.classList.contains("clapped")) {
+        sideClapBtnEl.classList.add("clapped");
+    } else {
+        sideClapBtnEl.classList.remove("clapped");
+    }
+});
+
+sideCommentBtnEl?.addEventListener("click", openCommentsDrawer);
+
+sideSaveBtnEl?.addEventListener("click", () => {
+    document.getElementById("article-save-btn")?.click();
+});
+
+sideShareBtnEl?.addEventListener("click", () => {
+    document.getElementById("article-share-btn")?.click();
+});
+
 // Comments Drawer Toggles
 commentsTriggerBar?.addEventListener("click", openCommentsDrawer);
 articleCommentBtn?.addEventListener("click", openCommentsDrawer);
@@ -6015,7 +5328,7 @@ commentsDrawerBackdrop?.addEventListener("touchstart", (e) => {
     }
 }, { passive: false });
 
-// Reading Overlay Scroll Progress
+// Reading Overlay Scroll Progress & Top Sticky Navbar Title Toggle
 readingOverlay.addEventListener("scroll", () => {
     const scrollTop = readingOverlay.scrollTop;
     const scrollHeight = readingOverlay.scrollHeight;
@@ -6024,6 +5337,15 @@ readingOverlay.addEventListener("scroll", () => {
     if (scrollHeight - clientHeight > 0) {
         const percentage = (scrollTop / (scrollHeight - clientHeight)) * 100;
         readingProgress.style.width = `${percentage}%`;
+    }
+
+    const rtnCenterTitle = document.getElementById("rtn-center-title");
+    if (rtnCenterTitle) {
+        if (scrollTop > 220) {
+            rtnCenterTitle.classList.add("visible");
+        } else {
+            rtnCenterTitle.classList.remove("visible");
+        }
     }
 });
 
@@ -6049,6 +5371,11 @@ if (savedTheme === "dark") {
 }
 
 // Editorial Submission / Writer Studio Overlay Toggle — requires login
+
+// =============================================
+// WRITER STUDIO & WYSIWYG EDITOR
+// =============================================
+
 writeToggleBtn.addEventListener("click", () => {
     if (!currentUser) {
         openAuthModal();
@@ -7668,6 +6995,128 @@ async function bootApp() {
     isAppBooted = true;
 }
 
+
+// ── RICH TEXT WYSIWYG EDITOR INITIALIZATION ──────────────────
+function initWysiwygEditor() {
+    const editor = document.getElementById("post-editor");
+    const textarea = document.getElementById("post-content");
+    const wrapper = document.getElementById("post-editor-wrapper");
+    const publishForm = document.getElementById("publish-form");
+    const fontSelect = document.getElementById("editor-font-family");
+    
+    if (!editor || !textarea) return;
+
+    // Helper to sync editor content to hidden textarea
+    function syncEditorContent() {
+        textarea.value = editor.innerHTML;
+    }
+
+    // Input events to update the hidden textarea in real-time
+    editor.addEventListener("input", syncEditorContent);
+    editor.addEventListener("blur", syncEditorContent);
+
+    // Sync form resets (clears editor div as well)
+    if (publishForm) {
+        publishForm.addEventListener("reset", () => {
+            editor.innerHTML = "";
+            textarea.value = "";
+            if (wrapper) wrapper.classList.remove("profanity-error");
+            updateToolbarButtonStates();
+        });
+    }
+
+    // Font Family dropdown selection
+    if (fontSelect) {
+        fontSelect.addEventListener("change", function () {
+            const font = this.value;
+            editor.focus();
+            document.execCommand("fontName", false, font);
+            syncEditorContent();
+        });
+    }
+
+    // Toolbar formatting buttons
+    document.querySelectorAll(".editor-toolbar .toolbar-btn").forEach(btn => {
+        btn.addEventListener("click", function (e) {
+            e.preventDefault();
+            const command = this.getAttribute("data-command");
+            if (!command) return;
+
+            editor.focus();
+
+            if (command === "removeFormat") {
+                document.execCommand("removeFormat", false, null);
+                // Reset to default font-family Lora
+                document.execCommand("fontName", false, "'Lora', Georgia, serif");
+                if (fontSelect) fontSelect.selectedIndex = 0;
+            } else {
+                document.execCommand(command, false, null);
+            }
+
+            updateToolbarButtonStates();
+            syncEditorContent();
+        });
+    });
+
+    // Update active toolbar button states based on text selection
+    function updateToolbarButtonStates() {
+        document.querySelectorAll(".editor-toolbar .toolbar-btn[data-command]").forEach(btn => {
+            const command = btn.getAttribute("data-command");
+            if (command === "removeFormat") return;
+            try {
+                if (document.queryCommandState(command)) {
+                    btn.classList.add("active");
+                } else {
+                    btn.classList.remove("active");
+                }
+            } catch (e) {}
+        });
+
+        // Update selected option in font-family dropdown
+        if (fontSelect) {
+            try {
+                const fontName = document.queryCommandValue("fontName");
+                if (fontName) {
+                    const cleanFont = fontName.replace(/['"]/g, "").trim().toLowerCase();
+                    let matched = false;
+                    for (let option of fontSelect.options) {
+                        const optVal = option.value.replace(/['"]/g, "").trim().toLowerCase();
+                        if (optVal.includes(cleanFont) || cleanFont.includes(optVal)) {
+                            fontSelect.value = option.value;
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (!matched) {
+                        fontSelect.selectedIndex = 0; // Fallback to Lora
+                    }
+                }
+            } catch (e) {}
+        }
+    }
+
+    // Listeners for selection & focus changes to update toolbar state dynamically
+    editor.addEventListener("keyup", updateToolbarButtonStates);
+    editor.addEventListener("mouseup", updateToolbarButtonStates);
+    editor.addEventListener("focus", updateToolbarButtonStates);
+
+    // Listen for category selection changes to show slot-specific form sections
+    const catSelect = document.getElementById("post-category");
+    if (catSelect) {
+        catSelect.addEventListener("change", function() {
+            updateSlotFormSections(this.value);
+        });
+        updateSlotFormSections(catSelect.value);
+    }
+}
+
+
+// ===========================================================
+
+// =============================================
+// AUTHOR PROFILES & LITERARY JOURNEY
+// =============================================
+
 // =============================================
 // GLOBAL MODERATION HELPER FUNCTIONS
 // =============================================
@@ -8708,6 +8157,887 @@ function calculateAuthorStreak(authorName) {
     return streak;
 }
 
+// =============================================
+// SOCIAL, SHARING & MODERATION
+// =============================================
+
+// CONTENT MODERATION & SECURITY SYSTEM
+// =============================================
+
+const BANNED_WORDS = [
+    "amk", "amına", "göt", "piç", "siktir", "sik", "orospu", "yavşak", "pezevenk", "kahpe", "bok", "çüş", "kaltak", "gerzek", "salak", "aptal", "şerefsiz", "it", "kancık", "götlek", "amcık", "meme", "taşşak", "yarak", "yarrak", "sokayım", "sokam", "sikiş", "sokarım", "pic"
+];
+
+function containsProfanity(text) {
+    return false;
+}
+
+function getArticleReports(id) {
+    const reportsMap = JSON.parse(localStorage.getItem("murekkep_article_reports") || "{}");
+    return reportsMap[id] || 0;
+}
+
+function reportArticle(id) {
+    const reportsMap = JSON.parse(localStorage.getItem("murekkep_article_reports") || "{}");
+    reportsMap[id] = (reportsMap[id] || 0) + 1;
+    localStorage.setItem("murekkep_article_reports", JSON.stringify(reportsMap));
+    return reportsMap[id];
+}
+
+function resetArticleReports(id) {
+    const reportsMap = JSON.parse(localStorage.getItem("murekkep_article_reports") || "{}");
+    reportsMap[id] = 0;
+    localStorage.setItem("murekkep_article_reports", JSON.stringify(reportsMap));
+}
+
+function getCommentReports(id) {
+    const reportsMap = JSON.parse(localStorage.getItem("murekkep_comment_reports") || "{}");
+    return reportsMap[id] || 0;
+}
+
+function reportComment(id) {
+    const reportsMap = JSON.parse(localStorage.getItem("murekkep_comment_reports") || "{}");
+    reportsMap[id] = (reportsMap[id] || 0) + 1;
+    localStorage.setItem("murekkep_comment_reports", JSON.stringify(reportsMap));
+    return reportsMap[id];
+}
+
+function resetCommentReports(id) {
+    const reportsMap = JSON.parse(localStorage.getItem("murekkep_comment_reports") || "{}");
+    reportsMap[id] = 0;
+    localStorage.setItem("murekkep_comment_reports", JSON.stringify(reportsMap));
+}
+
+
+function updateEditorBannerUI() {
+    const banner = document.getElementById("editor-mode-banner");
+    const toggleBtn = document.getElementById("settings-editor-toggle");
+    if (isEditorModeActive && currentUser && currentUser.isEditor) {
+        if (banner) banner.classList.remove("hidden");
+        if (toggleBtn) toggleBtn.classList.add("active");
+    } else {
+        if (banner) banner.classList.add("hidden");
+        if (toggleBtn) toggleBtn.classList.remove("active");
+        isEditorModeActive = false;
+    }
+}
+
+const SUPABASE_URL = "https://xhgtipmmahtoshypngdm.supabase.co"; 
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZ3RpcG1tYWh0b3NoeXBuZ2RtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMDQyMzYsImV4cCI6MjA5Nzc4MDIzNn0.Z1eYqrrU8U62kDf0G8zUEBguXt4h0HviZJBIEJvH588";
+
+
+const CACHE_KEY = "murekkep_supabase_cache";
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+function clearSupabaseCache() {
+    localStorage.removeItem(CACHE_KEY);
+    console.log("Supabase client cache cleared.");
+}
+
+function updateSupabaseUI() {
+    const statusText = document.getElementById("supabase-status-text");
+    const configBtn = document.getElementById("supabase-config-btn");
+    if (!statusText || !configBtn) return;
+
+    if (isSupabaseConnected) {
+        statusText.innerText = "Supabase: Bağlı";
+        configBtn.style.backgroundColor = "rgba(46, 125, 50, 0.1)";
+        configBtn.style.color = "#2e7d32";
+        configBtn.style.borderColor = "#2e7d32";
+    } else {
+        statusText.innerText = "Supabase: Çevrimdışı";
+        configBtn.style.backgroundColor = "";
+        configBtn.style.color = "";
+        configBtn.style.borderColor = "var(--border-color)";
+    }
+}
+
+// Premium Toast Notification
+function showToast(message) {
+    const alertDiv = document.createElement("div");
+    alertDiv.style.position = "fixed";
+    alertDiv.style.bottom = "30px";
+    alertDiv.style.right = "30px";
+    alertDiv.style.backgroundColor = "var(--accent-color)";
+    alertDiv.style.color = "#ffffff";
+    alertDiv.style.padding = "16px 24px";
+    alertDiv.style.borderRadius = "30px";
+    alertDiv.style.fontFamily = "var(--font-ui)";
+    alertDiv.style.fontWeight = "600";
+    alertDiv.style.boxShadow = "0 8px 30px rgba(0,0,0,0.15)";
+    alertDiv.style.zIndex = "2000";
+    alertDiv.style.animation = "slideUp 0.3s ease";
+    alertDiv.innerText = message;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.style.opacity = "0";
+        alertDiv.style.transition = "opacity 0.5s ease";
+        setTimeout(() => alertDiv.remove(), 500);
+    }, 3000);
+}
+
+// Authentication Overlay Controls
+function openAuthModal() {
+    if (authOverlay) {
+        authOverlay.classList.remove("hidden");
+        lockBodyScroll();
+        switchAuthTab('login');
+    }
+}
+
+function closeAuthModal() {
+    if (authOverlay) {
+        authOverlay.classList.add("hidden");
+        unlockBodyScroll();
+    }
+}
+
+// =============================================
+// SHARE SYSTEM
+// =============================================
+
+/** Helper: update the share modal's quote display panel */
+function setShareQuote(text) {
+    const input   = document.getElementById('share-quote-input');
+    if (input)    input.value = text ? text.trim().substring(0, 280) : '';
+    renderShareCard(shareCurrentTemplate);
+}
+
+/** Populate the Spotify-style sentence selector list dynamically */
+function populateShareSentences(article) {
+    const listEl = document.getElementById("share-paragraphs-list");
+    if (!listEl) return;
+    listEl.innerHTML = "";
+
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = article.content;
+    const paragraphs = tempDiv.querySelectorAll("p, blockquote");
+
+    const decodeHTMLEntities = (str) => {
+        const temp = document.createElement("div");
+        temp.innerHTML = str;
+        const decoded = temp.textContent || temp.innerText || "";
+        return decoded.replace(/\s+/g, ' ').trim();
+    };
+
+    const sentences = [];
+    if (article.category === 'siir') {
+        // For poems, preserve line structure and treat each verse as a selectable item
+        const lines = tempDiv.innerHTML
+            .replace(/<br\s*\/?>/gi, "\n")
+            .replace(/<\/p>/gi, "\n")
+            .replace(/<\/div>/gi, "\n")
+            .replace(/<[^>]*>/g, "")
+            .split("\n")
+            .map(line => decodeHTMLEntities(line))
+            .filter(Boolean);
+        lines.forEach(l => sentences.push(l));
+    } else {
+        // For prose, split into sentences by punctuation
+        paragraphs.forEach(p => {
+            const text = decodeHTMLEntities(p.textContent);
+            if (!text) return;
+            
+            const matches = text.match(/[^.!?]+[.!?]+(?=\s|$)/g);
+            if (matches) {
+                matches.forEach(s => {
+                    const cleanS = s.trim();
+                    if (cleanS) sentences.push(cleanS);
+                });
+            } else if (text) {
+                sentences.push(text);
+            }
+        });
+    }
+
+    if (sentences.length === 0) {
+        listEl.innerHTML = `<div style="color:var(--text-secondary); font-size:0.8rem; text-align:center; padding:20px;">Bu makalede seçilebilir cümle bulunamadı.</div>`;
+        return;
+    }
+
+    sentences.forEach((sentenceText, idx) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "share-paragraph-item"; // uses existing CSS class for paragraph item
+        item.textContent = sentenceText;
+        item.dataset.index = idx;
+
+        item.addEventListener("click", () => {
+            // Toggle selection
+            item.classList.toggle("selected");
+
+            // Compile selected items (join with newlines for poems, spaces for other articles)
+            const selectedItems = listEl.querySelectorAll(".share-paragraph-item.selected");
+            const separator = (shareCurrentArticle && shareCurrentArticle.category === 'siir') ? "\n" : " ";
+            const compiledText = Array.from(selectedItems)
+                .map(el => el.textContent)
+                .join(separator)
+                .substring(0, 280);
+
+            const quoteInput = document.getElementById("share-quote-input");
+            if (quoteInput) {
+                quoteInput.value = compiledText;
+                quoteInput.dispatchEvent(new Event("input"));
+            }
+        });
+
+        listEl.appendChild(item);
+    });
+}
+
+function openShareModal(articleId, preselectedText) {
+    const article = articles.find(a => a.id === articleId);
+    if (!article) return;
+    shareCurrentArticle = article;
+    shareIsCustomMode = false;
+
+    const overlay = document.getElementById('share-overlay');
+    if (!overlay) return;
+
+    overlay.classList.remove('hidden');
+    lockBodyScroll();
+
+    // Toggle custom fields visibility
+    const customFieldsSection = document.getElementById("share-custom-inputs-section");
+    if (customFieldsSection) customFieldsSection.classList.add("hidden");
+
+    const paragraphPickerSection = overlay.querySelector(".share-paragraph-picker-section");
+    if (paragraphPickerSection) paragraphPickerSection.classList.remove("hidden");
+
+    const modalTitle = overlay.querySelector('.share-modal-title');
+    if (modalTitle) modalTitle.textContent = "Paylaş";
+
+    const quoteLabel = overlay.querySelector('.share-quote-display label');
+    if (quoteLabel) quoteLabel.textContent = "Paylaşılacak Alıntı (İsteğe Bağlı):";
+
+    const quoteInput = document.getElementById("share-quote-input");
+    if (quoteInput) quoteInput.placeholder = "Yukarıdan cümle seçebilir veya alıntıyı buraya kendiniz de yazabilirsiniz...";
+
+    // Populate sentences list
+    populateShareSentences(article);
+
+    // Populate quote: from preselected text only (no auto-fill from subtitle)
+    setShareQuote(preselectedText || '');
+
+    // Auto-select sentence containing the preselected text
+    if (preselectedText) {
+        const cleanPre = preselectedText.trim().toLowerCase();
+        const items = document.querySelectorAll('.share-paragraph-item');
+        items.forEach(item => {
+            if (item.textContent.toLowerCase().includes(cleanPre) || cleanPre.includes(item.textContent.toLowerCase())) {
+                item.classList.add('selected');
+            }
+        });
+    }
+}
+
+function openCustomShareModal() {
+    shareIsCustomMode = true;
+    shareCurrentArticle = {
+        title: "Yeni Bir Başlangıç",
+        author: "Kalem Sahibi",
+        category: "deneme"
+    };
+
+    const overlay = document.getElementById('share-overlay');
+    if (!overlay) return;
+
+    overlay.classList.remove('hidden');
+    lockBodyScroll();
+
+    // Toggle custom fields visibility
+    const customFieldsSection = document.getElementById("share-custom-inputs-section");
+    if (customFieldsSection) customFieldsSection.classList.remove("hidden");
+
+    const paragraphPickerSection = overlay.querySelector(".share-paragraph-picker-section");
+    if (paragraphPickerSection) paragraphPickerSection.classList.add("hidden");
+
+    const modalTitle = overlay.querySelector('.share-modal-title');
+    if (modalTitle) modalTitle.textContent = "Sosyal Medya Kartı Oluştur";
+
+    const quoteLabel = overlay.querySelector('.share-quote-display label');
+    if (quoteLabel) quoteLabel.textContent = "Kart Üzerindeki Metin / Alıntı:";
+
+    const quoteInput = document.getElementById("share-quote-input");
+    if (quoteInput) quoteInput.placeholder = "Kart üzerinde görünmesini istediğiniz cümleyi yazın...";
+
+    // Populate input values to match default mock article
+    const customAuthorInput = document.getElementById("share-custom-author-input");
+    const customCategorySelect = document.getElementById("share-custom-category-input");
+    const customTitleInput = document.getElementById("share-custom-title-input");
+
+    if (customAuthorInput) customAuthorInput.value = shareCurrentArticle.author;
+    if (customCategorySelect) customCategorySelect.value = shareCurrentArticle.category;
+    if (customTitleInput) customTitleInput.value = shareCurrentArticle.title;
+
+    setShareQuote("Kendi cümlenizi buraya yazıp, yukarıdan şablon seçerek sosyal medya kartınızı anında oluşturun.");
+}
+
+function closeShareModal() {
+    const overlay = document.getElementById("share-overlay");
+    if (overlay) {
+        overlay.classList.add("hidden");
+        unlockBodyScroll();
+    }
+}
+
+// Canvas text wrapping helper that respects explicit newlines
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
+    const sourceLines = text.split('\n');
+    let currentY = y;
+    const lines = [];
+
+    sourceLines.forEach(srcLine => {
+        const words = srcLine.split(' ');
+        let line = '';
+        
+        for (let n = 0; n < words.length; n++) {
+            const testLine = line + words[n] + ' ';
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > maxWidth && n > 0) {
+                lines.push({ text: line.trim(), y: currentY });
+                line = words[n] + ' ';
+                currentY += lineHeight;
+            } else {
+                line = testLine;
+            }
+        }
+        lines.push({ text: line.trim(), y: currentY });
+        currentY += lineHeight;
+    });
+
+    lines.forEach(l => ctx.fillText(l.text, x, l.y));
+    return currentY;
+}
+
+// Render a share card on canvas
+function renderShareCard(template) {
+    const canvas = document.getElementById("share-canvas");
+    if (!canvas || !shareCurrentArticle) return;
+    const ctx = canvas.getContext("2d");
+    const W = 1080, H = 1080;
+    canvas.width = W;
+    canvas.height = H;
+
+    const quoteInput = document.getElementById("share-quote-input");
+    const quoteText = (quoteInput && quoteInput.value.trim()) ? quoteInput.value.trim() : "";
+    
+    let articleTitle = "";
+    let authorName = "";
+    let categoryName = "";
+
+    if (shareIsCustomMode) {
+        const customTitleInput = document.getElementById("share-custom-title-input");
+        const customAuthorInput = document.getElementById("share-custom-author-input");
+        const customCategorySelect = document.getElementById("share-custom-category-input");
+
+        articleTitle = (customTitleInput && customTitleInput.value.trim()) ? customTitleInput.value.trim() : "Yeni Bir Başlangıç";
+        authorName = (customAuthorInput && customAuthorInput.value.trim()) ? customAuthorInput.value.trim() : "Kalem Sahibi";
+        categoryName = (customCategorySelect && customCategorySelect.value) ? customCategorySelect.value : "deneme";
+
+        // Keep shareCurrentArticle synced so other components (social sharing etc) get correct values
+        shareCurrentArticle.title = articleTitle;
+        shareCurrentArticle.author = authorName;
+        shareCurrentArticle.category = categoryName;
+    } else {
+        articleTitle = shareCurrentArticle.title || "";
+        authorName = shareCurrentArticle.author || "Mürekkep";
+        categoryName = shareCurrentArticle.category || "deneme";
+    }
+
+    // Template definitions
+    const templates = {
+        gece: {
+            bgColors: ['#0f0f0f', '#1a1a1a'],
+            angle: 0,
+            textColor: '#e2ddd5',
+            accentColor: '#c94040',
+            logoColor: '#e2ddd5',
+            subtleColor: '#666666',
+            borderColor: '#333333',
+            quoteMarkColor: 'rgba(93,26,26,0.6)',
+        },
+        sabah: {
+            bgColors: ['#faf8f5', '#f0ebe0'],
+            angle: 0,
+            textColor: '#111111',
+            accentColor: '#5d1a1a',
+            logoColor: '#111111',
+            subtleColor: '#888888',
+            borderColor: '#d8d2c4',
+            quoteMarkColor: 'rgba(93,26,26,0.15)',
+        },
+        gazete: {
+            bgColors: ['#f3efe6', '#e8e0cc'],
+            angle: 0,
+            textColor: '#2c1a00',
+            accentColor: '#2c1a00',
+            logoColor: '#2c1a00',
+            subtleColor: '#8a7560',
+            borderColor: '#c8b898',
+            quoteMarkColor: 'rgba(44,26,0,0.12)',
+            italic: true,
+        },
+        yangin: {
+            bgColors: ['#1a0000', '#6b0f0f', '#c0390f'],
+            angle: 135,
+            textColor: '#fff8e1',
+            accentColor: '#ff6b35',
+            logoColor: '#fff8e1',
+            subtleColor: '#ff9a70',
+            borderColor: '#ff4500',
+            quoteMarkColor: 'rgba(255,107,53,0.25)',
+        },
+        okyanus: {
+            bgColors: ['#0d1b2a', '#1b4f72', '#2471a3'],
+            angle: 135,
+            textColor: '#e8f4f8',
+            accentColor: '#5dade2',
+            logoColor: '#e8f4f8',
+            subtleColor: '#85c1e9',
+            borderColor: '#2980b9',
+            quoteMarkColor: 'rgba(93,173,226,0.25)',
+        }
+    };
+
+    const t = templates[template] || templates.gece;
+    const pad = 90;
+
+    // ── Background ──
+    if (t.bgColors.length > 1) {
+        let grad;
+        if (t.angle === 135) {
+            grad = ctx.createLinearGradient(0, 0, W, H);
+        } else {
+            grad = ctx.createLinearGradient(0, 0, 0, H);
+        }
+        t.bgColors.forEach((c, i) => grad.addColorStop(i / (t.bgColors.length - 1), c));
+        ctx.fillStyle = grad;
+    } else {
+        ctx.fillStyle = t.bgColors[0];
+    }
+    ctx.fillRect(0, 0, W, H);
+
+    // ── Top border line ──
+    ctx.strokeStyle = t.borderColor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(pad, 130);
+    ctx.lineTo(W - pad, 130);
+    ctx.stroke();
+
+    // ── Logo / Title ──
+    ctx.fillStyle = t.logoColor;
+    ctx.font = `900 72px 'Cinzel', Georgia, serif`;
+    if (t.italic) ctx.font = `italic 900 72px 'Cinzel', Georgia, serif`;
+    ctx.fillText('MÜREKKEP', pad, 110);
+
+    let lastY = H - 240;
+
+    if (quoteText) {
+        // ── Decorative quote mark (large ❝) ──
+        ctx.fillStyle = t.quoteMarkColor;
+        ctx.font = 'bold 500px serif';
+        ctx.fillText('"', pad - 30, 420);
+
+        // ── Quote text ──
+        ctx.fillStyle = t.textColor;
+        const fontSize = quoteText.length > 120 ? 46 : quoteText.length > 80 ? 54 : 62;
+        ctx.font = `${t.italic ? 'italic ' : ''}${fontSize}px 'Playfair Display', Georgia, serif`;
+        ctx.textBaseline = 'top';
+        lastY = wrapCanvasText(ctx, `"${quoteText}"`, pad, 220, W - pad * 2, fontSize * 1.5);
+    } else {
+        // ── Draw Article Poster/Cover layout in the middle ──
+        ctx.textAlign = 'center';
+        
+        // Category Tag
+        ctx.fillStyle = t.accentColor;
+        ctx.font = `700 32px 'Inter', sans-serif`;
+        ctx.fillText(shareCurrentArticle.category.replace("-", " ").toUpperCase(), W / 2, 360);
+        
+        // Article Title
+        ctx.fillStyle = t.textColor;
+        const titleFontSize = articleTitle.length > 50 ? 52 : articleTitle.length > 30 ? 60 : 70;
+        ctx.font = `900 ${titleFontSize}px 'Cinzel', Georgia, serif`;
+        const titleY = 430;
+        const endTitleY = wrapCanvasText(ctx, articleTitle, W / 2, titleY, W - pad * 2.5, titleFontSize * 1.4);
+        
+        // Subtitle (if fits and space allows)
+        const subtitleText = shareCurrentArticle.subtitle || "";
+        if (subtitleText && endTitleY < 720) {
+            ctx.fillStyle = t.subtleColor;
+            const subFontSize = 36;
+            ctx.font = `italic ${subFontSize}px 'Playfair Display', Georgia, serif`;
+            wrapCanvasText(ctx, subtitleText, W / 2, endTitleY + 30, W - pad * 3, subFontSize * 1.4);
+        }
+        
+        ctx.textAlign = 'left'; // Restore alignment
+        lastY = H - 240;
+    }
+
+    // ── Bottom border line ──
+    const bottomBorderY = Math.min(lastY + 60, H - 220);
+    ctx.strokeStyle = t.borderColor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(pad, bottomBorderY);
+    ctx.lineTo(W - pad, bottomBorderY);
+    ctx.stroke();
+
+    // ── Accent line ──
+    ctx.strokeStyle = t.accentColor;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(pad, bottomBorderY + 10);
+    ctx.lineTo(pad + 120, bottomBorderY + 10);
+    ctx.stroke();
+
+    // ── Author name ──
+    ctx.fillStyle = t.subtleColor;
+    ctx.font = `italic 500 36px 'Playfair Display', Georgia, serif`;
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(`— ${authorName}`, pad, bottomBorderY + 60);
+
+    // ── Article title (smaller, below author) ──
+    ctx.fillStyle = t.subtleColor;
+    ctx.font = `400 30px 'Lora', Georgia, serif`;
+    const shortTitle = articleTitle.length > 55 ? articleTitle.substring(0, 55) + '…' : articleTitle;
+    ctx.fillText(shortTitle, pad, bottomBorderY + 108);
+
+    // ── Bottom site tag ──
+    ctx.fillStyle = t.accentColor;
+    ctx.font = `700 28px 'Inter', sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.fillText('Devamı ► murekkepgzt.com', W - pad, H - pad);
+    ctx.textAlign = 'left';
+}
+
+// =============================================
+// SPOTIFY-STYLE TEXT SELECTION POPUP
+// =============================================
+
+function initTextSelectionPopup() {
+    const popup = document.getElementById('text-selection-popup');
+    const previewEl = document.getElementById('tsp-preview-text');
+    const shareBtn = document.getElementById('tsp-share-btn');
+    const copyBtn = document.getElementById('tsp-copy-btn');
+    const tweetBtn = document.getElementById('tsp-tweet-btn');
+    if (!popup) return;
+
+    let lastSelectedText = '';
+    let hideTimeout = null;
+
+    function showPopup(selectedText, rect) {
+        lastSelectedText = selectedText.trim();
+        if (!lastSelectedText || lastSelectedText.length < 3) { hidePopup(); return; }
+
+        // Truncate preview to ~80 chars
+        previewEl.textContent = lastSelectedText.length > 80
+            ? '"' + lastSelectedText.substring(0, 80) + '…"'
+            : '"' + lastSelectedText + '"';
+
+        popup.classList.remove('hidden');
+
+        // Position: centered above the selection, clamped inside viewport
+        // popup is position:fixed → use viewport (rect) coords directly
+        const POPUP_W = Math.min(340, window.innerWidth - 24);
+        const POPUP_H = 92;
+        const ARROW_H = 10;
+
+        let left = rect.left + rect.width / 2 - POPUP_W / 2;
+        let top  = rect.top - POPUP_H - ARROW_H;
+
+        // If there's not enough room above, flip below
+        if (top < 8) {
+            top = rect.bottom + ARROW_H;
+        }
+
+        // Clamp horizontally & vertically
+        left = Math.max(12, Math.min(left, window.innerWidth - POPUP_W - 12));
+        top  = Math.max(8, top);
+
+        popup.style.left = left + 'px';
+        popup.style.top  = top + 'px';
+        popup.style.width = POPUP_W + 'px';
+    }
+
+    function hidePopup() {
+        popup.classList.add('hidden');
+        lastSelectedText = '';
+    }
+
+    // ── Listen for selections inside the reading overlay ──────────────────
+    const readingOverlay = document.getElementById('reading-overlay');
+    if (!readingOverlay) return;
+
+    function handleSelectionChange() {
+        clearTimeout(hideTimeout);
+        hideTimeout = setTimeout(() => {
+            const sel = window.getSelection();
+            if (!sel || sel.isCollapsed || !sel.toString().trim()) {
+                hidePopup();
+                return;
+            }
+
+            // Only trigger if selection is inside the reading overlay
+            const anchorNode = sel.anchorNode;
+            if (!readingOverlay.contains(anchorNode)) { hidePopup(); return; }
+
+            try {
+                const range = sel.getRangeAt(0);
+                const rect  = range.getBoundingClientRect();
+                if (rect.width === 0 && rect.height === 0) { hidePopup(); return; }
+                showPopup(sel.toString(), rect);
+            } catch(e) { hidePopup(); }
+        }, 50);
+    }
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+    readingOverlay.addEventListener('scroll', handleSelectionChange);
+
+    // Hide on clicking elsewhere (but not on the popup itself)
+    document.addEventListener('mousedown', (e) => {
+        if (!popup.contains(e.target)) hidePopup();
+    });
+    document.addEventListener('touchstart', (e) => {
+        if (!popup.contains(e.target)) hidePopup();
+    });
+
+    // ESC key hides
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') hidePopup();
+    });
+
+    // ── SHARE button → open share modal with selected text ────────────────
+    shareBtn?.addEventListener('click', () => {
+        if (!lastSelectedText) return;
+        const selectedText = lastSelectedText;
+        hidePopup();
+        window.getSelection()?.removeAllRanges();
+
+        if (!activeArticleId) return;
+        // Open share modal and inject selected text
+        openShareModal(activeArticleId, selectedText);
+    });
+
+    // ── COPY button ───────────────────────────────────────────────────────
+    copyBtn?.addEventListener('click', () => {
+        if (!lastSelectedText) return;
+        const textToCopy = `"${lastSelectedText}"`;
+        navigator.clipboard.writeText(textToCopy)
+            .then(() => showToast('📋 Alıntı kopyalandı!'))
+            .catch(() => showToast('Kopyalama başarısız.'));
+        hidePopup();
+        window.getSelection()?.removeAllRanges();
+    });
+
+    // ── TWEET button ──────────────────────────────────────────────────────
+    tweetBtn?.addEventListener('click', () => {
+        if (!lastSelectedText) return;
+        const art = articles.find(a => a.id === activeArticleId);
+        const author = art ? `— ${art.author}` : '';
+        const tweet = `"${lastSelectedText.substring(0, 200)}" ${author} #Mürekkep\nmurekkepgzt.com`;
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweet)}`, '_blank');
+        hidePopup();
+        window.getSelection()?.removeAllRanges();
+    });
+}
+
+// =============================================
+// SHARE SYSTEM
+// =============================================
+
+function initShareOverlay() {
+    const overlay = document.getElementById("share-overlay");
+    const closeBtn = document.getElementById("close-share");
+    const quoteInput = document.getElementById("share-quote-input");
+    const thumbs = document.querySelectorAll(".share-template-thumb");
+
+    // Close button
+    if (closeBtn) closeBtn.addEventListener("click", closeShareModal);
+
+    // Backdrop click
+    if (overlay) {
+        overlay.addEventListener("click", (e) => {
+            if (e.target === overlay) closeShareModal();
+        });
+    }
+
+    // Clear quote button
+    document.getElementById('share-quote-clear')?.addEventListener('click', () => {
+        setShareQuote('');
+    });
+
+    // Template thumb selection
+    thumbs.forEach(thumb => {
+        thumb.addEventListener("click", () => {
+            thumbs.forEach(t => t.classList.remove("active"));
+            thumb.classList.add("active");
+            shareCurrentTemplate = thumb.getAttribute("data-template");
+            renderShareCard(shareCurrentTemplate);
+        });
+    });
+
+    // Live re-render as user edits quote
+    if (quoteInput) {
+        quoteInput.addEventListener("input", () => {
+            renderShareCard(shareCurrentTemplate);
+        });
+    }
+
+    // Live re-render for custom card inputs
+    const customAuthorInput = document.getElementById("share-custom-author-input");
+    const customTitleInput = document.getElementById("share-custom-title-input");
+    const customCategorySelect = document.getElementById("share-custom-category-input");
+
+    [customAuthorInput, customTitleInput].forEach(input => {
+        if (input) {
+            input.addEventListener("input", () => {
+                if (shareIsCustomMode) renderShareCard(shareCurrentTemplate);
+            });
+        }
+    });
+
+    if (customCategorySelect) {
+        customCategorySelect.addEventListener("change", () => {
+            if (shareIsCustomMode) renderShareCard(shareCurrentTemplate);
+        });
+    }
+
+    // Connect trigger buttons for custom card creator
+    document.getElementById("create-card-toggle")?.addEventListener("click", () => {
+        openCustomShareModal();
+    });
+
+    document.getElementById("footer-create-card-btn")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        openCustomShareModal();
+    });
+
+    // WhatsApp share
+    document.getElementById("share-whatsapp")?.addEventListener("click", () => {
+        if (!shareCurrentArticle) return;
+        const q = quoteInput?.value.trim() || shareCurrentArticle.subtitle || shareCurrentArticle.title;
+        const text = `"${q}"\n\n— ${shareCurrentArticle.author}\n📖 ${shareCurrentArticle.title}\n\nmurekkepgzt.com`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    });
+
+    // Twitter/X share
+    document.getElementById("share-twitter")?.addEventListener("click", () => {
+        if (!shareCurrentArticle) return;
+        const q = quoteInput?.value.trim() || shareCurrentArticle.subtitle || shareCurrentArticle.title;
+        const text = `"${q}"\n\n— ${shareCurrentArticle.author} | #Mürekkep`;
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
+    });
+
+    // Instagram — download image
+    document.getElementById("share-instagram")?.addEventListener("click", () => {
+        const canvas = document.getElementById("share-canvas");
+        if (!canvas) return;
+        const link = document.createElement("a");
+        link.download = `murekkep-paylasim.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+        showToast("📥 Görsel indirildi! Instagram'da paylaşabilirsiniz.");
+    });
+
+    // Copy link
+    document.getElementById("share-copy-link")?.addEventListener("click", () => {
+        const url = window.location.href.split("?")[0];
+        navigator.clipboard.writeText(url).then(() => {
+            showToast("🔗 Link kopyalandı!");
+        }).catch(() => {
+            showToast("Link: " + url);
+        });
+    });
+
+    // Native share image
+    document.getElementById("share-native-image")?.addEventListener("click", () => {
+        const canvas = document.getElementById("share-canvas");
+        if (!canvas) return;
+
+        canvas.toBlob((blob) => {
+            if (!blob) return;
+            const file = new File([blob], 'murekkep-paylasim.png', { type: 'image/png' });
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                navigator.share({
+                    files: [file],
+                    title: 'Mürekkep Alıntı',
+                    text: 'Mürekkep Gazetesi\'nden edebi bir alıntı paylaştı.'
+                }).catch(err => {
+                    console.log("Paylaşım iptal edildi veya hata oluştu:", err);
+                });
+            } else {
+                // Fallback: Download the image
+                const link = document.createElement("a");
+                link.download = `murekkep-paylasim.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                showToast("📥 Cihazınız doğrudan görsel paylaşımını desteklemediği için indirildi.");
+            }
+        }, 'image/png');
+    });
+}
+
+// Helper: Calculate weekly writing streak based on consecutive weeks of published articles
+function calculateAuthorStreak(authorName) {
+    if (!authorName) return 0;
+    const authorArticles = articles.filter(a => a.author && a.author.toLowerCase().trim() === authorName.toLowerCase().trim());
+    if (authorArticles.length === 0) return 0;
+
+    // Parse dates
+    const dates = authorArticles.map(a => {
+        const dt = a.created_at ? new Date(a.created_at) : (a.date ? new Date(a.date) : new Date());
+        return dt;
+    }).filter(d => !isNaN(d.getTime()));
+
+    if (dates.length === 0) return 0;
+
+    // Sort dates descending (newest first)
+    dates.sort((a, b) => b - a);
+
+    // Helper to get start of the week (Monday)
+    function getStartOfWeek(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is Sunday
+        const start = new Date(d.setDate(diff));
+        start.setHours(0,0,0,0);
+        return start;
+    }
+
+    const todayStartOfWeek = getStartOfWeek(new Date());
+    
+    // Group dates by week start date (in milliseconds for easy comparison)
+    const weekStarts = new Set();
+    dates.forEach(d => {
+        weekStarts.add(getStartOfWeek(d).getTime());
+    });
+
+    // Check if they published this week or last week (otherwise streak is broken / 0)
+    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+    const thisWeekTime = todayStartOfWeek.getTime();
+    const lastWeekTime = thisWeekTime - oneWeekMs;
+
+    if (!weekStarts.has(thisWeekTime) && !weekStarts.has(lastWeekTime)) {
+        return 0;
+    }
+
+    // Count back consecutive weeks
+    let streak = 0;
+    let currentCheckWeek = weekStarts.has(thisWeekTime) ? thisWeekTime : lastWeekTime;
+
+    while (weekStarts.has(currentCheckWeek)) {
+        streak++;
+        currentCheckWeek -= oneWeekMs;
+    }
+
+    return streak;
+}
+
 // Dynamic Dashboard Sync in Profile Modal
 function syncDashboardInProfile() {
     if (!currentUser) return;
@@ -9347,328 +9677,10 @@ document.getElementById("dropdown-profile-btn")?.addEventListener("click", () =>
 });
 
 
-if (document.readyState === "loading") {
-    window.addEventListener("DOMContentLoaded", () => {
-        bootApp();
-        initDynamicViewport();
-        initWysiwygEditor();
-    });
-} else {
-    bootApp();
-    initDynamicViewport();
-    initWysiwygEditor();
-}
 
-// Dynamic Viewport Manager: Responsive mobile reading for articles/modals, Broadsheet for front page
-function updateDynamicViewport(isOverlayOpen) {
-    const viewportMeta = document.querySelector('meta[name="viewport"]');
-    if (!viewportMeta) return;
-    if (isOverlayOpen) {
-        viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
-    } else {
-        viewportMeta.setAttribute('content', 'width=1300');
-    }
-}
-
-// History Manager for Modals
-function initDynamicViewport() {
-    const overlays = document.querySelectorAll('.overlay');
-    
-    let isHandlingPopstate = false;
-
-    const checkOverlays = () => {
-        let anyVisible = false;
-        let visibleOverlayId = null;
-
-        overlays.forEach(overlay => {
-            if (!overlay.classList.contains('hidden')) {
-                anyVisible = true;
-                visibleOverlayId = overlay.id;
-            }
-        });
-        
-        if (commentsDrawer && !commentsDrawer.classList.contains('hidden')) {
-            anyVisible = true;
-            visibleOverlayId = commentsDrawer.id;
-        }
-
-        // Apply dynamic viewport sizing
-        updateDynamicViewport(anyVisible);
-
-        // Push state if overlay or drawer is open
-        if (anyVisible && visibleOverlayId) {
-            if (visibleOverlayId === 'reading-overlay' && activeArticleId) {
-                const newUrl = window.location.pathname + `?article=${activeArticleId}`;
-                if (!isHandlingPopstate && window.location.search !== `?article=${activeArticleId}`) {
-                    history.pushState({ activeOverlay: visibleOverlayId, articleId: activeArticleId }, '', newUrl);
-                }
-            } else {
-                if (!isHandlingPopstate && window.location.hash !== '#' + visibleOverlayId) {
-                    history.pushState({ activeOverlay: visibleOverlayId }, '', '#' + visibleOverlayId);
-                }
-            }
-        } else if (isAppBooted && !anyVisible && !isHandlingPopstate && (window.location.hash || window.location.search)) {
-            // Clean history when everything is closed
-            history.pushState(null, '', window.location.pathname);
-        }
-    };
-
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                checkOverlays();
-            }
-        });
-    });
-
-    overlays.forEach(overlay => {
-        observer.observe(overlay, { attributes: true, attributeFilter: ['class'] });
-    });
-    
-    if (commentsDrawer) {
-        observer.observe(commentsDrawer, { attributes: true, attributeFilter: ['class'] });
-    }
-
-    // Listen for mobile/browser back button
-    window.addEventListener('popstate', (event) => {
-        isHandlingPopstate = true;
-        
-        // Parse parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const queryArticleId = urlParams.get('article');
-
-        // Check if query parameter for article is now empty, but we have an active article
-        if (!queryArticleId && activeArticleId) {
-            closeArticle();
-        } else if (queryArticleId && activeArticleId !== queryArticleId) {
-            openArticle(queryArticleId);
-        }
-
-        // Hide open drawer first
-        if (commentsDrawer && !commentsDrawer.classList.contains('hidden')) {
-            closeCommentsDrawer();
-        }
-        
-        // Hide open overlays
-        overlays.forEach(overlay => {
-            if (!overlay.classList.contains('hidden')) {
-                // If it is reading-overlay and we actually want to open an article, don't close it
-                if (overlay.id === 'reading-overlay' && queryArticleId) {
-                    return;
-                }
-                // Find and click the close button to trigger all default cleanups
-                const closeBtn = overlay.querySelector('.btn-close-overlay, #close-share, .share-close-btn');
-                if (closeBtn) {
-                    closeBtn.click();
-                } else {
-                    overlay.classList.add('hidden');
-                    unlockBodyScroll();
-                }
-            }
-        });
-
-        isHandlingPopstate = false;
-        checkOverlays();
-    });
-
-    checkOverlays();
-    // Scaling is handled natively by the browser via viewport meta tag width=1300
-}
-
-// Reading Settings Controller
-document.addEventListener("DOMContentLoaded", () => {
-    const rsToggle = document.getElementById("reading-settings-toggle");
-    const rsDropdown = document.getElementById("reading-settings-dropdown");
-    const articleContainer = document.querySelector(".medium-article-container");
-
-    if (rsToggle && rsDropdown && articleContainer) {
-        rsToggle.addEventListener("click", (e) => {
-            e.stopPropagation();
-            rsDropdown.classList.toggle("hidden");
-        });
-
-        document.addEventListener("click", (e) => {
-            if (!rsDropdown.classList.contains("hidden") && !rsDropdown.contains(e.target) && e.target !== rsToggle) {
-                rsDropdown.classList.add("hidden");
-            }
-        });
-
-        // Font Family selection
-        const fontBtns = document.querySelectorAll(".font-family-options .rs-opt-btn");
-        fontBtns.forEach(btn => {
-            btn.addEventListener("click", () => {
-                fontBtns.forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-                
-                const font = btn.getAttribute("data-font");
-                articleContainer.classList.remove("article-font-serif", "article-font-sans", "article-font-classic");
-                articleContainer.classList.add("article-font-" + font);
-                localStorage.setItem("murekkep_reader_font", font);
-            });
-        });
-
-        // Font Size selection
-        const sizeBtns = document.querySelectorAll(".font-size-options .rs-opt-btn");
-        sizeBtns.forEach(btn => {
-            btn.addEventListener("click", () => {
-                sizeBtns.forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-                
-                const size = btn.getAttribute("data-size");
-                articleContainer.classList.remove("article-size-small", "article-size-medium", "article-size-large");
-                articleContainer.classList.add("article-size-" + size);
-                localStorage.setItem("murekkep_reader_size", size);
-            });
-        });
-
-        // Load saved reader preferences
-        const savedFont = localStorage.getItem("murekkep_reader_font") || "serif";
-        const savedSize = localStorage.getItem("murekkep_reader_size") || "medium";
-
-        const activeFontBtn = document.querySelector(`.font-family-options .rs-opt-btn[data-font="${savedFont}"]`);
-        if (activeFontBtn) activeFontBtn.click();
-
-        const activeSizeBtn = document.querySelector(`.font-size-options .rs-opt-btn[data-size="${savedSize}"]`);
-        if (activeSizeBtn) activeSizeBtn.click();
-    }
-
-    // Instagram Visitor Bar Controller
-    const igVisitorBar = document.getElementById("instagram-visitor-bar");
-    const closeIgbBtn = document.getElementById("close-ivb-btn");
-
-    if (igVisitorBar) {
-        const isDismissed = sessionStorage.getItem("murekkep_ig_bar_dismissed");
-        if (isDismissed) {
-            igVisitorBar.classList.add("hidden");
-        } else {
-            igVisitorBar.classList.remove("hidden");
-        }
-
-        if (closeIgbBtn) {
-            closeIgbBtn.addEventListener("click", () => {
-                igVisitorBar.classList.add("hidden");
-                sessionStorage.setItem("murekkep_ig_bar_dismissed", "true");
-            });
-        }
-    }
-});
-
-// ── RICH TEXT WYSIWYG EDITOR INITIALIZATION ──────────────────
-function initWysiwygEditor() {
-    const editor = document.getElementById("post-editor");
-    const textarea = document.getElementById("post-content");
-    const wrapper = document.getElementById("post-editor-wrapper");
-    const publishForm = document.getElementById("publish-form");
-    const fontSelect = document.getElementById("editor-font-family");
-    
-    if (!editor || !textarea) return;
-
-    // Helper to sync editor content to hidden textarea
-    function syncEditorContent() {
-        textarea.value = editor.innerHTML;
-    }
-
-    // Input events to update the hidden textarea in real-time
-    editor.addEventListener("input", syncEditorContent);
-    editor.addEventListener("blur", syncEditorContent);
-
-    // Sync form resets (clears editor div as well)
-    if (publishForm) {
-        publishForm.addEventListener("reset", () => {
-            editor.innerHTML = "";
-            textarea.value = "";
-            if (wrapper) wrapper.classList.remove("profanity-error");
-            updateToolbarButtonStates();
-        });
-    }
-
-    // Font Family dropdown selection
-    if (fontSelect) {
-        fontSelect.addEventListener("change", function () {
-            const font = this.value;
-            editor.focus();
-            document.execCommand("fontName", false, font);
-            syncEditorContent();
-        });
-    }
-
-    // Toolbar formatting buttons
-    document.querySelectorAll(".editor-toolbar .toolbar-btn").forEach(btn => {
-        btn.addEventListener("click", function (e) {
-            e.preventDefault();
-            const command = this.getAttribute("data-command");
-            if (!command) return;
-
-            editor.focus();
-
-            if (command === "removeFormat") {
-                document.execCommand("removeFormat", false, null);
-                // Reset to default font-family Lora
-                document.execCommand("fontName", false, "'Lora', Georgia, serif");
-                if (fontSelect) fontSelect.selectedIndex = 0;
-            } else {
-                document.execCommand(command, false, null);
-            }
-
-            updateToolbarButtonStates();
-            syncEditorContent();
-        });
-    });
-
-    // Update active toolbar button states based on text selection
-    function updateToolbarButtonStates() {
-        document.querySelectorAll(".editor-toolbar .toolbar-btn[data-command]").forEach(btn => {
-            const command = btn.getAttribute("data-command");
-            if (command === "removeFormat") return;
-            try {
-                if (document.queryCommandState(command)) {
-                    btn.classList.add("active");
-                } else {
-                    btn.classList.remove("active");
-                }
-            } catch (e) {}
-        });
-
-        // Update selected option in font-family dropdown
-        if (fontSelect) {
-            try {
-                const fontName = document.queryCommandValue("fontName");
-                if (fontName) {
-                    const cleanFont = fontName.replace(/['"]/g, "").trim().toLowerCase();
-                    let matched = false;
-                    for (let option of fontSelect.options) {
-                        const optVal = option.value.replace(/['"]/g, "").trim().toLowerCase();
-                        if (optVal.includes(cleanFont) || cleanFont.includes(optVal)) {
-                            fontSelect.value = option.value;
-                            matched = true;
-                            break;
-                        }
-                    }
-                    if (!matched) {
-                        fontSelect.selectedIndex = 0; // Fallback to Lora
-                    }
-                }
-            } catch (e) {}
-        }
-    }
-
-    // Listeners for selection & focus changes to update toolbar state dynamically
-    editor.addEventListener("keyup", updateToolbarButtonStates);
-    editor.addEventListener("mouseup", updateToolbarButtonStates);
-    editor.addEventListener("focus", updateToolbarButtonStates);
-
-    // Listen for category selection changes to show slot-specific form sections
-    const catSelect = document.getElementById("post-category");
-    if (catSelect) {
-        catSelect.addEventListener("change", function() {
-            updateSlotFormSections(this.value);
-        });
-        updateSlotFormSections(catSelect.value);
-    }
-}
-
-
-// ===========================================================
+// =============================================
+// MÜREKKEP POSTASI / PENPAL MODULE v5.0
+// =============================================
 
 // MÜREKKEPLİ MEKTUP MODULE v5.0
 // Supabase `letters` tablosu ile tam gerçek kullanıcı sistemi.
@@ -10715,3 +10727,213 @@ function initWysiwygEditor() {
     };
 
 })();
+
+// =============================================
+// MAIN APPLICATION ROUTER & BOOTSTRAP
+// =============================================
+
+if (document.readyState === "loading") {
+    window.addEventListener("DOMContentLoaded", () => {
+        bootApp();
+        initDynamicViewport();
+        initWysiwygEditor();
+    });
+} else {
+    bootApp();
+    initDynamicViewport();
+    initWysiwygEditor();
+}
+
+// Dynamic Viewport Manager: Responsive mobile reading for articles/modals, Broadsheet for front page
+function updateDynamicViewport(isOverlayOpen) {
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (!viewportMeta) return;
+    if (isOverlayOpen) {
+        viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+    } else {
+        viewportMeta.setAttribute('content', 'width=1300');
+    }
+}
+
+// History Manager for Modals
+function initDynamicViewport() {
+    const overlays = document.querySelectorAll('.overlay');
+    
+    let isHandlingPopstate = false;
+
+    const checkOverlays = () => {
+        let anyVisible = false;
+        let visibleOverlayId = null;
+
+        overlays.forEach(overlay => {
+            if (!overlay.classList.contains('hidden')) {
+                anyVisible = true;
+                visibleOverlayId = overlay.id;
+            }
+        });
+        
+        if (commentsDrawer && !commentsDrawer.classList.contains('hidden')) {
+            anyVisible = true;
+            visibleOverlayId = commentsDrawer.id;
+        }
+
+        // Apply dynamic viewport sizing
+        updateDynamicViewport(anyVisible);
+
+        // Push state if overlay or drawer is open
+        if (anyVisible && visibleOverlayId) {
+            if (visibleOverlayId === 'reading-overlay' && activeArticleId) {
+                const newUrl = window.location.pathname + `?article=${activeArticleId}`;
+                if (!isHandlingPopstate && window.location.search !== `?article=${activeArticleId}`) {
+                    history.pushState({ activeOverlay: visibleOverlayId, articleId: activeArticleId }, '', newUrl);
+                }
+            } else {
+                if (!isHandlingPopstate && window.location.hash !== '#' + visibleOverlayId) {
+                    history.pushState({ activeOverlay: visibleOverlayId }, '', '#' + visibleOverlayId);
+                }
+            }
+        } else if (isAppBooted && !anyVisible && !isHandlingPopstate && (window.location.hash || window.location.search)) {
+            // Clean history when everything is closed
+            history.pushState(null, '', window.location.pathname);
+        }
+    };
+
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                checkOverlays();
+            }
+        });
+    });
+
+    overlays.forEach(overlay => {
+        observer.observe(overlay, { attributes: true, attributeFilter: ['class'] });
+    });
+    
+    if (commentsDrawer) {
+        observer.observe(commentsDrawer, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    // Listen for mobile/browser back button
+    window.addEventListener('popstate', (event) => {
+        isHandlingPopstate = true;
+        
+        // Parse parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryArticleId = urlParams.get('article');
+
+        // Check if query parameter for article is now empty, but we have an active article
+        if (!queryArticleId && activeArticleId) {
+            closeArticle();
+        } else if (queryArticleId && activeArticleId !== queryArticleId) {
+            openArticle(queryArticleId);
+        }
+
+        // Hide open drawer first
+        if (commentsDrawer && !commentsDrawer.classList.contains('hidden')) {
+            closeCommentsDrawer();
+        }
+        
+        // Hide open overlays
+        overlays.forEach(overlay => {
+            if (!overlay.classList.contains('hidden')) {
+                // If it is reading-overlay and we actually want to open an article, don't close it
+                if (overlay.id === 'reading-overlay' && queryArticleId) {
+                    return;
+                }
+                // Find and click the close button to trigger all default cleanups
+                const closeBtn = overlay.querySelector('.btn-close-overlay, #close-share, .share-close-btn');
+                if (closeBtn) {
+                    closeBtn.click();
+                } else {
+                    overlay.classList.add('hidden');
+                    unlockBodyScroll();
+                }
+            }
+        });
+
+        isHandlingPopstate = false;
+        checkOverlays();
+    });
+
+    checkOverlays();
+    // Scaling is handled natively by the browser via viewport meta tag width=1300
+}
+
+// Reading Settings Controller
+document.addEventListener("DOMContentLoaded", () => {
+    const rsToggle = document.getElementById("reading-settings-toggle");
+    const rsDropdown = document.getElementById("reading-settings-dropdown");
+    const articleContainer = document.querySelector(".medium-article-container");
+
+    if (rsToggle && rsDropdown && articleContainer) {
+        rsToggle.addEventListener("click", (e) => {
+            e.stopPropagation();
+            rsDropdown.classList.toggle("hidden");
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!rsDropdown.classList.contains("hidden") && !rsDropdown.contains(e.target) && e.target !== rsToggle) {
+                rsDropdown.classList.add("hidden");
+            }
+        });
+
+        // Font Family selection
+        const fontBtns = document.querySelectorAll(".font-family-options .rs-opt-btn");
+        fontBtns.forEach(btn => {
+            btn.addEventListener("click", () => {
+                fontBtns.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                
+                const font = btn.getAttribute("data-font");
+                articleContainer.classList.remove("article-font-serif", "article-font-sans", "article-font-classic");
+                articleContainer.classList.add("article-font-" + font);
+                localStorage.setItem("murekkep_reader_font", font);
+            });
+        });
+
+        // Font Size selection
+        const sizeBtns = document.querySelectorAll(".font-size-options .rs-opt-btn");
+        sizeBtns.forEach(btn => {
+            btn.addEventListener("click", () => {
+                sizeBtns.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                
+                const size = btn.getAttribute("data-size");
+                articleContainer.classList.remove("article-size-small", "article-size-medium", "article-size-large");
+                articleContainer.classList.add("article-size-" + size);
+                localStorage.setItem("murekkep_reader_size", size);
+            });
+        });
+
+        // Load saved reader preferences
+        const savedFont = localStorage.getItem("murekkep_reader_font") || "serif";
+        const savedSize = localStorage.getItem("murekkep_reader_size") || "medium";
+
+        const activeFontBtn = document.querySelector(`.font-family-options .rs-opt-btn[data-font="${savedFont}"]`);
+        if (activeFontBtn) activeFontBtn.click();
+
+        const activeSizeBtn = document.querySelector(`.font-size-options .rs-opt-btn[data-size="${savedSize}"]`);
+        if (activeSizeBtn) activeSizeBtn.click();
+    }
+
+    // Instagram Visitor Bar Controller
+    const igVisitorBar = document.getElementById("instagram-visitor-bar");
+    const closeIgbBtn = document.getElementById("close-ivb-btn");
+
+    if (igVisitorBar) {
+        const isDismissed = sessionStorage.getItem("murekkep_ig_bar_dismissed");
+        if (isDismissed) {
+            igVisitorBar.classList.add("hidden");
+        } else {
+            igVisitorBar.classList.remove("hidden");
+        }
+
+        if (closeIgbBtn) {
+            closeIgbBtn.addEventListener("click", () => {
+                igVisitorBar.classList.add("hidden");
+                sessionStorage.setItem("murekkep_ig_bar_dismissed", "true");
+            });
+        }
+    }
+});

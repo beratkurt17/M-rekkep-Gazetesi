@@ -17,7 +17,6 @@ function getCategoriesList() {
 }
 
 // IO Functions for User Notifications
-let userNotifications = [];
 
 async function loadNotifications() {
     if (!currentUser) {
@@ -241,7 +240,6 @@ function renderNotifications() {
 }
 
 // IO Functions for Custom Author Profiles
-let authorProfiles = {};
 
 async function loadAuthorProfiles() {
     if (isSupabaseConnected && supabaseClient) {
@@ -289,10 +287,6 @@ async function saveAuthorProfiles() {
 }
 
 // IO Functions for User Roles and Access Control
-const DEFAULT_USER_ROLES = [
-    { email: "murekkep@admin.com", username: "Mürekkep", role: "admin" }
-];
-let userRoles = [];
 
 async function loadUserRoles() {
     if (isSupabaseConnected && supabaseClient) {
@@ -1795,7 +1789,6 @@ const articleEditorEditBtn = document.getElementById("article-editor-edit-btn");
 let editingArticleId = null;
 
 // SEO State & Management Helpers
-let isAppBooted = false;
 let defaultSEO = {
     title: document.title,
     description: "",
@@ -2028,8 +2021,6 @@ function toggleProfileDropdown(forceClose = false) {
 
 
 // Current active article ID inside modal
-let activeArticleId = null;
-let currentCategoryFilter = "all";
 let currentPage = 1;
 // Shared state for sequential slot filling
 let _slotArticleIdx = 0;

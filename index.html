@@ -283,40 +283,80 @@
 
     <!-- Medium / T24 Style distraction-free reading overlay -->
     <div id="reading-overlay" class="overlay hidden">
-        <div class="reading-progress-container">
-            <div id="reading-progress" class="reading-progress-bar"></div>
-        </div>
-
-        <button id="close-reading" class="btn-close-overlay" aria-label="Okumayı Kapat">
-            <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-            <span>Geri Dön</span>
-        </button>
-
-        <!-- Reading Preferences Controls (Font family and size switcher) -->
-        <div class="reading-controls-wrapper">
-            <button id="reading-settings-toggle" class="btn-reading-settings" aria-label="Okuma Ayarları">
-                <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M9 4v3h5v12h3V7h5V4H9zm-6 6v3h3v6h3v-6h3v-3H3z"/></svg>
-                <span>Görünüm</span>
-            </button>
-            <div id="reading-settings-dropdown" class="reading-settings-dropdown hidden">
-                <div class="rs-section">
-                    <span class="rs-label">Yazı Karakteri</span>
-                    <div class="rs-options font-family-options">
-                        <button class="rs-opt-btn active" data-font="serif" style="font-family: var(--font-body);">Lora</button>
-                        <button class="rs-opt-btn" data-font="sans" style="font-family: var(--font-ui);">Inter</button>
-                        <button class="rs-opt-btn" data-font="classic" style="font-family: var(--font-serif);">Cinzel</button>
-                    </div>
+        <!-- Top Medium Reader Header Bar (PC & Mobile Sticky Navbar) -->
+        <header class="reader-top-navbar" id="reader-top-navbar">
+            <div class="rtn-left">
+                <button id="close-reading" class="btn-close-overlay" aria-label="Okumayı Kapat">
+                    <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                    <span>Gazeteye Dön</span>
+                </button>
+                <div class="rtn-brand-badge">
+                    <span class="rtn-logo-icon">✒️</span>
+                    <span class="rtn-logo-text">MÜREKKEP</span>
                 </div>
-                <div class="rs-section">
-                    <span class="rs-label">Harf Boyutu</span>
-                    <div class="rs-options font-size-options">
-                        <button class="rs-opt-btn" data-size="small">Küçük</button>
-                        <button class="rs-opt-btn active" data-size="medium">Orta</button>
-                        <button class="rs-opt-btn" data-size="large">Büyük</button>
+            </div>
+
+            <div class="rtn-center" id="rtn-center-title">
+                <span class="rtn-article-title" id="rtn-sticky-title">Yazı Başlığı</span>
+                <span class="rtn-author-name" id="rtn-sticky-author">• Yazar</span>
+            </div>
+
+            <div class="rtn-right">
+                <!-- Reading Preferences Controls (Font family and size switcher) -->
+                <div class="reading-controls-wrapper">
+                    <button id="reading-settings-toggle" class="btn-reading-settings" aria-label="Okuma Ayarları">
+                        <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M9 4v3h5v12h3V7h5V4H9zm-6 6v3h3v6h3v-6h3v-3H3z"/></svg>
+                        <span>Görünüm</span>
+                    </button>
+                    <div id="reading-settings-dropdown" class="reading-settings-dropdown hidden">
+                        <div class="rs-section">
+                            <span class="rs-label">Yazı Karakteri</span>
+                            <div class="rs-options font-family-options">
+                                <button class="rs-opt-btn active" data-font="serif" style="font-family: var(--font-body);">Lora</button>
+                                <button class="rs-opt-btn" data-font="sans" style="font-family: var(--font-ui);">Inter</button>
+                                <button class="rs-opt-btn" data-font="classic" style="font-family: var(--font-serif);">Cinzel</button>
+                            </div>
+                        </div>
+                        <div class="rs-section">
+                            <span class="rs-label">Harf Boyutu</span>
+                            <div class="rs-options font-size-options">
+                                <button class="rs-opt-btn" data-size="small">Küçük</button>
+                                <button class="rs-opt-btn active" data-size="medium">Orta</button>
+                                <button class="rs-opt-btn" data-size="large">Büyük</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <!-- Reading Progress Bar -->
+            <div class="reading-progress-container">
+                <div id="reading-progress" class="reading-progress-bar"></div>
+            </div>
+        </header>
+
+        <!-- Desktop Medium Left Floating Sticky Side Rail (PC Desktop >1024px) -->
+        <aside class="reader-side-rail" id="reader-side-rail" aria-label="Hızlı Etkileşimler">
+            <button class="rail-action-btn side-clap-btn" id="side-clap-btn" title="Alkışla">
+                <svg class="clap-icon" viewBox="0 0 24 24"><path d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm-1.78 12.77c-.31.31-.69.43-1.07.43-.38 0-.76-.12-1.07-.43-.59-.59-.59-1.54 0-2.12l4.9-4.9c.59-.59 1.54-.59 2.12 0 .59.59.59 1.54 0 2.12l-4.88 4.9zm4.78-4.78c.31-.31.69-.43 1.07-.43.38 0 .76.12 1.07.43.59.59.59 1.54 0 2.12l-4.9 4.9c-.3.3-.68.44-1.06.44-.38 0-.76-.14-1.06-.44-.59-.59-.59-1.54 0-2.12l4.95-4.91z"/></svg>
+                <span class="rail-btn-count" id="side-clap-count">0</span>
+            </button>
+            
+            <button class="rail-action-btn side-comment-btn" id="side-comment-btn" title="Yorumlar">
+                <svg viewBox="0 0 24 24"><path d="M9 22a1 1 0 0 1-1-1v-3H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6.1l-3.7 3.7a1 1 0 0 1-.7.3H9zM4 4v10h6v2.58L12.58 14H20V4H4z"/></svg>
+                <span class="rail-btn-count" id="side-comments-count">0</span>
+            </button>
+
+            <div class="rail-divider"></div>
+
+            <button class="rail-action-btn side-save-btn" id="side-save-btn" title="Yazıyı Kaydet">
+                <svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
+            </button>
+
+            <button class="rail-action-btn side-share-btn" id="side-share-btn" title="Yazıyı Paylaş">
+                <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7L15.9 8.12c.53.5 1.25.8 2.1.8 1.78 0 3.22-1.44 3.22-3.22S19.78 2.5 18 2.5c-1.78 0-3.22 1.44-3.22 3.22 0 .24.04.47.09.7L7.8 9.54c-.52-.47-1.2-.77-1.96-.77-1.78 0-3.22 1.44-3.22 3.22s1.44 3.22 3.22 3.22c.76 0 1.44-.3 1.96-.77l7.07 4.14c-.05.23-.09.45-.09.68 0 1.78 1.44 3.22 3.22 3.22s3.22-1.44 3.22-3.22-1.44-3.22-3.22-3.22z"/></svg>
+            </button>
+        </aside>
 
         <article class="medium-article-container">
             <header class="article-detail-header">

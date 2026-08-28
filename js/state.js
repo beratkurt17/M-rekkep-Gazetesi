@@ -12,8 +12,10 @@ var editorNoteData = {};
 var dailyWordData = {};
 var userNotifications = [];
 var authorProfiles = {};
-var DEFAULT_USER_ROLES = {};
-var userRoles = {};
+var DEFAULT_USER_ROLES = [
+    { email: "murekkep@admin.com", username: "Mürekkep", role: "admin" }
+];
+var userRoles = [];
 var followersData = {};
 var currentUser = null;
 var isEditorModeActive = false;

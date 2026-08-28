@@ -49,7 +49,6 @@ function resetCommentReports(id) {
     localStorage.setItem("murekkep_comment_reports", JSON.stringify(reportsMap));
 }
 
-let isEditorModeActive = false;
 
 function updateEditorBannerUI() {
     const banner = document.getElementById("editor-mode-banner");
@@ -67,11 +66,6 @@ function updateEditorBannerUI() {
 const SUPABASE_URL = "https://xhgtipmmahtoshypngdm.supabase.co"; 
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZ3RpcG1tYWh0b3NoeXBuZ2RtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMDQyMzYsImV4cCI6MjA5Nzc4MDIzNn0.Z1eYqrrU8U62kDf0G8zUEBguXt4h0HviZJBIEJvH588";
 
-let supabaseClient = null;
-let isSupabaseConnected = false;
-
-let currentUser = null;
-let savedArticleIds = [];
 
 const CACHE_KEY = "murekkep_supabase_cache";
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -144,9 +138,6 @@ function closeAuthModal() {
 // =============================================
 // SHARE SYSTEM
 // =============================================
-let shareCurrentTemplate = 'gece';
-let shareCurrentArticle = null;
-let shareIsCustomMode = false;
 
 /** Helper: update the share modal's quote display panel */
 function setShareQuote(text) {
@@ -832,8 +823,22 @@ function initShareOverlay() {
     });
 }
 
-// Settings Modal
+// Helper: Calculate weekly writing streak based on consecutive weeks of published articles
+function calculateAuthorStreak(authorName) {
+    if (!authorName) return 0;
+    const authorArticles = articles.filter(a => a.author && a.author.toLowerCase().trim() === authorName.toLowerCase().trim());
+    if (authorArticles.length === 0) return 0;
 
+    // Parse dates
+    const dates = authorArticles.map(a => {
+        const dt = a.created_at ? new Date(a.created_at) : (a.date ? new Date(a.date) : new Date());
+        return dt;
+    }).filter(d => !isNaN(d.getTime()));
+
+    if (dates.length === 0) return 0;
+
+    // Sort dates descending (newest first)
+    dates.sort((a, b) => b - a);
 
     // Helper to get start of the week (Monday)
     function getStartOfWeek(date) {

@@ -45,15 +45,217 @@
     max-width: 100%;
     margin: 0 auto;
     box-sizing: border-box;
+    background-color: var(--bg-secondary);
 }
 
-.medium-article-container {
-    max-width: 740px;
+/* Reader Top Navbar (Sticky Header Bar on PC & Mobile) */
+.reader-top-navbar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
     width: 100%;
-    margin: 80px auto 40px;
-    padding: 0 20px 140px;
+    height: 60px;
+    z-index: 1010;
+    background: rgba(253, 252, 248, 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
     box-sizing: border-box;
-    align-self: center;
+    transition: background-color var(--transition-speed);
+}
+
+[data-theme="dark"] .reader-top-navbar {
+    background: rgba(18, 18, 18, 0.94);
+}
+
+.rtn-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.rtn-brand-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-header);
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: 1px;
+}
+
+.rtn-logo-icon {
+    font-size: 1.1rem;
+}
+
+.rtn-center {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 450px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.rtn-center.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.rtn-article-title {
+    font-family: var(--font-header);
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rtn-author-name {
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.rtn-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Reset .btn-close-overlay inside header navbar */
+.reader-top-navbar .btn-close-overlay {
+    position: static;
+    top: auto;
+    left: auto;
+    box-shadow: none;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    border-radius: 20px;
+}
+
+/* Reset .reading-controls-wrapper inside header navbar */
+.reader-top-navbar .reading-controls-wrapper {
+    position: relative;
+    top: auto;
+    right: auto;
+}
+
+.reader-top-navbar .btn-reading-settings {
+    box-shadow: none;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    border-radius: 20px;
+}
+
+.reader-top-navbar .reading-progress-container {
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    top: auto;
+    width: 100%;
+    height: 3px;
+}
+
+/* Desktop Medium Left Floating Sticky Side Rail */
+.reader-side-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    position: fixed;
+    top: 140px;
+    left: max(20px, calc(50% - 490px));
+    z-index: 1000;
+    padding: 14px 10px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 30px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    transition: background-color var(--transition-speed);
+}
+
+.rail-action-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    transition: all 0.2s ease;
+}
+
+.rail-action-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.rail-action-btn:hover {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    transform: scale(1.08);
+}
+
+.rail-action-btn.clapped,
+.rail-action-btn.active {
+    color: var(--accent-color);
+    background-color: rgba(184, 51, 42, 0.08);
+}
+
+.rail-btn-count {
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.rail-divider {
+    width: 24px;
+    height: 1px;
+    background-color: var(--border-light);
+    margin: 2px 0;
+}
+
+/* PC Desktop Elevated Card Presentation for Medium Container */
+@media screen and (min-width: 769px) {
+    .medium-article-container {
+        max-width: 740px;
+        width: 100%;
+        margin: 36px auto 70px;
+        padding: 56px 64px 80px;
+        background-color: var(--bg-primary);
+        border: 1px solid var(--border-light);
+        border-radius: 16px;
+        box-shadow: 0 10px 35px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0,0,0,0.02);
+        box-sizing: border-box;
+        align-self: center;
+    }
+}
+
+@media screen and (max-width: 1023px) {
+    .reader-side-rail {
+        display: none !important;
+    }
 }
 /* Reading Progress Bar */
 .reading-progress-container {

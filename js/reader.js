@@ -37,13 +37,27 @@ async function openArticle(id) {
     detailImage.src = article.image || 'assets/typewriter_birds.webp';
     detailImage.onerror = function() { this.onerror=null; this.src='assets/typewriter_birds.webp'; };
     
+    // Sync Medium sticky top navbar & side rail
+    const rtnStickyTitle = document.getElementById("rtn-sticky-title");
+    const rtnStickyAuthor = document.getElementById("rtn-sticky-author");
+    if (rtnStickyTitle) rtnStickyTitle.innerText = article.title;
+    if (rtnStickyAuthor) rtnStickyAuthor.innerText = `• ${article.author}`;
+
+    const sideClapCount = document.getElementById("side-clap-count");
+    const sideCommentsCount = document.getElementById("side-comments-count");
+    const sideClapBtn = document.getElementById("side-clap-btn");
+    if (sideClapCount) sideClapCount.innerText = article.claps || 0;
+    if (sideCommentsCount) sideCommentsCount.innerText = (article.comments ? article.comments.length : 0);
+
     // Check if clapped previously
     const storageKey = currentUser ? `clapped_articles_${currentUser.id}` : null;
     const clappedArticles = storageKey ? JSON.parse(localStorage.getItem(storageKey) || "[]") : [];
     if (clappedArticles.includes(id)) {
         detailClapBtn.classList.add("clapped");
+        if (sideClapBtn) sideClapBtn.classList.add("clapped");
     } else {
         detailClapBtn.classList.remove("clapped");
+        if (sideClapBtn) sideClapBtn.classList.remove("clapped");
     }
 
     // Set author avatar dynamically using our customization system
@@ -556,6 +570,33 @@ function closeCommentsDrawer() {
 
 // EVENT LISTENERS
 
+// Side Rail Action Button Wiring
+const sideClapBtnEl = document.getElementById("side-clap-btn");
+const sideCommentBtnEl = document.getElementById("side-comment-btn");
+const sideSaveBtnEl = document.getElementById("side-save-btn");
+const sideShareBtnEl = document.getElementById("side-share-btn");
+
+sideClapBtnEl?.addEventListener("click", () => {
+    detailClapBtn?.click();
+    const sideClapCountEl = document.getElementById("side-clap-count");
+    if (sideClapCountEl && detailClapCount) sideClapCountEl.innerText = detailClapCount.innerText;
+    if (detailClapBtn && detailClapBtn.classList.contains("clapped")) {
+        sideClapBtnEl.classList.add("clapped");
+    } else {
+        sideClapBtnEl.classList.remove("clapped");
+    }
+});
+
+sideCommentBtnEl?.addEventListener("click", openCommentsDrawer);
+
+sideSaveBtnEl?.addEventListener("click", () => {
+    document.getElementById("article-save-btn")?.click();
+});
+
+sideShareBtnEl?.addEventListener("click", () => {
+    document.getElementById("article-share-btn")?.click();
+});
+
 // Comments Drawer Toggles
 commentsTriggerBar?.addEventListener("click", openCommentsDrawer);
 articleCommentBtn?.addEventListener("click", openCommentsDrawer);
@@ -574,7 +615,7 @@ commentsDrawerBackdrop?.addEventListener("touchstart", (e) => {
     }
 }, { passive: false });
 
-// Reading Overlay Scroll Progress
+// Reading Overlay Scroll Progress & Top Sticky Navbar Title Toggle
 readingOverlay.addEventListener("scroll", () => {
     const scrollTop = readingOverlay.scrollTop;
     const scrollHeight = readingOverlay.scrollHeight;
@@ -583,6 +624,15 @@ readingOverlay.addEventListener("scroll", () => {
     if (scrollHeight - clientHeight > 0) {
         const percentage = (scrollTop / (scrollHeight - clientHeight)) * 100;
         readingProgress.style.width = `${percentage}%`;
+    }
+
+    const rtnCenterTitle = document.getElementById("rtn-center-title");
+    if (rtnCenterTitle) {
+        if (scrollTop > 220) {
+            rtnCenterTitle.classList.add("visible");
+        } else {
+            rtnCenterTitle.classList.remove("visible");
+        }
     }
 });
 

@@ -152,11 +152,4 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// Application State & Seed Data
-const DEFAULT_ARTICLES = [];
 
-const DEFAULT_COMMENTS = [];
-
-// Initialize Storage
-let articles = [];
-let comments = [];

@@ -44,107 +44,12 @@ async function hashPassword(password) {
     }
 }
 
-/**
- * Brute-Force Koruması: Aynı e-posta ile yapılan giriş
- * denemelerini sessionStorage'da sayar. 5 başarısız denemeden
- * sonra 15 dakika boyunca erişimi kilitler.
- */
-const LOGIN_MAX_ATTEMPTS = 5;
-const LOGIN_LOCKOUT_MS   = 15 * 60 * 1000; // 15 dakika
-
-function checkLoginRateLimit(email) {
-    try {
-        const key    = 'murekkep_login_rl_' + btoa(encodeURIComponent(email.toLowerCase().trim()));
-        let   record = JSON.parse(sessionStorage.getItem(key) || '{"count":0,"since":0}');
-        const now    = Date.now();
-
-        // Kilit süresi dolmuşsa sayacı sıfırla
-        if (now - record.since > LOGIN_LOCKOUT_MS) {
-            record = { count: 0, since: now };
-        }
-
-        record.count++;
-        sessionStorage.setItem(key, JSON.stringify(record));
-
-        if (record.count > LOGIN_MAX_ATTEMPTS) {
-            const minutesLeft = Math.ceil((LOGIN_LOCKOUT_MS - (now - record.since)) / 60000);
-            return { allowed: false, minutesLeft };
-        }
-        return { allowed: true };
-    } catch (e) {
-        return { allowed: true }; // sessionStorage yoksa engelleme
-    }
-}
-
-function resetLoginRateLimit(email) {
-    try {
-        const key = 'murekkep_login_rl_' + btoa(encodeURIComponent(email.toLowerCase().trim()));
-        sessionStorage.removeItem(key);
-    } catch (e) {}
-}
-
-/**
- * Yorum Flood Koruması: Bir kullanıcı aynı makaleye 30 saniye
- * içinde ikinci yorum yapamaz. sessionStorage tabanlıdır.
- */
-const COMMENT_COOLDOWN_MS = 30 * 1000; // 30 saniye
-
-function checkCommentCooldown(articleId) {
-    try {
-        const key    = 'murekkep_comment_cd_' + articleId;
-        const lastMs = parseInt(sessionStorage.getItem(key) || '0', 10);
-        const now    = Date.now();
-        if (now - lastMs < COMMENT_COOLDOWN_MS) {
-            const secsLeft = Math.ceil((COMMENT_COOLDOWN_MS - (now - lastMs)) / 1000);
-            return { allowed: false, secsLeft };
-        }
-        sessionStorage.setItem(key, String(now));
-        return { allowed: true };
-    } catch (e) {
-        return { allowed: true };
-    }
-}
 
 
-// =============================================
-// SCROLL LOCK UTILITY (Medium-style)
-// Prevents the page from jumping to top when
-// overlays open by using position:fixed + top offset.
-// =============================================
-let _scrollLockDepth = 0;
 
-function lockBodyScroll() {
-    _scrollLockDepth++;
-    document.body.classList.add('modal-open');
-    document.body.style.overflow = 'hidden';
-}
 
-function unlockBodyScroll() {
-    _scrollLockDepth = Math.max(0, _scrollLockDepth - 1);
-    if (_scrollLockDepth === 0) {
-        document.body.classList.remove('modal-open');
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.left = '';
-        document.body.style.right = '';
-        document.body.style.overflow = '';
-    }
-}
 
-function forceUnlockAllOverlays() {
-    _scrollLockDepth = 0;
-    document.body.classList.remove('modal-open');
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.left = '';
-    document.body.style.right = '';
-    document.body.style.overflow = '';
-    document.querySelectorAll('.overlay').forEach(el => {
-        el.classList.add('hidden');
-    });
-    const actionModal = document.getElementById('mobile-action-modal');
-    if (actionModal) actionModal.classList.remove('active');
-}
+
 
 window.addEventListener('DOMContentLoaded', () => {
     forceUnlockAllOverlays();
