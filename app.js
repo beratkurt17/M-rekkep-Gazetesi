@@ -5502,9 +5502,14 @@ async function openArticle(id) {
     }
 
     // Show Overlay with fade/slide animations
+    updateDynamicViewport(true);
     readingOverlay.classList.remove("hidden");
     lockBodyScroll(); // lock page scroll
     readingOverlay.scrollTop = 0;
+    readingOverlay.scrollLeft = 0;
+    window.scrollTo(0, 0);
+    document.documentElement.scrollLeft = 0;
+    document.body.scrollLeft = 0;
     readingProgress.style.width = "0%";
 
     // Update editor buttons in reader overlay
