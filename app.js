@@ -5269,16 +5269,12 @@ function renderNewspaperGrid() {
         </div>
     `;
 
-    // Attach click handlers to all actionable items
+    // Attach click handlers to all actionable items - Directly opens article
     mainGrid.querySelectorAll("[data-id]").forEach(item => {
         item.addEventListener("click", (e) => {
             e.stopPropagation();
             const articleId = item.getAttribute("data-id");
-            if (window.innerWidth <= 768) {
-                openMobileActionModal(articleId);
-            } else {
-                if (articleId) openArticle(articleId);
-            }
+            if (articleId) openArticle(articleId);
         });
     });
 }
