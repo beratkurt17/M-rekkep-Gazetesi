@@ -9358,6 +9358,17 @@ if (document.readyState === "loading") {
     initWysiwygEditor();
 }
 
+// Dynamic Viewport Manager: Responsive mobile reading for articles/modals, Broadsheet for front page
+function updateDynamicViewport(isOverlayOpen) {
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (!viewportMeta) return;
+    if (isOverlayOpen) {
+        viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+    } else {
+        viewportMeta.setAttribute('content', 'width=1300');
+    }
+}
+
 // History Manager for Modals
 function initDynamicViewport() {
     const overlays = document.querySelectorAll('.overlay');
@@ -9379,6 +9390,9 @@ function initDynamicViewport() {
             anyVisible = true;
             visibleOverlayId = commentsDrawer.id;
         }
+
+        // Apply dynamic viewport sizing
+        updateDynamicViewport(anyVisible);
 
         // Push state if overlay or drawer is open
         if (anyVisible && visibleOverlayId) {
