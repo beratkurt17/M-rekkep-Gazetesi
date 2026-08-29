@@ -2,15 +2,18 @@
 // WRITER STUDIO & WYSIWYG EDITOR
 // =============================================
 
-writeToggleBtn.addEventListener("click", () => {
+// Open Writer Studio Modal (unified handler for header button and slot cards)
+function openWriterStudioModal(categoryKey) {
     if (!currentUser) {
-        openAuthModal();
-        showToast("Yazı başvurusu yapmak için lütfen giriş yapın.");
+        if (typeof openAuthModal === 'function') openAuthModal();
+        if (typeof showToast === 'function') showToast("Yazı başvurusu yapmak veya düzenlemek için lütfen giriş yapın.");
         return;
     }
-    editorOverlay.classList.remove("hidden");
-    editorOverlay.scrollTop = 0;
-    lockBodyScroll();
+    if (editorOverlay) {
+        editorOverlay.classList.remove("hidden");
+        editorOverlay.scrollTop = 0;
+    }
+    if (typeof lockBodyScroll === 'function') lockBodyScroll();
     
     // Prefill the author name to match user profile exactly and lock input
     const authorInput = document.getElementById("post-author");
@@ -34,13 +37,13 @@ writeToggleBtn.addEventListener("click", () => {
         if (submitBtn) submitBtn.innerText = "Yayın Kuruluna Başvuru Gönder";
     }
 
-    // Limit category select dynamically according to user role / editor slots
+    // Populate and set category select dynamically
     const categorySelect = document.getElementById("post-category");
     if (categorySelect) {
         categorySelect.innerHTML = "";
         let baseOptions = [];
 
-        if (currentUser.isEditor || isEditorModeActive) {
+        if ((currentUser && currentUser.isEditor) || isEditorModeActive) {
             baseOptions = [
                 { id: "manset", name: "🌟 1. Ana Manşet (Hero Story)" },
                 { id: "kose-yazilari", name: "✒️ 2. Köşe Yazısı (Sol 1. Slot)" },
@@ -58,21 +61,29 @@ writeToggleBtn.addEventListener("click", () => {
             ];
         } else {
             baseOptions = [
-                { id: "deneme", name: "Deneme & Düşünce" },
-                { id: "oyku", name: "Öykü & Anlatı" },
-                { id: "siir", name: "Şiir" },
-                { id: "kitap", name: "Kitap İncelemesi" },
-                { id: "kose-yazilari", name: "Köşe Yazısı" },
-                { id: "genc-kalemler", name: "Genç Kalemler" },
-                { id: "roportaj", name: "Yazar Röportajı" }
+                { id: "kose-yazilari", name: "✒️ Köşe Yazısı (Sol 1. Slot)" },
+                { id: "deneme", name: "🖋️ Deneme & Eleştiri (Sol 2. Slot)" },
+                { id: "gunun-sozu", name: "📜 Günün Sözü (Sol 3. Slot)" },
+                { id: "genc-kalemler", name: "📖 Genç Kalemler & Anlatı (Sol 4. Slot)" },
+                { id: "oyku", name: "📖 Öykü & Anlatı (Orta Alt Sol Slot)" },
+                { id: "kitap", name: "📚 Kitaplık & Tenkit (Orta Alt Sağ Slot)" },
+                { id: "siir", name: "📜 Günün Şiiri (Sağ 1. Slot)" },
+                { id: "haber", name: "🏛️ Kültür & Medeniyet (Sağ 2. Slot)" },
+                { id: "lugat", name: "📖 Edebi Lûgat / Kelime (Sağ 3. Slot)" },
+                { id: "manset", name: "🌟 Ana Manşet Başvurusu" },
+                { id: "biyografi", name: "Edebi Portre & Biyografi" },
+                { id: "roportaj", name: "Yazar Röportajı / Söyleşi" },
+                { id: "yarismalar", name: "Yarışmalar & Duyurular" }
             ];
         }
 
-        customCategories.forEach(cat => {
-            if (!baseOptions.some(o => o.id === cat.id)) {
-                baseOptions.push(cat);
-            }
-        });
+        if (Array.isArray(customCategories)) {
+            customCategories.forEach(cat => {
+                if (!baseOptions.some(o => o.id === cat.id)) {
+                    baseOptions.push(cat);
+                }
+            });
+        }
 
         baseOptions.forEach(opt => {
             const el = document.createElement("option");
@@ -81,11 +92,18 @@ writeToggleBtn.addEventListener("click", () => {
             categorySelect.appendChild(el);
         });
 
-        if (!categorySelect.value) {
-            categorySelect.value = (currentUser.isEditor || isEditorModeActive) ? "manset" : "deneme";
+        const targetCat = categoryKey || ((currentUser && currentUser.isEditor) || isEditorModeActive ? "manset" : "deneme");
+        categorySelect.value = targetCat;
+        if (typeof updateSlotFormSections === 'function') {
+            updateSlotFormSections(categorySelect.value);
         }
     }
-});
+}
+
+if (writeToggleBtn) {
+    writeToggleBtn.addEventListener("click", () => openWriterStudioModal());
+}
+window.openWriteModalForCategory = openWriterStudioModal;
 
 closeEditorBtn.addEventListener("click", () => {
     editingArticleId = null;
