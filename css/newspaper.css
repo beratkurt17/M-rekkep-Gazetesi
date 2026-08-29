@@ -33,69 +33,29 @@
     align-items: center;
 }
 
-/* Touch/mobile device: make utility bar much taller (values must be ~3x larger due to 1300px viewport scaling) */
-@media (pointer: coarse) {
-    .utility-bar {
-        border-bottom: 4px solid var(--border-color);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-    }
+/* Responsive Utility Bar */
+@media (max-width: 860px) {
     .utility-container {
-        padding: 30px 20px;
+        padding: 10px 14px;
+        gap: 8px;
+        flex-wrap: wrap;
     }
     .btn-utility {
-        padding: 16px 32px !important;
-        font-size: 1.4rem !important;
-        border-radius: 40px !important;
-        gap: 12px !important;
-        height: auto !important;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        gap: 6px;
     }
     .btn-utility svg {
-        width: 24px !important;
-        height: 24px !important;
+        width: 14px;
+        height: 14px;
     }
     .utility-logo {
-        font-size: 2.2rem !important;
-        letter-spacing: 3px !important;
-    }
-    .user-avatar {
-        width: 50px !important;
-        height: 50px !important;
-        font-size: 1.3rem !important;
-    }
-    .profile-avatar-btn {
-        padding: 8px 24px !important;
-        gap: 12px !important;
-    }
-    .profile-avatar-btn span {
-        font-size: 1.4rem !important;
-    }
-    .profile-avatar-btn .dropdown-chevron {
-        width: 20px !important;
-        height: 20px !important;
-    }
-    .notifications-btn svg {
-        width: 26px !important;
-        height: 26px !important;
-    }
-    .notifications-badge {
-        font-size: 0.9rem !important;
-        padding: 4px 8px !important;
-        top: -6px !important;
-        right: -6px !important;
-    }
-    .author-search-wrapper {
-        height: auto !important;
+        font-size: 1rem !important;
     }
     #global-author-search-input {
-        padding: 14px 20px 14px 44px !important;
-        font-size: 1.3rem !important;
-        border-radius: 30px !important;
-        width: 200px !important;
-    }
-    .author-search-wrapper svg {
-        left: 16px !important;
-        width: 20px !important;
-        height: 20px !important;
+        width: 120px;
+        font-size: 0.8rem;
+        padding: 6px 12px 6px 32px;
     }
 }
 

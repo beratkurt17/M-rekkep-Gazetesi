@@ -14,15 +14,11 @@ if (document.readyState === "loading") {
     initWysiwygEditor();
 }
 
-// Dynamic Viewport Manager: Responsive mobile reading for articles/modals, Broadsheet for front page
+// Dynamic Viewport Manager: Responsive mobile reading across all views
 function updateDynamicViewport(isOverlayOpen) {
     const viewportMeta = document.querySelector('meta[name="viewport"]');
     if (!viewportMeta) return;
-    if (isOverlayOpen) {
-        viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
-    } else {
-        viewportMeta.setAttribute('content', 'width=1300');
-    }
+    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0');
 }
 
 // History Manager for Modals
