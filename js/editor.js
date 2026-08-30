@@ -243,7 +243,7 @@ window.approveEditorialSubmission = async function(subId) {
         author_email: sub.author_email || null,
         user_id: sub.user_id || null,
         category: sub.category || "deneme",
-        image: sub.image || "assets/typewriter_birds.webp",
+        image: sub.image && sub.image !== "assets/typewriter_birds.webp" ? sub.image : "",
         date: sub.date || formatDate(new Date()),
         readTime: sub.readTime || calculateReadTime(sub.content),
         claps: 0,
@@ -680,7 +680,7 @@ publishForm.addEventListener("submit", async (e) => {
             author_email: currentUser ? currentUser.email : null,
             user_id: currentUser ? currentUser.id : null,
             category: "siir",
-            image: "assets/typewriter_birds.webp",
+            image: "",
             date: formatDate(new Date()),
             readTime: "2 dk",
             claps: 0,
@@ -732,7 +732,7 @@ publishForm.addEventListener("submit", async (e) => {
     const subtitle = subtitleInput ? subtitleInput.value.trim() : "";
     const contentText = contentInput ? contentInput.value.trim() : "";
     const cornerName = cornerNameInput ? cornerNameInput.value.trim() : "";
-    const image = (editingArticleId && articles.find(a => a.id === editingArticleId)?.image) || "assets/typewriter_birds.webp";
+    const image = (editingArticleId && articles.find(a => a.id === editingArticleId)?.image && articles.find(a => a.id === editingArticleId)?.image !== "assets/typewriter_birds.webp") ? articles.find(a => a.id === editingArticleId).image : "";
 
     if (!title || !subtitle || !contentText) {
         showToast("⚠️ Lütfen başlık, özet ve yazı içeriğini doldurun.");
@@ -1336,8 +1336,124 @@ async function bootApp() {
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
             toggleProfileDropdown(true);
+            if (typeof window.closeMobileMenu === 'function') window.closeMobileMenu();
         }
     });
+
+    // =============================================
+    // MOBILE OPTIONS DRAWER EVENT LISTENERS
+    // =============================================
+    const mobileMenuToggle = document.getElementById("mobile-menu-toggle");
+    const mobileMenuCloseBtn = document.getElementById("mobile-menu-close-btn");
+    const mobileMenuBackdrop = document.getElementById("mobile-menu-backdrop");
+
+    if (mobileMenuToggle) {
+        mobileMenuToggle.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (typeof window.toggleMobileMenu === 'function') window.toggleMobileMenu();
+        });
+    }
+
+    if (mobileMenuCloseBtn) {
+        mobileMenuCloseBtn.addEventListener("click", () => {
+            if (typeof window.closeMobileMenu === 'function') window.closeMobileMenu();
+        });
+    }
+
+    if (mobileMenuBackdrop) {
+        mobileMenuBackdrop.addEventListener("click", () => {
+            if (typeof window.closeMobileMenu === 'function') window.closeMobileMenu();
+        });
+    }
+
+    // Drawer: Bildirimler
+    const mobileDrawerNotifsBtn = document.getElementById("mobile-drawer-notifs-btn");
+    if (mobileDrawerNotifsBtn) {
+        mobileDrawerNotifsBtn.addEventListener("click", () => {
+            if (typeof window.closeMobileMenu === 'function') window.closeMobileMenu();
+            const notifBtn = document.getElementById("notifications-btn");
+            if (notifBtn) notifBtn.click();
+        });
+    }
+
+    // Drawer: Profilim
+    const mobileDrawerProfileBtn = document.getElementById("mobile-drawer-profile-btn");
+    if (mobileDrawerProfileBtn) {
+        mobileDrawerProfileBtn.addEventListener("click", () => {
+            if (typeof window.closeMobileMenu === 'function') window.closeMobileMenu();
+            if (currentUser) {
+                const displayName = currentUser.username || currentUser.email.split("@")[0];
+                if (typeof window.openAuthorProfile === 'function') {
+                    window.openAuthorProfile(displayName);
+                }
+            } else {
+                if (typeof openAuthModal === 'function') openAuthModal();
+            }
+        });
+    }
+
+    // Drawer: Kaydedilenler
+    const mobileDrawerBookmarksBtn = document.getElementById("mobile-drawer-bookmarks-btn");
+    if (mobileDrawerBookmarksBtn) {
+        mobileDrawerBookmarksBtn.addEventListener("click", () => {
+            if (typeof window.closeMobileMenu === 'function') window.closeMobileMenu();
+            if (typeof filterCategory === 'function') filterCategory("bookmarks");
+        });
+    }
+
+    // Drawer: Kart Oluştur
+    const mobileDrawerCardBtn = document.getElementById("mobile-drawer-card-btn");
+    if (mobileDrawerCardBtn) {
+        mobileDrawerCardBtn.addEventListener("click", () => {
+            if (typeof window.closeMobileMenu === 'function') window.closeMobileMenu();
+            const createCardToggle = document.getElementById("create-card-toggle");
+            if (createCardToggle) createCardToggle.click();
+        });
+    }
+
+    // Drawer: Tema Değiştir (Gece/Gündüz Okuması)
+    const mobileDrawerThemeBtn = document.getElementById("mobile-drawer-theme-btn");
+    if (mobileDrawerThemeBtn) {
+        mobileDrawerThemeBtn.addEventListener("click", () => {
+            const themeToggle = document.getElementById("theme-toggle");
+            if (themeToggle) themeToggle.click();
+            
+            // Sync theme text in drawer
+            const themeText = document.getElementById("mobile-drawer-theme-text");
+            const isNight = document.documentElement.getAttribute("data-theme") === "night";
+            if (themeText) {
+                themeText.innerText = isNight ? "Gündüz Okuması" : "Gece Okuması";
+            }
+        });
+    }
+
+    // Drawer: Ayarlar
+    const mobileDrawerSettingsBtn = document.getElementById("mobile-drawer-settings-btn");
+    if (mobileDrawerSettingsBtn) {
+        mobileDrawerSettingsBtn.addEventListener("click", () => {
+            if (typeof window.closeMobileMenu === 'function') window.closeMobileMenu();
+            if (typeof openSettingsModal === 'function') openSettingsModal();
+        });
+    }
+
+    // Drawer: Giriş Yap
+    const mobileDrawerLoginBtn = document.getElementById("mobile-drawer-login-btn");
+    if (mobileDrawerLoginBtn) {
+        mobileDrawerLoginBtn.addEventListener("click", () => {
+            if (typeof window.closeMobileMenu === 'function') window.closeMobileMenu();
+            if (typeof openAuthModal === 'function') openAuthModal();
+        });
+    }
+
+    // Drawer: Çıkış Yap
+    const mobileDrawerLogoutBtn = document.getElementById("mobile-drawer-logout-btn");
+    if (mobileDrawerLogoutBtn) {
+        mobileDrawerLogoutBtn.addEventListener("click", () => {
+            if (typeof window.closeMobileMenu === 'function') window.closeMobileMenu();
+            const logoutBtn = document.getElementById("logout-btn");
+            if (logoutBtn) logoutBtn.click();
+        });
+    }
 
     // Tab switching inside auth modal
     if (tabLogin) {

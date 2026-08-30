@@ -33,12 +33,30 @@
     align-items: center;
 }
 
+/* Menu toggle (3 Çizgi) - Hem masaüstü hem mobilde açık ve fonksiyonel */
+.mobile-only-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
 /* Responsive Utility Bar */
 @media (max-width: 860px) {
     .utility-container {
         padding: 10px 14px;
         gap: 8px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap !important;
+    }
+    .mobile-only-toggle {
+        display: flex !important;
+    }
+    .utility-container #theme-toggle,
+    .utility-container #notifications-section,
+    .utility-container #user-profile-section,
+    .utility-container #create-card-toggle,
+    .utility-container #supabase-config-btn {
+        display: none !important;
     }
     .btn-utility {
         padding: 6px 12px;
@@ -51,11 +69,6 @@
     }
     .utility-logo {
         font-size: 1rem !important;
-    }
-    #global-author-search-input {
-        width: 120px;
-        font-size: 0.8rem;
-        padding: 6px 12px 6px 32px;
     }
 }
 
@@ -97,6 +110,24 @@
     border-color: var(--accent-hover);
     box-shadow: 0 4px 12px var(--shadow-color);
     transform: translateY(-1px);
+}
+
+/* Prominent Editorial Submission Button */
+.prominent-editorial-btn {
+    background: linear-gradient(135deg, var(--accent-color) 0%, #801a1a 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    box-shadow: 0 3px 12px rgba(168, 50, 50, 0.35), 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+    padding: 8px 18px !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.prominent-editorial-btn:hover {
+    background: linear-gradient(135deg, var(--accent-hover) 0%, var(--accent-color) 100%) !important;
+    box-shadow: 0 6px 18px rgba(168, 50, 50, 0.45) !important;
+    transform: translateY(-2px) scale(1.02) !important;
 }
 
 .hidden {
@@ -273,6 +304,208 @@
 
 .dropdown-item-danger svg {
     fill: #e53935 !important;
+}
+
+/* =============================================
+   MOBILE OPTIONS DRAWER & BACKDROP
+   ============================================= */
+.mobile-menu-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 10000;
+    transition: opacity 0.3s ease;
+}
+
+.mobile-menu-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 310px;
+    max-width: 86vw;
+    height: 100vh;
+    background-color: var(--bg-primary);
+    border-left: 1px solid var(--border-light);
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.2);
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.mobile-menu-drawer.open {
+    transform: translateX(0);
+}
+
+.mobile-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border-light);
+    background-color: var(--bg-secondary);
+}
+
+.mobile-drawer-close {
+    background: none;
+    border: 1px solid var(--border-light);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.mobile-drawer-close:hover {
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    background: var(--bg-primary);
+}
+
+.mobile-drawer-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.mobile-user-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.mobile-user-name {
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    text-transform: uppercase;
+}
+
+.mobile-user-email {
+    font-family: var(--font-ui);
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 190px;
+}
+
+.mobile-drawer-nav {
+    display: flex;
+    flex-direction: column;
+    padding: 12px 10px;
+    gap: 4px;
+}
+
+.mobile-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border: none;
+    background: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: left;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.mobile-nav-item svg {
+    width: 20px;
+    height: 20px;
+    fill: var(--text-secondary);
+    flex-shrink: 0;
+    transition: fill 0.15s ease;
+}
+
+.mobile-nav-item:hover, .mobile-nav-item:active {
+    background-color: var(--bg-secondary);
+}
+
+.mobile-nav-item:hover svg {
+    fill: var(--accent-color);
+}
+
+.mobile-drawer-badge {
+    margin-left: auto;
+    background-color: var(--accent-color);
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 10px;
+}
+
+.mobile-menu-badge {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    background-color: var(--accent-color);
+    color: #ffffff;
+    font-size: 0.65rem;
+    font-weight: 800;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 1.5px solid var(--bg-primary);
+}
+
+.mobile-drawer-divider {
+    height: 1px;
+    background-color: var(--border-light);
+    margin: 8px 10px;
+}
+
+.mobile-nav-login {
+    color: var(--accent-color);
+}
+
+.mobile-nav-login svg {
+    fill: var(--accent-color);
+}
+
+.mobile-nav-logout {
+    color: #e53935;
+}
+
+.mobile-nav-logout svg {
+    fill: #e53935;
 }
 
 .dropdown-item-danger:hover {
@@ -781,14 +1014,14 @@
     }
 }
 
-/* Header & Masthead */
-/* Header & Masthead - Sleek, Compact, Classical Matbuat */
+/* Header & Masthead - Klasik Matbuat Mastheadi */
 .newspaper-header {
     display: grid;
-    grid-template-columns: 180px 1fr 180px;
+    grid-template-columns: 200px 1fr 200px;
     align-items: center;
+    border-top: 3px double var(--border-color);
     border-bottom: 3px double var(--border-color);
-    padding: 8px 0 10px;
+    padding: 12px 0 14px;
     margin-bottom: 10px;
     text-align: center;
     transition: border-color var(--transition-speed);
@@ -797,7 +1030,7 @@
 @media (max-width: 860px) {
     .newspaper-header {
         grid-template-columns: 1fr;
-        gap: 8px;
+        gap: 6px;
         padding: 10px 0;
     }
     .header-meta-left, .header-meta-right {
@@ -808,15 +1041,16 @@
 .header-meta-left, .header-meta-right {
     display: flex;
     flex-direction: column;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     color: var(--text-primary);
-    line-height: 1.35;
+    line-height: 1.4;
+    gap: 3px;
 }
 
 .header-meta-left {
     text-align: left;
     border-right: 1px solid var(--border-light);
-    padding-right: 12px;
+    padding-right: 14px;
     height: 100%;
     justify-content: center;
 }
@@ -824,7 +1058,7 @@
 .header-meta-right {
     text-align: right;
     border-left: 1px solid var(--border-light);
-    padding-left: 12px;
+    padding-left: 14px;
     height: 100%;
     justify-content: center;
 }
@@ -851,74 +1085,61 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 10px;
+    padding: 0 12px;
 }
 
+/* Masthead brand row artik yok, masthead-titles direkt merkez */
 .masthead-brand-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
+    display: contents; /* Transparent wrapper */
 }
 
 .newspaper-logo {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    border: 1.5px solid var(--border-color);
-    object-fit: cover;
-    background-color: #fff;
-    box-shadow: 0 2px 6px var(--shadow-color);
-    transition: transform 0.3s ease;
-    flex-shrink: 0;
-}
-
-.newspaper-logo:hover {
-    transform: scale(1.06);
+    display: none; /* Logo kaldirili, sadece tipografi */
 }
 
 .masthead-titles {
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 100%;
 }
 
 .header-slogan {
     font-family: var(--font-ui);
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 800;
-    letter-spacing: 2px;
-    color: var(--accent-color);
-    margin-bottom: 2px;
+    letter-spacing: 2.5px;
+    color: var(--text-secondary);
+    margin-bottom: 3px;
+    text-transform: uppercase;
 }
 
 .newspaper-title {
     font-family: var(--font-header);
-    font-size: 2.5rem;
+    font-size: 3.4rem;
     font-weight: 900;
-    letter-spacing: 4px;
+    letter-spacing: 10px;
     line-height: 1;
-    margin: 1px 0 3px 0;
+    margin: 2px 0 4px 0;
     color: var(--text-primary);
+    text-transform: uppercase;
 }
 
 @media (max-width: 768px) {
     .newspaper-title {
-        font-size: 1.9rem;
-        letter-spacing: 2px;
-    }
-    .newspaper-logo {
-        width: 36px;
-        height: 36px;
+        font-size: 2.1rem;
+        letter-spacing: 5px;
     }
 }
 
 .header-subtitle {
-    font-family: var(--font-title);
-    font-size: 0.72rem;
+    font-family: var(--font-ui);
+    font-size: 0.58rem;
     font-weight: 700;
-    letter-spacing: 2.5px;
+    letter-spacing: 3px;
     color: var(--text-secondary);
+    text-transform: uppercase;
+    opacity: 0.8;
 }
 
 /* Category Navigation */
@@ -1157,6 +1378,169 @@
     border-color: var(--accent-color);
     box-shadow: 0 6px 16px var(--shadow-color);
     transform: translateY(-2px);
+}
+
+/* ─── GÜNÜN EDEBİ SÖZÜ KARTI - YENİDEN TASARIM ─── */
+.gunun-sozu-card {
+    background: var(--bg-secondary);
+    border: 1.5px solid var(--border-color);
+    border-left: 4px solid var(--accent-color);
+    border-radius: 4px;
+    padding: 16px 16px 14px;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    box-shadow: 0 2px 8px var(--shadow-color);
+    overflow: hidden;
+}
+
+.gunun-sozu-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px var(--shadow-color);
+    border-color: var(--accent-color);
+}
+
+.gunun-sozu-eyebrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-ui);
+    font-size: 0.62rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent-color);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.gunun-sozu-inner {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.gunun-sozu-mark {
+    font-family: var(--font-header);
+    font-size: 3.2rem;
+    line-height: 0.7;
+    color: var(--accent-color);
+    opacity: 0.3;
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-weight: 900;
+    user-select: none;
+}
+
+.gunun-sozu-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.gunun-sozu-text {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-style: italic;
+    line-height: 1.55;
+    color: var(--text-primary);
+    margin: 0 0 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.gunun-sozu-rule {
+    width: 30px;
+    height: 1.5px;
+    background: var(--accent-color);
+    margin: 0 0 8px;
+    opacity: 0.5;
+}
+
+.gunun-sozu-attribution {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.gunun-sozu-author {
+    font-family: var(--font-header);
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gunun-sozu-hint {
+    font-family: var(--font-ui);
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--accent-color);
+    white-space: nowrap;
+    flex-shrink: 0;
+    opacity: 0.8;
+    letter-spacing: 0.5px;
+}
+
+/* ─── BOŞ EDİTÖRYAL SLOT STİLLERİ (YAZI BEKLENEN KÖŞELER) ─── */
+.editorial-slot-card.empty-slot,
+.poem-slot-card.empty-slot {
+    border-style: dashed;
+    border-color: var(--border-color);
+    background: var(--bg-secondary);
+    opacity: 0.85;
+    transition: all 0.25s ease;
+}
+
+.editorial-slot-card.empty-slot:hover,
+.poem-slot-card.empty-slot:hover,
+.lead-headline-box.empty-lead:hover {
+    border-color: var(--accent-color);
+    background: var(--bg-primary);
+    opacity: 1;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px var(--shadow-color);
+}
+
+.slot-empty-badge {
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(140, 140, 140, 0.12);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-light);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.editorial-slot-card.empty-slot .empty-title,
+.poem-slot-card.empty-slot .empty-title {
+    color: var(--text-secondary);
+    font-weight: 700;
+    font-style: italic;
+    opacity: 0.9;
+}
+
+.editorial-slot-card.empty-slot .empty-desc,
+.poem-slot-card.empty-slot .empty-desc {
+    color: var(--text-secondary);
+    opacity: 0.75;
+    font-size: 0.82rem;
+}
+
+.lead-headline-box.empty-lead {
+    border: 1.5px dashed var(--border-color);
+    padding: 18px 20px;
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    transition: all 0.25s ease;
 }
 
 .slot-kicker {

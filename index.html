@@ -161,12 +161,11 @@
                 </div>
             </div>
 
-            <!-- Author Search Bar -->
-            <div class="author-search-wrapper">
-                <input type="text" id="global-author-search-input" placeholder="Yazar Ara..." aria-label="Yazar Ara">
-                <svg viewBox="0 0 24 24" style="position: absolute; left: 10px; width: 14px; height: 14px; fill: var(--text-secondary); pointer-events: none;"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                <div id="author-search-results" class="author-search-results-dropdown hidden"></div>
-            </div>
+            <!-- Mobile Menu Toggle Button (3 Çizgi / Hamburger) -->
+            <button id="mobile-menu-toggle" class="btn-utility mobile-only-toggle" aria-label="Menü ve Seçenekler" aria-expanded="false" onclick="window.toggleMobileMenu ? window.toggleMobileMenu() : (function(){ var d=document.getElementById('mobile-menu-drawer'), b=document.getElementById('mobile-menu-backdrop'); if(d&&b){ b.classList.toggle('hidden'); d.classList.toggle('open'); } })()">
+                <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor;"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+                <span id="mobile-menu-badge" class="mobile-menu-badge hidden">0</span>
+            </button>
 
             <button id="editorial-inbox-toggle" class="btn-utility hidden" style="border-color: var(--accent-color); color: var(--accent-color); font-weight: 700;" aria-label="Başvuru Havuzu">
                 <svg viewBox="0 0 24 24" style="width: 15px; height: 15px; fill: currentColor; margin-right: 4px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-2-8H7v-2h10v2zm-4 4H7v-2h6v2z"/></svg>
@@ -179,9 +178,9 @@
                 <span>Giriş Yap</span>
             </button>
 
-            <button id="write-toggle" class="btn-utility primary">
+            <button id="write-toggle" class="btn-utility primary prominent-editorial-btn">
                 <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                <span>Editöryal Başvuru</span>
+                <span>✦ Editöryal Başvuru</span>
             </button>
             <button id="create-card-toggle" class="btn-utility" style="border-color: var(--border-color); color: var(--text-primary); background: transparent;">
                 <svg viewBox="0 0 24 24" style="width: 15px; height: 15px; fill: currentColor; margin-right: 6px; display: inline-block; vertical-align: middle;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H6c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1zm-4.5-9L11 14.5l-1.5-2L7 16h10l-3.5-6z"/></svg>
@@ -189,6 +188,77 @@
             </button>
         </div>
     </div>
+
+    <!-- Mobile Options Drawer (3 Çizgiden Açılan Yan Menü) -->
+    <div id="mobile-menu-backdrop" class="mobile-menu-backdrop hidden" onclick="window.closeMobileMenu ? window.closeMobileMenu() : (function(){ var d=document.getElementById('mobile-menu-drawer'), b=document.getElementById('mobile-menu-backdrop'); if(d&&b){ b.classList.add('hidden'); d.classList.remove('open'); } })()"></div>
+    <aside id="mobile-menu-drawer" class="mobile-menu-drawer" aria-hidden="true">
+        <div class="mobile-drawer-header">
+            <div class="mobile-drawer-brand">
+                <span style="font-family: 'Cinzel', serif; font-weight: 900; letter-spacing: 2px; color: var(--text-primary); font-size: 1.15rem;">MÜREKKEP</span>
+                <span style="font-size: 0.72rem; color: var(--text-secondary); display: block; font-family: var(--font-ui);">SEÇENEKLER & MENÜ</span>
+            </div>
+            <button id="mobile-menu-close-btn" class="mobile-drawer-close" aria-label="Menüyü Kapat" onclick="window.closeMobileMenu ? window.closeMobileMenu() : (function(){ var d=document.getElementById('mobile-menu-drawer'), b=document.getElementById('mobile-menu-backdrop'); if(d&&b){ b.classList.add('hidden'); d.classList.remove('open'); } })()">
+                <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+        </div>
+
+        <!-- Logged in user info inside drawer -->
+        <div id="mobile-drawer-user-info" class="mobile-drawer-user hidden">
+            <div class="mobile-user-avatar" id="mobile-drawer-avatar">M</div>
+            <div class="mobile-user-details">
+                <div class="mobile-user-name" id="mobile-drawer-name">Yazar</div>
+                <div class="mobile-user-email" id="mobile-drawer-email">ornek@domain.com</div>
+            </div>
+        </div>
+
+        <!-- Actions inside drawer -->
+        <div class="mobile-drawer-nav">
+            <!-- Profile Item -->
+            <button class="mobile-nav-item" id="mobile-drawer-profile-btn">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span>Profilim</span>
+            </button>
+
+            <!-- Bookmarks Item -->
+            <button class="mobile-nav-item" id="mobile-drawer-bookmarks-btn">
+                <svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
+                <span>Kaydedilenler</span>
+            </button>
+
+            <!-- Kart Oluştur Item -->
+            <button class="mobile-nav-item" id="mobile-drawer-card-btn">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H6c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1zm-4.5-9L11 14.5l-1.5-2L7 16h10l-3.5-6z"/></svg>
+                <span>Kart Oluştur</span>
+            </button>
+
+            <!-- Gece / Gündüz Okuması (Tema Değiştir) Item -->
+            <button class="mobile-nav-item" id="mobile-drawer-theme-btn">
+                <svg viewBox="0 0 24 24"><path d="M12.3 22h-.1c-5.5 0-10-4.5-10-10C2.2 6.8 6.2 2.7 11.5 2.1c.5-.1 1 .3 1.1.8.1.5-.2 1-.7 1.2-3.6 1.3-6 4.8-6 8.7 0 4.7 3.5 8.6 8.2 9 5 .4 9.2-3.1 9.2-8.1 0-.4.3-.8.7-.9.4-.1.9.1 1.1.5.8 1.4 1.2 3 1.2 4.7-.1 5.5-4.6 10-10 10z"/></svg>
+                <span id="mobile-drawer-theme-text">Gece / Gündüz Okuması</span>
+            </button>
+
+            <!-- Notifications Item -->
+            <button class="mobile-nav-item" id="mobile-drawer-notifs-btn">
+                <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 4.36 6 6.92 6 10v5l-2 2v1h16v-1l-2-2z"/></svg>
+                <span>Bildirimler</span>
+                <span id="mobile-drawer-notifs-badge" class="mobile-drawer-badge hidden">0</span>
+            </button>
+
+            <!-- Settings Item -->
+            <button class="mobile-nav-item" id="mobile-drawer-settings-btn">
+                <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+                <span>Ayarlar</span>
+            </button>
+
+            <div class="mobile-drawer-divider"></div>
+
+            <!-- Logout button inside drawer if logged in -->
+            <button class="mobile-nav-item mobile-nav-logout hidden" id="mobile-drawer-logout-btn">
+                <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+                <span>Çıkış Yap</span>
+            </button>
+        </div>
+    </aside>
 
     <!-- Main newspaper container -->
     <div class="newspaper-wrapper">
@@ -200,13 +270,10 @@
             </div>
             
             <div class="header-center-info">
-                <div class="masthead-brand-row">
-                    <img src="assets/logo.jpg" alt="Mürekkep Gazetesi Logo" class="newspaper-logo">
-                    <div class="masthead-titles">
-                        <span class="header-slogan">GENÇ KALEMLERİN SESİ, EDEBİYATIN YENİ NEFESİ</span>
-                        <h1 class="newspaper-title">MÜREKKEP</h1>
-                        <span class="header-subtitle uppercase">DİJİTAL EDEBİYAT VE KÜLTÜR GAZETESİ</span>
-                    </div>
+                <div class="masthead-titles">
+                    <span class="header-slogan">GENÇ KALEMLERİN SESİ, EDEBİYATIN YENİ NEFESİ</span>
+                    <h1 class="newspaper-title">MÜREKKEP</h1>
+                    <span class="header-subtitle uppercase">DİJİTAL EDEBİYAT VE KÜLTÜR GAZETESİ</span>
                 </div>
             </div>
 
@@ -409,8 +476,17 @@
                 </div>
             </header>
 
-            <div class="article-featured-image-box">
-                <img id="article-detail-image" src="assets/quiet_lake.webp" alt="Kapak Görseli" class="article-featured-image">
+            <!-- Tipografik Dekoratif Başlık Şeridi (Fotoğraf yerine) -->
+            <div class="article-typo-divider" id="article-typo-divider-box">
+                <div class="typo-ornament-line"></div>
+                <div class="typo-ornament-center">
+                    <span class="typo-flourish">✦</span>
+                    <span class="typo-ornament-text">MÜREKKEP</span>
+                    <span class="typo-flourish">✦</span>
+                </div>
+                <div class="typo-ornament-line"></div>
+                <!-- Hidden image element (kept for JS compatibility, never displayed) -->
+                <img id="article-detail-image" src="" alt="" style="display:none; width:0; height:0; visibility:hidden;">
             </div>
 
             <section class="article-body-content" id="article-detail-content">
@@ -1793,6 +1869,141 @@
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Core Application Logic -->
-    <script src="app.js?v=3.2.0"></script>
+    <script src="app.js?v=3.6.0"></script>
+    <!-- Direct Event Bindings for Mobile Menu Drawer -->
+    <script>
+    (function() {
+        function openMobileMenu() {
+            var drawer = document.getElementById("mobile-menu-drawer");
+            var backdrop = document.getElementById("mobile-menu-backdrop");
+            if (drawer && backdrop) {
+                backdrop.classList.remove("hidden");
+                drawer.classList.add("open");
+                drawer.setAttribute("aria-hidden", "false");
+            }
+        }
+        function closeMobileMenu() {
+            var drawer = document.getElementById("mobile-menu-drawer");
+            var backdrop = document.getElementById("mobile-menu-backdrop");
+            if (drawer && backdrop) {
+                backdrop.classList.add("hidden");
+                drawer.classList.remove("open");
+                drawer.setAttribute("aria-hidden", "true");
+            }
+        }
+        function toggleMobileMenu(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            var drawer = document.getElementById("mobile-menu-drawer");
+            if (drawer && drawer.classList.contains("open")) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
+        }
+        window.openMobileMenu = openMobileMenu;
+        window.closeMobileMenu = closeMobileMenu;
+        window.toggleMobileMenu = toggleMobileMenu;
+
+        function initDrawerEvents() {
+            var toggleBtn = document.getElementById("mobile-menu-toggle");
+            var closeBtn = document.getElementById("mobile-menu-close-btn");
+            var backdrop = document.getElementById("mobile-menu-backdrop");
+
+            if (toggleBtn) {
+                toggleBtn.onclick = toggleMobileMenu;
+            }
+            if (closeBtn) {
+                closeBtn.onclick = closeMobileMenu;
+            }
+            if (backdrop) {
+                backdrop.onclick = closeMobileMenu;
+            }
+
+            // 1. Profilim
+            var profBtn = document.getElementById("mobile-drawer-profile-btn");
+            if (profBtn) {
+                profBtn.onclick = function() {
+                    closeMobileMenu();
+                    if (window.currentUser && window.openAuthorProfile) {
+                        window.openAuthorProfile(window.currentUser.username || (window.currentUser.email ? window.currentUser.email.split("@")[0] : "Yazar"));
+                    } else if (window.openAuthModal) {
+                        window.openAuthModal();
+                    }
+                };
+            }
+
+            // 2. Kaydedilenler
+            var bookBtn = document.getElementById("mobile-drawer-bookmarks-btn");
+            if (bookBtn) {
+                bookBtn.onclick = function() {
+                    closeMobileMenu();
+                    var origBookmarksBtn = document.getElementById("dropdown-bookmarks-btn");
+                    if (origBookmarksBtn) origBookmarksBtn.click();
+                    else if (window.openBookmarksModal) window.openBookmarksModal();
+                };
+            }
+
+            // 3. Kart Oluştur
+            var cardBtn = document.getElementById("mobile-drawer-card-btn");
+            if (cardBtn) {
+                cardBtn.onclick = function() {
+                    closeMobileMenu();
+                    var origCardToggle = document.getElementById("create-card-toggle");
+                    if (origCardToggle) origCardToggle.click();
+                    else if (window.openCardGeneratorModal) window.openCardGeneratorModal();
+                };
+            }
+
+            // 4. Gece / Gündüz Okuması (Tema Değiştir)
+            var themeBtn = document.getElementById("mobile-drawer-theme-btn");
+            if (themeBtn) {
+                themeBtn.onclick = function() {
+                    var origThemeToggle = document.getElementById("theme-toggle");
+                    if (origThemeToggle) origThemeToggle.click();
+                };
+            }
+
+            // 5. Bildirimler
+            var notifBtn = document.getElementById("mobile-drawer-notifs-btn");
+            if (notifBtn) {
+                notifBtn.onclick = function() {
+                    closeMobileMenu();
+                    var origNotifBtn = document.getElementById("notifications-btn");
+                    if (origNotifBtn) origNotifBtn.click();
+                };
+            }
+
+            // 6. Ayarlar
+            var settBtn = document.getElementById("mobile-drawer-settings-btn");
+            if (settBtn) {
+                settBtn.onclick = function() {
+                    closeMobileMenu();
+                    var origSettingsBtn = document.getElementById("dropdown-settings-btn");
+                    if (origSettingsBtn) origSettingsBtn.click();
+                    else if (window.openSettingsModal) window.openSettingsModal();
+                };
+            }
+
+            // 7. Çıkış Yap
+            var logoutBtn = document.getElementById("mobile-drawer-logout-btn");
+            if (logoutBtn) {
+                logoutBtn.onclick = function() {
+                    closeMobileMenu();
+                    var origLogout = document.getElementById("logout-btn");
+                    if (origLogout) origLogout.click();
+                };
+            }
+        }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initDrawerEvents);
+        } else {
+            initDrawerEvents();
+        }
+    })();
+    </script>
 </body>
 </html>

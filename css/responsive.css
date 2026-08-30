@@ -174,38 +174,65 @@ html, body {
         box-sizing: border-box !important;
     }
 
-    /* Top Utility Bar */
+    /* Top Utility Bar on Mobile: Only Logo, Editöryal Başvuru and 3-line Menu */
     .utility-bar {
         position: sticky;
         top: 0;
     }
 
     .utility-container {
-        padding: 8px 10px !important;
+        padding: 8px 12px !important;
         gap: 6px !important;
         justify-content: space-between !important;
+        flex-wrap: nowrap !important;
     }
 
-    .btn-utility {
+    /* Show 3-line mobile menu button */
+    .mobile-only-toggle {
+        display: flex !important;
+        position: relative;
+        padding: 6px 10px !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Hide desktop profile, notifications & extra buttons from mobile top bar */
+    .utility-container #theme-toggle,
+    .utility-container #notifications-section,
+    .utility-container #user-profile-section,
+    .utility-container #create-card-toggle,
+    .utility-container #supabase-config-btn {
+        display: none !important;
+    }
+
+    /* Keep Login button visible on mobile top bar */
+    .utility-container #login-toggle {
+        display: flex !important;
         padding: 5px 10px !important;
+        font-size: 0.74rem !important;
+        gap: 4px !important;
+        background: transparent !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+
+    .utility-container #login-toggle.hidden {
+        display: none !important;
+    }
+
+    /* Keep Write toggle (Editöryal Başvuru) button prominent and compact */
+    .utility-container #write-toggle {
+        display: flex !important;
+        padding: 6px 12px !important;
         font-size: 0.76rem !important;
         gap: 5px !important;
+        margin-left: auto;
     }
 
     .utility-logo {
-        font-size: 0.95rem !important;
+        font-size: 1rem !important;
         letter-spacing: 1.5px !important;
-    }
-
-    .author-search-wrapper {
-        order: 10;
-        width: 100% !important;
-        margin-top: 4px;
-    }
-
-    #global-author-search-input {
-        width: 100% !important;
-        box-sizing: border-box;
+        flex-shrink: 0;
     }
 
     /* Modals & Overlays */

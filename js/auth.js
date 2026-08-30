@@ -547,9 +547,45 @@ function updateAuthUI() {
                 dropdownAvatarLarge.innerText = initial;
                 dropdownAvatarLarge.style.background = profile.avatarVal || "var(--accent-color)";
             }
-        }
         if (dropdownUserName)   dropdownUserName.innerText   = displayName;
         if (dropdownUserEmail)  dropdownUserEmail.innerText  = currentUser.email || "";
+
+        // Sync Mobile Drawer User Info
+        const mobileDrawerUserInfo = document.getElementById("mobile-drawer-user-info");
+        const mobileDrawerName = document.getElementById("mobile-drawer-name");
+        const mobileDrawerEmail = document.getElementById("mobile-drawer-email");
+        const mobileDrawerAvatar = document.getElementById("mobile-drawer-avatar");
+        const mobileDrawerLoginBtn = document.getElementById("mobile-drawer-login-btn");
+        const mobileDrawerLogoutBtn = document.getElementById("mobile-drawer-logout-btn");
+        const mobileDrawerProfileBtn = document.getElementById("mobile-drawer-profile-btn");
+        const mobileDrawerBookmarksBtn = document.getElementById("mobile-drawer-bookmarks-btn");
+        const mobileDrawerNotifsBtn = document.getElementById("mobile-drawer-notifs-btn");
+
+        if (mobileDrawerUserInfo) mobileDrawerUserInfo.classList.remove("hidden");
+        if (mobileDrawerName) mobileDrawerName.innerText = displayName;
+        if (mobileDrawerEmail) mobileDrawerEmail.innerText = currentUser.email || "";
+        if (mobileDrawerLoginBtn) mobileDrawerLoginBtn.classList.add("hidden");
+        if (mobileDrawerLogoutBtn) mobileDrawerLogoutBtn.classList.remove("hidden");
+        if (mobileDrawerProfileBtn) mobileDrawerProfileBtn.classList.remove("hidden");
+        if (mobileDrawerBookmarksBtn) mobileDrawerBookmarksBtn.classList.remove("hidden");
+        if (mobileDrawerNotifsBtn) mobileDrawerNotifsBtn.classList.remove("hidden");
+
+        if (mobileDrawerAvatar) {
+            mobileDrawerAvatar.innerText = "";
+            mobileDrawerAvatar.style.backgroundImage = "";
+            mobileDrawerAvatar.style.background = "";
+            if (profile.avatarType === "image" && profile.avatarVal) {
+                mobileDrawerAvatar.style.backgroundImage = `url('${profile.avatarVal}')`;
+                mobileDrawerAvatar.style.backgroundSize = "cover";
+                mobileDrawerAvatar.style.backgroundPosition = "center";
+            } else if (profile.avatarType === "emoji" && profile.avatarVal) {
+                mobileDrawerAvatar.innerText = profile.avatarVal;
+                mobileDrawerAvatar.style.background = "var(--bg-secondary)";
+            } else {
+                mobileDrawerAvatar.innerText = initial;
+                mobileDrawerAvatar.style.background = profile.avatarVal || "var(--accent-color)";
+            }
+        }
         
         // Show Bookmarks Tab
         if (bookmarksTab) bookmarksTab.classList.remove("hidden");
@@ -608,6 +644,21 @@ function updateAuthUI() {
         if (configBtn) configBtn.classList.add("hidden");
         // Close dropdown if open
         toggleProfileDropdown(true);
+
+        // Sync Mobile Drawer for Logged Out state
+        const mobileDrawerUserInfo = document.getElementById("mobile-drawer-user-info");
+        const mobileDrawerLoginBtn = document.getElementById("mobile-drawer-login-btn");
+        const mobileDrawerLogoutBtn = document.getElementById("mobile-drawer-logout-btn");
+        const mobileDrawerProfileBtn = document.getElementById("mobile-drawer-profile-btn");
+        const mobileDrawerBookmarksBtn = document.getElementById("mobile-drawer-bookmarks-btn");
+        const mobileDrawerNotifsBtn = document.getElementById("mobile-drawer-notifs-btn");
+
+        if (mobileDrawerUserInfo) mobileDrawerUserInfo.classList.add("hidden");
+        if (mobileDrawerLoginBtn) mobileDrawerLoginBtn.classList.remove("hidden");
+        if (mobileDrawerLogoutBtn) mobileDrawerLogoutBtn.classList.add("hidden");
+        if (mobileDrawerProfileBtn) mobileDrawerProfileBtn.classList.add("hidden");
+        if (mobileDrawerBookmarksBtn) mobileDrawerBookmarksBtn.classList.add("hidden");
+        if (mobileDrawerNotifsBtn) mobileDrawerNotifsBtn.classList.add("hidden");
         
         // Hide Bookmarks Tab
         if (bookmarksTab) {

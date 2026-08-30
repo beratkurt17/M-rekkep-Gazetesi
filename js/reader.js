@@ -34,8 +34,18 @@ async function openArticle(id) {
 
     detailDate.innerText = article.date;
     detailClapCount.innerText = article.claps;
-    detailImage.src = article.image || 'assets/typewriter_birds.webp';
-    detailImage.onerror = function() { this.onerror=null; this.src='assets/typewriter_birds.webp'; };
+    const NO_IMG = 'assets/typewriter_birds.webp';
+    if (article.image && article.image !== 'undefined' && article.image !== '' && article.image !== NO_IMG) {
+        detailImage.src = article.image;
+        detailImage.onerror = function() {
+            this.onerror = null;
+            this.style.display = 'none';
+            if (this.parentElement) this.parentElement.style.display = 'none';
+        };
+    } else {
+        detailImage.style.display = 'none';
+        if (detailImage.parentElement) detailImage.parentElement.style.display = 'none';
+    }
     
     // Sync Medium sticky top navbar & side rail
     const rtnStickyTitle = document.getElementById("rtn-sticky-title");

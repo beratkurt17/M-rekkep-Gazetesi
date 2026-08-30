@@ -539,20 +539,63 @@
     100% { transform: scale(1.2) rotate(0); }
 }
 
-.article-featured-image-box {
+/* Tipografik Dekoratif Başlık Şeridi (Fotoğraf yerine) */
+.article-typo-divider {
     width: 100%;
-    margin-bottom: 40px;
-    border: 1px solid var(--border-light);
-    padding: 5px;
-    background-color: var(--bg-primary);
+    margin: 0 0 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+}
+
+.typo-ornament-line {
+    height: 1px;
+    background: var(--border-color);
+    flex: 1;
+    position: relative;
+}
+
+.typo-ornament-line::before {
+    content: '';
+    display: block;
+    height: 3px;
+    margin-top: 4px;
+    background: var(--border-light);
+}
+
+.typo-ornament-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 18px 0 14px;
+}
+
+.typo-ornament-text {
+    font-family: var(--font-header);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    opacity: 0.55;
+}
+
+.typo-flourish {
+    font-size: 0.65rem;
+    color: var(--accent-color);
+    opacity: 0.5;
+    letter-spacing: 0;
+}
+
+/* Legacy: hide the old article image if it still exists */
+.article-featured-image-box {
+    display: none !important;
 }
 
 .article-featured-image {
-    width: 100%;
-    height: auto;
-    max-height: 450px;
-    object-fit: cover;
-    display: block;
+    display: none !important;
 }
 
 /* Reading content layout details */
