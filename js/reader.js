@@ -95,33 +95,46 @@ async function openArticle(id) {
     const approveBtn = document.getElementById("article-editor-approve-btn");
     const deleteBtn = document.getElementById("article-editor-delete-btn");
     if (approveBtn && deleteBtn) {
-        const isOwnArticle = currentUser && currentUser.username &&
-            currentUser.username.trim().toLowerCase() === article.author.trim().toLowerCase();
-
-        if (isEditorModeActive) {
-            approveBtn.classList.remove("hidden");
-            deleteBtn.classList.remove("hidden");
-            deleteBtn.innerText = "Kaldır";
-        } else if (isOwnArticle) {
-            approveBtn.classList.add("hidden");
-            deleteBtn.classList.remove("hidden");
-            deleteBtn.innerText = "Yazıyı Sil";
-        } else {
+        // Günün Sözü ve Kelimesi sahte kartları — sil/onayla butonlarını gösterme
+        const isMockCard = (id === 'gunun-sozu-card' || id === 'gunun-kelimesi-card');
+        if (isMockCard) {
             approveBtn.classList.add("hidden");
             deleteBtn.classList.add("hidden");
+        } else {
+            const isOwnArticle = currentUser && currentUser.username &&
+                currentUser.username.trim().toLowerCase() === article.author.trim().toLowerCase();
+
+            if (isEditorModeActive) {
+                approveBtn.classList.remove("hidden");
+                deleteBtn.classList.remove("hidden");
+                deleteBtn.innerText = "Kaldır";
+            } else if (isOwnArticle) {
+                approveBtn.classList.add("hidden");
+                deleteBtn.classList.remove("hidden");
+                deleteBtn.innerText = "Yazıyı Sil";
+            } else {
+                approveBtn.classList.add("hidden");
+                deleteBtn.classList.add("hidden");
+            }
         }
     }
 
     // Handle article edit button
     if (articleEditorEditBtn) {
-        const isOwnArticle = currentUser && currentUser.username &&
-            currentUser.username.trim().toLowerCase() === article.author.trim().toLowerCase();
-        const canEdit = isOwnArticle || (currentUser && (currentUser.isEditor || currentUser.isAdmin));
-        if (canEdit) {
-            articleEditorEditBtn.classList.remove("hidden");
-            articleEditorEditBtn.onclick = (e) => { window.editArticleClick(id, e); };
-        } else {
+        // Günün Sözü ve Kelimesi sahte kartları — düzenle butonu gösterme
+        const isMockCard = (id === 'gunun-sozu-card' || id === 'gunun-kelimesi-card');
+        if (isMockCard) {
             articleEditorEditBtn.classList.add("hidden");
+        } else {
+            const isOwnArticle = currentUser && currentUser.username &&
+                currentUser.username.trim().toLowerCase() === article.author.trim().toLowerCase();
+            const canEdit = isOwnArticle || (currentUser && (currentUser.isEditor || currentUser.isAdmin));
+            if (canEdit) {
+                articleEditorEditBtn.classList.remove("hidden");
+                articleEditorEditBtn.onclick = (e) => { window.editArticleClick(id, e); };
+            } else {
+                articleEditorEditBtn.classList.add("hidden");
+            }
         }
     }
 

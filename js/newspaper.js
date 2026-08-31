@@ -2644,13 +2644,14 @@ window.openWriteModalForCategory = function(categoryKey) {
 // Günün Sözü Özel Okuma Görünümü (Okur Tıkladığında Açar)
 window.openDailyQuoteDetail = function() {
     const quote = editorNoteData.quote || 'Bir dizesi eksik kalmış bir şiir gibi gezinir insan; ta ki hakikatin kelimesini bulana kadar.';
-    const author = editorNoteData.desc || 'Ahmet Hamdi Tanpınar';
+    const quoteAuthor = editorNoteData.desc || 'Ahmet Hamdi Tanpınar';
 
     const mockArticle = {
         id: 'gunun-sozu-card',
         title: 'Haftanın Edebi Sözü',
-        subtitle: `${author} • Edebi Hafıza ve Tefekkür`,
-        author: author,
+        subtitle: `${quoteAuthor} • Edebi Hafıza ve Tefekkür`,
+        author: 'Mürekkep Gazetesi',
+        quoteAuthor: quoteAuthor,
         category: 'edebi-hafiza',
         date: 'AĞUSTOS 2026',
         claps: 48,
@@ -2664,17 +2665,43 @@ window.openDailyQuoteDetail = function() {
                 </blockquote>
                 <div style="width: 50px; height: 2px; background: var(--accent-color); margin: 0 auto 16px; opacity: 0.6;"></div>
                 <div style="font-family: var(--font-header); font-size: 1.15rem; font-weight: 800; color: var(--text-primary); letter-spacing: 0.5px;">
-                    — ${author}
+                    — ${quoteAuthor}
                 </div>
                 <p style="font-family: var(--font-ui); font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px;">
                     Mürekkep Gazetesi • Edebi Hafıza Arşivi
                 </p>
+                <div style="margin-top: 24px;">
+                    <button onclick="window._openDailyQuoteShare()" style="background: var(--accent-color); color: #fff; border: none; padding: 10px 22px; border-radius: 24px; font-family: var(--font-ui); font-size: 0.85rem; font-weight: 700; cursor: pointer; letter-spacing: 0.5px;">📤 Bu Sözü Paylaş</button>
+                </div>
                 <div style="margin-top: 36px; padding: 18px 22px; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--border-light); font-size: 0.95rem; line-height: 1.6; text-align: left;">
                     <strong style="color: var(--accent-color); font-family: var(--font-ui); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Edebi Şerh & Not</strong>
                     Bu veciz ifade, edebiyatın insanın içsel yolculuğundaki arayışına ayna tutar. Kelimelerin eksik kaldığı yerde duygunun tamamlanışı, edebi derinliğin en saf halidir.
                 </div>
             </div>
         `
+    };
+
+    window._openDailyQuoteShare = function() {
+        shareCurrentArticle = {
+            id: 'gunun-sozu-card',
+            title: 'Günün Sözü',
+            subtitle: `${quoteAuthor} • Mürekkep Gazetesi`,
+            author: quoteAuthor,
+            category: 'edebi-hafiza',
+        };
+        shareIsCustomMode = false;
+        const overlay = document.getElementById('share-overlay');
+        if (!overlay) return;
+        overlay.classList.remove('hidden');
+        if (typeof lockBodyScroll === 'function') lockBodyScroll();
+        const customFieldsSection = document.getElementById('share-custom-inputs-section');
+        if (customFieldsSection) customFieldsSection.classList.add('hidden');
+        const paragraphPickerSection = overlay.querySelector('.share-paragraph-picker-section');
+        if (paragraphPickerSection) paragraphPickerSection.classList.add('hidden');
+        const modalTitle = overlay.querySelector('.share-modal-title');
+        if (modalTitle) modalTitle.textContent = 'Günün Sözünü Paylaş';
+        if (typeof setShareQuote === 'function') setShareQuote(quote);
+        if (typeof renderShareCard === 'function') renderShareCard(shareCurrentTemplate || 'gece');
     };
 
     if (typeof openArticleObject === 'function') {
@@ -2698,7 +2725,7 @@ window.openDailyWordDetail = function() {
         id: 'gunun-kelimesi-card',
         title: `Lûgat-ı Mürekkep: ${word}`,
         subtitle: `${origin} • Unutulmaya Yüz Tutmuş Zengin Kelimeler`,
-        author: 'Lûgat Heyeti',
+        author: 'Mürekkep Gazetesi',
         category: 'edebi-lugat',
         date: 'AĞUSTOS 2026',
         claps: 64,

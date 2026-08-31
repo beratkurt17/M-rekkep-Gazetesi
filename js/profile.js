@@ -61,13 +61,19 @@ window.approveArticleClick = function(id, event) {
     refreshOpenProfileModal();
 };
 
-window.deleteArticleClick = function(id, event) {
+window.deleteArticleClick = async function(id, event) {
     if (event) event.stopPropagation();
 
     // Find article author before removing
     const targetArt = articles.find(a => a.id === id);
     if (!targetArt) return;
     const deletedAuthor = targetArt.author;
+
+    // Günün Sözü ve Kelimesi sahte kartlarını silmeye çalışmayı engelle
+    if (id === 'gunun-sozu-card' || id === 'gunun-kelimesi-card') {
+        showToast("Bu içerik silinemiyor. Değiştirmek için 'Değiştir' butonunu kullanın.");
+        return;
+    }
 
     // Check permission: must be admin OR the author of this article
     const isOwnArticle = currentUser && currentUser.username &&
@@ -82,18 +88,25 @@ window.deleteArticleClick = function(id, event) {
         return;
     }
 
-    // Remove from local array
+    // Remove from local array immediately
     articles = articles.filter(art => art.id !== id);
 
-    // Always save to LocalStorage immediately
+    // Save to LocalStorage immediately
     try {
         localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
     } catch(e) {}
 
-    if (isSupabaseConnected) {
-        supabaseClient.from('articles').delete().eq('id', id).then(({ error }) => {
-            if (error) console.error("Error deleting article from Supabase:", error);
-        });
+    // Delete from Supabase and WAIT for it before refreshing UI
+    if (isSupabaseConnected && supabaseClient) {
+        try {
+            const { error } = await supabaseClient.from('articles').delete().eq('id', id);
+            if (error) {
+                console.error("Error deleting article from Supabase:", error);
+                showToast("⚠️ Yazı yerel olarak silindi ancak sunucudan silinemedi.");
+            }
+        } catch(e) {
+            console.error("Supabase delete exception:", e);
+        }
         clearSupabaseCache();
     }
 

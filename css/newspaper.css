@@ -2894,6 +2894,136 @@
     margin-top: 5px;
     text-transform: uppercase;
 }
+/* ─── Substack Newsletter Section ─── */
+.substack-newsletter-section {
+    margin: 32px 0 0;
+    padding: 48px 0;
+    border-top: 2px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    transition: background var(--transition-speed), border-color var(--transition-speed);
+}
+
+.substack-newsletter-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.substack-newsletter-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.substack-kicker {
+    display: inline-block;
+    font-family: var(--font-ui);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent-color);
+    margin-bottom: 10px;
+}
+
+.substack-headline {
+    font-family: var(--font-header);
+    font-size: 2.1rem;
+    font-weight: 900;
+    color: var(--text-primary);
+    margin: 0 0 12px;
+    line-height: 1.2;
+    letter-spacing: 0.5px;
+}
+
+.substack-desc {
+    font-family: var(--font-body);
+    font-size: 1.02rem;
+    color: var(--text-secondary);
+    line-height: 1.65;
+    margin: 0;
+    max-width: 400px;
+}
+
+.substack-cta-wrapper {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 32px 36px;
+    background: var(--bg-primary);
+    border: 1.5px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    text-align: center;
+    min-width: 260px;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.substack-cta-wrapper:hover {
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    border-color: var(--accent-color);
+}
+
+.substack-cta-badge {
+    display: inline-block;
+    background: var(--accent-color);
+    color: #fff;
+    font-family: var(--font-ui);
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+}
+
+.substack-cta-sub {
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+    max-width: 220px;
+}
+
+.substack-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--accent-color);
+    color: #fff;
+    font-family: var(--font-ui);
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 13px 28px;
+    border-radius: 32px;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 2px 12px rgba(93,26,26,0.18);
+}
+
+.substack-cta-btn:hover {
+    background: #7a1f1f;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(93,26,26,0.28);
+    color: #fff;
+    text-decoration: none;
+}
+
+.substack-cta-hint {
+    font-family: var(--font-ui);
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    letter-spacing: 0.3px;
+}
 
 /* Footer Section */
 .newspaper-footer {

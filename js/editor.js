@@ -1582,7 +1582,15 @@ async function bootApp() {
     if (articleShareBtn) {
         articleShareBtn.addEventListener("click", () => {
             if (activeArticleId) {
-                openShareModal(activeArticleId);
+                // Günün Sözü kartı için özel paylaşım
+                if (activeArticleId === 'gunun-sozu-card' && typeof window._openDailyQuoteShare === 'function') {
+                    window._openDailyQuoteShare();
+                } else if (activeArticleId === 'gunun-kelimesi-card') {
+                    // Günün kelimesi için custom modal ile aç
+                    if (window.openCustomShareModal) window.openCustomShareModal();
+                } else {
+                    openShareModal(activeArticleId);
+                }
             }
         });
     }

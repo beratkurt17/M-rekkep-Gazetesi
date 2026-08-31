@@ -145,6 +145,24 @@ html, body {
         display: none !important;
     }
 
+    /* Substack Newsletter - tablet düzeni */
+    .substack-newsletter-inner {
+        flex-direction: column !important;
+        text-align: center !important;
+        align-items: center !important;
+        gap: 28px !important;
+    }
+
+    .substack-desc {
+        max-width: 100% !important;
+        margin: 0 auto !important;
+    }
+
+    .substack-cta-wrapper {
+        width: 100% !important;
+        max-width: 360px !important;
+    }
+
     /* Footer */
     .newspaper-footer {
         display: flex !important;
