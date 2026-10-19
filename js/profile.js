@@ -560,6 +560,13 @@ function reconcileUserArticles() {
     restoreDefaultArticlesAuthors();
     autoMergeUserPenName();
 
+    // Clean up any legacy "Mürekkep Tenkit" author labels
+    articles.forEach(art => {
+        if (art.author === "Mürekkep Tenkit" || art.author === "MÜREKKEP TENKİT") {
+            art.author = "Mürekkep Edebiyat";
+        }
+    });
+
     if (!currentUser) return false;
     const currentUsername = currentUser.username || (currentUser.email ? currentUser.email.split("@")[0] : "");
     const currentUserEmail = currentUser.email ? currentUser.email.toLowerCase().trim() : "";

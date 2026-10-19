@@ -547,6 +547,7 @@ function updateAuthUI() {
                 dropdownAvatarLarge.innerText = initial;
                 dropdownAvatarLarge.style.background = profile.avatarVal || "var(--accent-color)";
             }
+        }
         if (dropdownUserName)   dropdownUserName.innerText   = displayName;
         if (dropdownUserEmail)  dropdownUserEmail.innerText  = currentUser.email || "";
 
@@ -599,12 +600,18 @@ function updateAuthUI() {
             if (editorDivider) editorDivider.classList.remove("hidden");
             if (editorialInboxToggle) editorialInboxToggle.classList.remove("hidden");
             if (dropdownEditorialInboxBtn) dropdownEditorialInboxBtn.classList.remove("hidden");
+            // Yazı ekleme butonu sadece editör/admin için göster
+            const writeToggle = document.getElementById("write-toggle");
+            if (writeToggle) writeToggle.classList.remove("hidden");
             updateEditorialSubmissionsBadge();
         } else {
             if (editorSection) editorSection.classList.add("hidden");
             if (editorDivider) editorDivider.classList.add("hidden");
             if (editorialInboxToggle) editorialInboxToggle.classList.add("hidden");
             if (dropdownEditorialInboxBtn) dropdownEditorialInboxBtn.classList.add("hidden");
+            // Normal kullanıcılar için yazı ekleme butonunu gizle
+            const writeToggle = document.getElementById("write-toggle");
+            if (writeToggle) writeToggle.classList.add("hidden");
             isEditorModeActive = false;
             updateEditorBannerUI();
         }
@@ -637,6 +644,9 @@ function updateAuthUI() {
         const dropdownEditorialInboxBtn = document.getElementById("dropdown-editorial-inbox-btn");
         if (editorialInboxToggle) editorialInboxToggle.classList.add("hidden");
         if (dropdownEditorialInboxBtn) dropdownEditorialInboxBtn.classList.add("hidden");
+        // Çıkışta yazı ekleme butonunu gizle
+        const writeToggleLogout = document.getElementById("write-toggle");
+        if (writeToggleLogout) writeToggleLogout.classList.add("hidden");
 
         if (loginToggleBtn) loginToggleBtn.classList.remove("hidden");
         if (userProfileSection) userProfileSection.classList.add("hidden");

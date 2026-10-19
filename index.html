@@ -178,9 +178,9 @@
                 <span>Giriş Yap</span>
             </button>
 
-            <button id="write-toggle" class="btn-utility primary prominent-editorial-btn">
+            <button id="write-toggle" class="btn-utility primary prominent-editorial-btn hidden" style="border-color: var(--accent-color);">
                 <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                <span>✦ Editöryal Başvuru</span>
+                <span>✦ Yazı / İçerik Ekle</span>
             </button>
             <button id="create-card-toggle" class="btn-utility" style="border-color: var(--border-color); color: var(--text-primary); background: transparent;">
                 <svg viewBox="0 0 24 24" style="width: 15px; height: 15px; fill: currentColor; margin-right: 6px; display: inline-block; vertical-align: middle;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H6c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1zm-4.5-9L11 14.5l-1.5-2L7 16h10l-3.5-6z"/></svg>
@@ -555,8 +555,8 @@
 
         <div class="editor-studio-container">
             <header class="editor-studio-header">
-                <h2>Editöryal Yazı Başvurusu</h2>
-                <p>Eseriniz Mürekkep Yayın Kurulu ve Editör heyetimizce incelenecektir. Onaylanan eserler gazetemizde yayına alınır.</p>
+                <h2>Yazı & Köşe İçeriği Yayınla</h2>
+                <p>Mürekkep Gazetesi için yeni bir edebi yazı, manşet, seri veya köşe içeriği oluşturun.</p>
             </header>
 
             <form id="publish-form" class="editor-form" autocomplete="off">
@@ -566,14 +566,15 @@
                     <select id="post-category" required class="form-control" style="font-size: 1rem; font-weight: 700; padding: 12px 16px;">
                         <option value="manset">🌟 1. Ana Manşet (Hero Story)</option>
                         <option value="kose-yazilari">✒️ 2. Köşe Yazısı (Sol 1. Slot)</option>
-                        <option value="deneme" selected>🖋️ 3. Deneme & Eleştiri (Sol 2. Slot)</option>
+                        <option value="deneme" selected>🖋️ 3. Deneme & Düşünce (Sol 2. Slot)</option>
                         <option value="gunun-sozu">📜 4. Günün Sözü (Sol 3. Slot)</option>
-                        <option value="genc-kalemler">📖 5. Genç Kalemler & Anlatı (Sol 4. Slot)</option>
+                        <option value="genc-kalemler">📖 5. Edebi Anlatı & Portre (Sol 4. Slot)</option>
                         <option value="oyku">📖 6. Öykü & Anlatı (Orta Alt Sol Slot)</option>
-                        <option value="kitap">📚 7. Kitaplık & Tenkit (Orta Alt Sağ Slot)</option>
+                        <option value="kitap">📚 7. Kitap & İnceleme (Orta Alt Sağ Slot)</option>
                         <option value="siir">📜 8. Günün Şiiri (Sağ 1. Slot)</option>
-                        <option value="haber">🏛️ 9. Kültür & Medeniyet (Sağ 2. Slot)</option>
+                        <option value="haber">🏛️ 9. Kültür & Sanat (Sağ 2. Slot)</option>
                         <option value="lugat">📖 10. Edebi Lûgat / Günün Kelimesi (Sağ 3. Slot)</option>
+                        <option value="oneri">📚 11. Öneri Köşesi (RAF Serisi / Marka İş birliği)</option>
                         <option value="biyografi">Edebi Portre & Biyografi</option>
                         <option value="roportaj">Yazar Röportajı / Söyleşi</option>
                         <option value="yarismalar">Yarışmalar & Duyurular</option>
@@ -634,7 +635,54 @@
                     </div>
                 </div>
 
-                <!-- 4. STANDART YAZI FORMU (MANŞET, KÖŞE YAZISI, DENEME, GENÇ KALEMLER, ÖYKÜ, KİTAPLIK, KÜLTÜR-MEDENİYET) -->
+                <!-- 4. ÖNERİ KÖŞESİ (RAF SERİSİ / MARKA İŞBİRLİĞİ) ÖZEL FORMU -->
+                <div id="slot-section-oneri" class="slot-section hidden" style="display: flex; flex-direction: column; gap: 16px;">
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: 8px; padding: 14px 16px; font-family: var(--font-ui); font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">
+                        📚 <strong style="color: var(--accent-color);">Öneri Köşesi</strong> — RAF serisi veya marka iş birliği kapsamında önerdiğin kitap, ürün veya içeriği buraya ekle. Bu köşe sitende özel bir öneri kartı olarak görünecek.
+                    </div>
+                    <div class="form-row" style="display: flex; gap: 15px;">
+                        <div class="form-group" style="flex: 1.3;">
+                            <label for="oneri-title-input">📚 Önerilen Başlık (Kitap / Ürün / İçerik)</label>
+                            <input type="text" id="oneri-title-input" placeholder="Örn: Kürk Mantolu Madonna" class="form-control" style="font-weight: 700;">
+                        </div>
+                        <div class="form-group" style="flex: 0.7;">
+                            <label for="oneri-type-input">🏷️ Tür</label>
+                            <select id="oneri-type-input" class="form-control">
+                                <option value="kitap">📖 Kitap</option>
+                                <option value="muzik">🎵 Müzik / Albüm</option>
+                                <option value="film">🎬 Film / Dizi</option>
+                                <option value="urun">🛍️ Ürün</option>
+                                <option value="diger">✨ Diğer</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row" style="display: flex; gap: 15px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="oneri-author-input">✍️ Yazar / Marka / Yapımcı</label>
+                            <input type="text" id="oneri-author-input" placeholder="Örn: Sabahattin Ali" class="form-control">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="oneri-tag-input">🔖 Kısa Etiket <span style="font-size: 0.65rem; opacity: 0.6;">(RAF #xx veya serbest)</span></label>
+                            <input type="text" id="oneri-tag-input" placeholder="Örn: RAF #07" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="oneri-desc-input">💬 Neden Öneriyorum? <span style="font-size: 0.65rem; opacity: 0.6;">(Kısa açıklama)</span></label>
+                        <textarea id="oneri-desc-input" rows="4" placeholder="Bu içeriği neden sevdiğini, okuyucuya ne katacağını kısaca yaz..." class="form-control" style="font-family: var(--font-body); font-size: 0.95rem;"></textarea>
+                    </div>
+                    <div class="form-row" style="display: flex; gap: 15px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="oneri-link-input">🔗 Satın Al / İncele Linki <span style="font-size: 0.65rem; opacity: 0.6;">(Opsiyonel)</span></label>
+                            <input type="url" id="oneri-link-input" placeholder="https://..." class="form-control">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="oneri-cover-input">🖼️ Kapak / Görsel URL <span style="font-size: 0.65rem; opacity: 0.6;">(Opsiyonel)</span></label>
+                            <input type="url" id="oneri-cover-input" placeholder="https://...kapak.jpg" class="form-control">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. STANDART YAZI FORMU (MANŞET, KÖŞE YAZISI, DENEME, GENÇ KALEMLER, ÖYKÜ, KİTAPLIK, KÜLTÜR-MEDENİYET) -->
                 <div id="slot-section-standard" class="slot-section" style="display: flex; flex-direction: column; gap: 16px;">
                     <div class="form-group">
                         <label for="post-title">Yazı Başlığı</label>
@@ -656,8 +704,8 @@
                             <small style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 3px; display: block;">Yazınız hesabınız altında yayınlanır. Kalem isminizi profilinizden değiştirebilirsiniz.</small>
                         </div>
                         <div class="form-group" style="flex: 1;">
-                            <label for="post-corner-name">Özel Üst Etiket <span style="font-size: 0.65rem; opacity: 0.6;">(Opsiyonel)</span></label>
-                            <input type="text" id="post-corner-name" placeholder="Örn: Edebiyat & Düşünce..." class="form-control">
+                            <label for="post-corner-name">🏷️ Köşe / Kicker Başlığı <span style="font-size: 0.68rem; color: var(--accent-color); font-weight: 700;">(Örn: Sabahattin Ali Hikayeleri)</span></label>
+                            <input type="text" id="post-corner-name" placeholder="Örn: Sabahattin Ali Serisi, Edebi Portre..." class="form-control">
                         </div>
                     </div>
 

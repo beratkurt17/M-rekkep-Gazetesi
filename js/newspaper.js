@@ -11,6 +11,7 @@ function getCategoriesList() {
         { id: "kitap", name: "Kitaplık & Tahlil" },
         { id: "roportaj", name: "Yazar Röportajı & Söyleşi" },
         { id: "haber", name: "Kültür & Sanat Haberleri" },
+        { id: "oneri", name: "Öneri Köşesi (RAF Serisi)" },
         { id: "yarismalar", name: "Yarışmalar & Duyurular" }
     ];
     return [...builtIn, ...customCategories];
@@ -2288,12 +2289,13 @@ function getLatestByCategory(cat) {
 function renderSlotCard(art, slotIndex, styleType, defaultCategoryLabel, pageLabel) {
     if (!art) {
         // Render a beautiful print-style placeholder for empty slot
+        const isEditorUser2 = (currentUser && (currentUser.isEditor || currentUser.isAdmin)) || isEditorModeActive;
         return `
             <div class="article-card empty-slot-placeholder" style="border: 1px dashed var(--border-light); padding: 25px; text-align: center; border-radius: 8px; background-color: var(--bg-secondary); margin-bottom: 20px;">
                 <span class="card-category" style="color: var(--text-secondary); opacity: 0.7;">BOŞ SÜTUN</span>
-                <h4 style="font-family: var(--font-header); font-size: 1.15rem; margin: 15px 0 10px; color: var(--text-secondary);">Yeni Kalemler Aranıyor</h4>
-                <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 15px;">Bu sütun boş kalmıştır. Edebiyat hareketine katılmak için hemen bir yazı kaleme alın!</p>
-                <button onclick="document.getElementById('write-toggle').click()" style="background-color: transparent; border: 1px solid var(--border-color); color: var(--text-primary); font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700; padding: 6px 12px; border-radius: 15px; cursor: pointer; text-transform: uppercase;">Yazı Ekle</button>
+                <h4 style="font-family: var(--font-header); font-size: 1.15rem; margin: 15px 0 10px; color: var(--text-secondary);">Yeni İçerik Bekleniyor</h4>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 15px;">Bu alan henüz doldurulmamıştır.</p>
+                ${isEditorUser2 ? `<button onclick="document.getElementById('write-toggle').click()" style="background-color: transparent; border: 1px solid var(--border-color); color: var(--text-primary); font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700; padding: 6px 12px; border-radius: 15px; cursor: pointer; text-transform: uppercase;">+ İçerik Ekle</button>` : ''}
             </div>
         `;
     }
@@ -2560,8 +2562,9 @@ function updateSlotFormSections(categoryKey) {
     const secLugat = document.getElementById("slot-section-lugat");
     const secSiir = document.getElementById("slot-section-siir");
     const secStandard = document.getElementById("slot-section-standard");
+    const secOneri = document.getElementById("slot-section-oneri");
 
-    [secGununSozu, secLugat, secSiir, secStandard].forEach(s => {
+    [secGununSozu, secLugat, secSiir, secStandard, secOneri].forEach(s => {
         if (s) s.classList.add("hidden");
     });
 
@@ -2594,6 +2597,10 @@ function updateSlotFormSections(categoryKey) {
         if (secSiir) secSiir.classList.remove("hidden");
         if (studioHeader) studioHeader.innerText = "📜 Günün Şiiri Yayınla";
         if (studioDesc) studioDesc.innerText = "Gazetenin sağ sütunundaki Günün Şiiri kutusunda yayınlanacak şiiri yazın.";
+    } else if (categoryKey === "oneri") {
+        if (secOneri) secOneri.classList.remove("hidden");
+        if (studioHeader) studioHeader.innerText = "📚 Öneri Köşesi • RAF Serisi";
+        if (studioDesc) studioDesc.innerText = "RAF serisi veya marka iş birliği kapsamında önerdiğin kitap, ürün veya içeriği gazetene ekle.";
     } else {
         if (secStandard) secStandard.classList.remove("hidden");
         if (studioHeader) studioHeader.innerText = categoryKey === "manset" ? "🌟 Ana Manşet Haberi Yaz" : "🖋️ Editöryal Yazı Yayınla";
@@ -2766,6 +2773,85 @@ window.openDailyWordDetail = function() {
     openArticle(mockArticle.id);
 };
 
+
+// Helper: Clean slot kicker renderer without rigid labels like Tenkit/Medeniyet
+function renderSlotKicker(art, categoryKey) {
+    const isEditor = (currentUser && (currentUser.isEditor || currentUser.isAdmin)) || isEditorModeActive;
+    let kickerText = "";
+
+    if (art && art.corner_name && art.corner_name.trim()) {
+        kickerText = art.corner_name.trim();
+    } else if (art) {
+        const cleanNames = {
+            "kitap": "📚 KİTAP İNCELEMESİ",
+            "haber": "🏛️ KÜLTÜR & SANAT",
+            "deneme": "🖋️ DENEME & DÜŞÜNCE",
+            "oyku": "📖 ÖYKÜ & ANLATI",
+            "kose-yazilari": "✒️ KÖŞE YAZISI",
+            "biyografi": "👤 EDEBİ PORTRE",
+            "genc-kalemler": "📖 EDEBİ ANLATI",
+            "roportaj": "🎙️ YAZAR SÖYLEŞİSİ",
+            "manset": "🌟 HAFTANIN MANŞETİ",
+            "siir": "📜 GÜNÜN ŞİİRİ"
+        };
+        kickerText = cleanNames[art.category] || cleanNames[categoryKey] || "🖋️ EDEBİYAT";
+    } else {
+        const defaultNames = {
+            "kose-yazilari": "✒️ KÖŞE YAZISI",
+            "deneme": "🖋️ DENEME & DÜŞÜNCE",
+            "genc-kalemler": "📖 EDEBİ ANLATI",
+            "oyku": "📖 ÖYKÜ & ANLATI",
+            "kitap": "📚 KİTAP İNCELEMESİ",
+            "haber": "🏛️ KÜLTÜR & SANAT"
+        };
+        kickerText = defaultNames[categoryKey] || "🖋️ EDEBİYAT";
+    }
+
+    let editorActions = "";
+    if (isEditor) {
+        if (art) {
+            editorActions = `
+                <span class="slot-write-hint" onclick="event.stopPropagation(); window.quickChangeKicker('${art.id}', event);" title="Üst başlığı serbestçe değiştir">✎ Başlık</span>
+                <span class="slot-write-hint" onclick="event.stopPropagation(); window.editArticleClick('${art.id}', event);" title="Yazıyı Düzenle">✎ Düzenle</span>
+            `;
+        } else {
+            editorActions = `<span class="slot-write-hint" onclick="event.stopPropagation(); window.openWriteModalForCategory('${categoryKey}');">+ Yazı Ekle</span>`;
+        }
+    }
+
+    const clickAttr = (art && isEditor) ? `onclick="event.stopPropagation(); window.quickChangeKicker('${art.id}', event);" style="cursor: pointer;" title="Tıkla ve başlığı değiştir"` : "";
+    return `<span class="slot-kicker" ${clickAttr}>${kickerText} ${editorActions}</span>`;
+}
+
+// Quick Inline Title / Kicker Changer for Editors
+window.quickChangeKicker = async function(articleId, event) {
+    if (event) event.stopPropagation();
+    const article = articles.find(a => a.id === articleId);
+    if (!article) return;
+    const current = article.corner_name || "";
+    const promptMsg = "Yazının üstündeki başlığı (Köşe / Seri Adı) girin:\n(Örn: Sabahattin Ali Hikayesi, Kitap Tahlili, Özel Röportaj...)\nBoş bırakırsanız sadece sade kategori başlığı görünür.";
+    const newKicker = prompt(promptMsg, current);
+    if (newKicker === null) return; // Kullanıcı iptal etti
+
+    article.corner_name = newKicker.trim();
+    try {
+        localStorage.setItem("murekkep_articles_v2", JSON.stringify(articles));
+    } catch(e) {}
+
+    if (isSupabaseConnected && supabaseClient) {
+        try {
+            await supabaseClient.from('articles').update({ corner_name: article.corner_name }).eq('id', article.id);
+        } catch(e) {
+            console.warn("Supabase update error:", e);
+        }
+    }
+
+    if (typeof showToast === 'function') {
+        showToast("✓ Başlık güncellendi: " + (article.corner_name || "Varsayılan"));
+    }
+    renderNewspaperGrid();
+};
+
 // RENDER NEWSPAPER FRONT-PAGE GRID (MÜREKKEP PROFESYONEL MİZANPAJ)
 function renderNewspaperGrid() {
     mainGrid.className = "newspaper-grid";
@@ -2782,30 +2868,29 @@ function renderNewspaperGrid() {
                || allArts[0]
                || null;
 
-    // 2. Identify categorized corners without duplicating lead
+    // 2. Identify categorized corners with smart fallback to real user articles
     const usedIds = new Set();
     if (leadArt) usedIds.add(leadArt.id);
 
-    let essayArt1 = allArts.find(a => (a.category === "kose-yazilari" || a.category === "deneme") && !usedIds.has(a.id));
-    if (essayArt1) usedIds.add(essayArt1.id);
+    function pickSlotArticle(categories) {
+        let art = allArts.find(a => categories.includes(a.category) && !usedIds.has(a.id));
+        if (!art) {
+            // Pick any other unused real article (except special poem)
+            art = allArts.find(a => a.category !== "siir" && a.category !== "gunun-sozu" && !usedIds.has(a.id));
+        }
+        if (art) usedIds.add(art.id);
+        return art;
+    }
 
-    let essayArt2 = allArts.find(a => (a.category === "deneme" || a.category === "biyografi") && !usedIds.has(a.id));
-    if (essayArt2) usedIds.add(essayArt2.id);
-
-    let youthArt = allArts.find(a => (a.category === "oyku" || a.category === "deneme" || a.category === "genc-kalemler") && !usedIds.has(a.id));
-    if (youthArt) usedIds.add(youthArt.id);
-
-    let storyArt = allArts.find(a => a.category === "oyku" && !usedIds.has(a.id));
-    if (storyArt) usedIds.add(storyArt.id);
-
-    let bookArt = allArts.find(a => a.category === "kitap" && !usedIds.has(a.id));
-    if (bookArt) usedIds.add(bookArt.id);
-
+    let essayArt1 = pickSlotArticle(["kose-yazilari", "deneme", "fikir"]);
+    let essayArt2 = pickSlotArticle(["deneme", "biyografi", "edebiyat"]);
+    let youthArt = pickSlotArticle(["genc-kalemler", "oyku", "anlati", "portre"]);
+    let storyArt = pickSlotArticle(["oyku", "anlati", "hikaye"]);
+    let bookArt = pickSlotArticle(["kitap", "inceleme"]);
     let poemArt = allArts.find(a => a.category === "siir" && !usedIds.has(a.id));
     if (poemArt) usedIds.add(poemArt.id);
 
-    let cultureMedeniyetArt = allArts.find(a => (a.category === "haber" || a.category === "biyografi" || a.category === "roportaj") && !usedIds.has(a.id));
-    if (cultureMedeniyetArt) usedIds.add(cultureMedeniyetArt.id);
+    let cultureMedeniyetArt = pickSlotArticle(["haber", "kultur", "roportaj", "biyografi"]);
 
     let artEstetikArt = allArts.find(a => (a.category === "haber" || a.category === "yarismalar" || a.category === "deneme") && !usedIds.has(a.id));
     if (artEstetikArt) usedIds.add(artEstetikArt.id);
@@ -2817,38 +2902,47 @@ function renderNewspaperGrid() {
     const colLeftHTML = `
         <aside class="broadsheet-col-left">
             <div class="editorial-slot-card" ${essayArt1 ? `data-id="${essayArt1.id}"` : (isEditorUser ? `onclick="window.openWriteModalForCategory('kose-yazilari')"` : '')}>
-                <span class="slot-kicker">✒️ KÖŞE YAZISI ${isEditorUser ? `<span class="slot-write-hint" onclick="event.stopPropagation(); window.openWriteModalForCategory('kose-yazilari');">✎ Yaz</span>` : ''}</span>
+                ${renderSlotKicker(essayArt1, "kose-yazilari")}
                 <h3 class="slot-title">${essayArt1 ? essayArt1.title : 'Edebiyatta Samimiyet ve Üslup'}</h3>
                 <p class="slot-excerpt">${essayArt1 ? truncateText(essayArt1.subtitle || (essayArt1.content ? essayArt1.content.replace(/<[^>]*>/g, '') : ''), 125) : 'Kelimelerin ardındaki samimiyet, yazarın ruhunu okura açtığı en şeffaf aynadır.'}</p>
                 <div class="slot-byline">
                     <span>✍️ ${essayArt1 ? essayArt1.author : 'Yayın Kurulu'}</span>
-                    ${isEditorUser ? `<span class="slot-action-link" onclick="event.stopPropagation(); window.openWriteModalForCategory('kose-yazilari');" title="Köşe Yazısı Gönder">+ Yazı Gönder</span>` : ''}
+                    ${isEditorUser ? `<span class="slot-action-link" onclick="event.stopPropagation(); window.openWriteModalForCategory('kose-yazilari');" title="Köşe Yazısı Düzenle">+ Yazı Gönder</span>` : ''}
                 </div>
             </div>
 
             <div class="editorial-slot-card" ${essayArt2 ? `data-id="${essayArt2.id}"` : (isEditorUser ? `onclick="window.openWriteModalForCategory('deneme')"` : '')}>
-                <span class="slot-kicker">🖋️ DENEME & ELEŞTİRİ ${isEditorUser ? `<span class="slot-write-hint" onclick="event.stopPropagation(); window.openWriteModalForCategory('deneme');">✎ Yaz</span>` : ''}</span>
+                ${renderSlotKicker(essayArt2, "deneme")}
                 <h3 class="slot-title">${essayArt2 ? essayArt2.title : 'Sanatın Gayesi ve Anlam Arayışı'}</h3>
                 <p class="slot-excerpt">${essayArt2 ? truncateText(essayArt2.subtitle || (essayArt2.content ? essayArt2.content.replace(/<[^>]*>/g, '') : ''), 125) : 'Felsefe ile edebiyatın kesiştiği noktada varoluşsal sancıların sözcüklerle dindirilmesi.'}</p>
                 <div class="slot-byline">
-                    <span>✍️ ${essayArt2 ? essayArt2.author : 'Mürekkep Tenkit'}</span>
+                    <span>✍️ ${essayArt2 ? essayArt2.author : 'Mürekkep Kitaplık'}</span>
                     ${isEditorUser ? `<span class="slot-action-link" onclick="event.stopPropagation(); window.openWriteModalForCategory('deneme');" title="Deneme Gönder">+ Yazı Gönder</span>` : ''}
                 </div>
             </div>
 
-            <!-- Günün Sözü Kartı: Okurlar için özel tefekkür okuma modalı, Editörler için değiştirme imkânı -->
+            <!-- Günün Sözü: Editör isterse oluşturur, yoksa boş durmaz -->
+            ${(editorNoteData && editorNoteData.quote && editorNoteData.quote.trim()) ? `
             <div class="editorial-slot-card" style="background: var(--bg-secondary); border-top: 4px solid var(--accent-color); cursor: pointer;" onclick="window.openDailyQuoteDetail()">
                 <span class="slot-kicker">📜 GÜNÜN SÖZÜ ${isEditorUser ? `<span class="slot-write-hint" onclick="event.stopPropagation(); window.openWriteModalForCategory('gunun-sozu');" title="Sözü Değiştir">✎ Değiştir</span>` : ''}</span>
-                <p class="slot-quote-text">“${editorNoteData.quote || 'Bir dizesi eksik kalmış bir şiir gibi gezinir insan; ta ki hakikatin kelimesini bulana kadar.'}”</p>
+                <p class="slot-quote-text">“${editorNoteData.quote}”</p>
                 <div class="slot-byline">
-                    <span>— ${editorNoteData.desc || 'Ahmet Hamdi Tanpınar'}</span>
+                    <span>— ${editorNoteData.desc || 'Mürekkep Tefekkür'}</span>
                     <span class="slot-action-link" onclick="event.stopPropagation(); window.openDailyQuoteDetail();" title="Sözün Detayını Oku">EDEBİ HAFIZA ➔</span>
                 </div>
             </div>
+            ` : (isEditorUser ? `
+            <div class="editorial-slot-card" style="background: var(--bg-secondary); border: 2px dashed var(--border-light); cursor: pointer; text-align: center; padding: 18px;" onclick="window.openWriteModalForCategory('gunun-sozu')">
+                <span style="font-size: 1.3rem; display: block; margin-bottom: 6px; opacity: 0.5;">📜</span>
+                <span class="slot-kicker" style="justify-content: center; opacity: 0.7;">GÜNÜN SÖZÜ</span>
+                <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 6px 0 10px;">Günün sözü veya alıntı kutusunu oluşturmak için tıklayın.</p>
+                <span class="slot-write-hint" style="display: inline-block;">+ Söz Kutusu Oluştur</span>
+            </div>
+            ` : '')}
 
-            <!-- Günün Sözünün Altındaki Ek Slot: Genç Kalemler & Anlatı -->
+            <!-- Genç Kalemler & Anlatı Slotu -->
             <div class="editorial-slot-card" ${youthArt ? `data-id="${youthArt.id}"` : (isEditorUser ? `onclick="window.openWriteModalForCategory('genc-kalemler')"` : '')}>
-                <span class="slot-kicker">📖 GENÇ KALEMLER & ANLATI ${isEditorUser ? `<span class="slot-write-hint" onclick="event.stopPropagation(); window.openWriteModalForCategory('genc-kalemler');">✎ Yaz</span>` : ''}</span>
+                ${renderSlotKicker(youthArt, "genc-kalemler")}
                 <h3 class="slot-title">${youthArt ? youthArt.title : 'Kuşların Kanadında Saklı Şehir'}</h3>
                 <p class="slot-excerpt">${youthArt ? truncateText(youthArt.subtitle || (youthArt.content ? youthArt.content.replace(/<[^>]*>/g, '') : ''), 120) : 'Taş sokakların yankısında büyüyen düşler, genç bir yazarın satırlarında yeniden hayat buluyor.'}</p>
                 <div class="slot-byline">
@@ -2864,7 +2958,7 @@ function renderNewspaperGrid() {
     if (leadArt) {
         const leadHasImg = leadArt.image && leadArt.image !== "undefined" && leadArt.image !== "assets/typewriter_birds.webp";
         const leadImg = leadHasImg ? leadArt.image : null;
-        const leadKicker = leadArt.corner_name || "EDEBİYAT & DÜŞÜNCE • HAFTANIN MANŞETİ";
+        const leadKicker = (leadArt.corner_name && leadArt.corner_name.trim()) ? leadArt.corner_name : "🌟 HAFTANIN MANŞETİ";
         const leadSubdeck = leadArt.subtitle || "İnsanlığın derin sancısı ve edebiyatın ruhu; hakikati kelimelere dökebilme cesaretinde yatar.";
         const leadTextRaw = leadArt.content ? leadArt.content.replace(/<[^>]*>/g, ' ') : leadSubdeck;
         const textCol1 = truncateText(leadTextRaw, 220);
@@ -2876,7 +2970,13 @@ function renderNewspaperGrid() {
         mainLeadHTML = `
             <article class="lead-headline-box" data-id="${leadArt.id}">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <span class="lead-kicker-tag">${leadKicker} ${isEditorUser ? `<span class="slot-write-hint" onclick="event.stopPropagation(); window.openWriteModalForCategory('manset');" style="margin-left: 6px;">✎ Manşet Yaz</span>` : ''}</span>
+                    <span class="lead-kicker-tag" ${isEditorUser ? `onclick="event.stopPropagation(); window.quickChangeKicker('${leadArt.id}', event);" style="cursor: pointer;" title="Tıkla ve manşet başlığını değiştir"` : ''}>
+                        ${leadKicker} 
+                        ${isEditorUser ? `
+                            <span class="slot-write-hint" onclick="event.stopPropagation(); window.quickChangeKicker('${leadArt.id}', event);" style="margin-left: 6px;">✎ Başlık</span>
+                            <span class="slot-write-hint" onclick="event.stopPropagation(); window.editArticleClick('${leadArt.id}', event);" style="margin-left: 4px;">✎ Düzenle</span>
+                        ` : ''}
+                    </span>
                 </div>
                 <h2 class="lead-main-title">${leadArt.title}</h2>
                 <div class="lead-byline-bar">
@@ -2919,7 +3019,7 @@ function renderNewspaperGrid() {
     const subleadHTML = `
         <div class="sublead-grid-row">
             <div class="editorial-slot-card" ${storyArt ? `data-id="${storyArt.id}"` : (isEditorUser ? `onclick="window.openWriteModalForCategory('oyku')"` : '')}>
-                <span class="slot-kicker">📖 ÖYKÜ & ANLATI ${isEditorUser ? `<span class="slot-write-hint" onclick="event.stopPropagation(); window.openWriteModalForCategory('oyku');">✎ Yaz</span>` : ''}</span>
+                ${renderSlotKicker(storyArt, "oyku")}
                 <h3 class="slot-title">${storyArt ? storyArt.title : 'Karanfil ve Yağmur Kokusu'}</h3>
                 <p class="slot-excerpt">${storyArt ? truncateText(storyArt.subtitle || (storyArt.content ? storyArt.content.replace(/<[^>]*>/g, '') : ''), 120) : 'Eski bir konağın gıcırdayan merdivenlerinde durdu ihtiyar. Sararmış mektuba son kez baktı...'}</p>
                 <div class="slot-byline">
@@ -2929,11 +3029,11 @@ function renderNewspaperGrid() {
             </div>
 
             <div class="editorial-slot-card" ${bookArt ? `data-id="${bookArt.id}"` : (isEditorUser ? `onclick="window.openWriteModalForCategory('kitap')"` : '')}>
-                <span class="slot-kicker">📚 KİTAPLIK & TENKİT ${isEditorUser ? `<span class="slot-write-hint" onclick="event.stopPropagation(); window.openWriteModalForCategory('kitap');">✎ Yaz</span>` : ''}</span>
+                ${renderSlotKicker(bookArt, "kitap")}
                 <h3 class="slot-title">${bookArt ? bookArt.title : 'Kuyucaklı Yusuf Tahlili'}</h3>
                 <p class="slot-excerpt">${bookArt ? truncateText(bookArt.subtitle || (bookArt.content ? bookArt.content.replace(/<[^>]*>/g, '') : ''), 120) : 'Anadolu insanının saf ve hırçın doğasını ustalıkla işleyen eserin edebi tahlili.'}</p>
                 <div class="slot-byline">
-                    <span>İnceleyen: ${bookArt ? bookArt.author : 'Mürekkep Tenkit'}</span>
+                    <span>İnceleyen: ${bookArt ? bookArt.author : 'Mürekkep Kitaplık'}</span>
                     ${isEditorUser ? `<span class="slot-action-link" onclick="event.stopPropagation(); window.openWriteModalForCategory('kitap');" title="Kitap Yazısı Gönder">+ İnceleme Yaz</span>` : ''}
                 </div>
             </div>
@@ -2947,52 +3047,98 @@ function renderNewspaperGrid() {
         </main>
     `;
 
-    // ─── C. SAĞ SÜTUN (GÜNÜN ŞİİRİ, KÜLTÜR & MEDENİYET, LÛGAT) ───
+    // ─── C. SAĞ SÜTUN (GÜNÜN ŞİİRİ, KÜLTÜR & SANAT, LÛGAT) ───
     const colRightHTML = `
         <aside class="broadsheet-col-right">
-            <div class="poem-slot-card" ${poemArt ? `data-id="${poemArt.id}"` : (isEditorUser ? `onclick="window.openWriteModalForCategory('siir')"` : '')}>
-                <span class="slot-kicker" style="justify-content: center;">📜 GÜNÜN ŞİİRİ ${isEditorUser ? `<span class="slot-write-hint" onclick="event.stopPropagation(); window.openWriteModalForCategory('siir');">✎ Şiir Yaz</span>` : ''}</span>
-                <strong class="poem-title">${poemArt ? poemArt.title : 'Kelimelerin Sükûtu'}</strong>
+            <!-- Günün Şiiri: Varsa göster, yoksa editöre kutu oluşturma imkânı sun -->
+            ${poemArt ? `
+            <div class="poem-slot-card" data-id="${poemArt.id}">
+                <span class="slot-kicker" style="justify-content: center;">${poemArt.corner_name || '📜 GÜNÜN ŞİİRİ'} ${isEditorUser ? `<span class="slot-write-hint" onclick="event.stopPropagation(); window.openWriteModalForCategory('siir');">✎ Değiştir</span>` : ''}</span>
+                <strong class="poem-title">${poemArt.title}</strong>
                 <div class="poem-stanzas">
-                    ${poemArt ? (poemArt.content ? poemArt.content.replace(/<[^>]*>/g, '\n').split('\n').filter(Boolean).slice(0, 5).join('<br>') : poemArt.subtitle) : 'Kelimeler yorulur, susar geceler,<br>Yalnızlığın kıyısında açar bir çiçek.<br>Ne giden döner geri, ne kalan kalır,<br>Yalnızca bir şiir kalır yadigar.'}
+                    ${poemArt.content ? poemArt.content.replace(/<[^>]*>/g, '\n').split('\n').filter(Boolean).slice(0, 5).join('<br>') : poemArt.subtitle}
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 8px; border-top: 1px dashed var(--border-color); padding-top: 6px;">
-                    <span class="poem-poet">${poemArt ? `ŞAİR: ${poemArt.author}` : 'Mürekkep Şair'}</span>
-                    ${isEditorUser ? `<span class="slot-action-link" onclick="event.stopPropagation(); window.openWriteModalForCategory('siir');" title="Şiir Başvurusu Yap">+ Şiir Gönder</span>` : ''}
+                    <span class="poem-poet">ŞAİR: ${poemArt.author}</span>
+                    <span class="slot-action-link" title="Şiiri Oku">ŞİİRİ OKU ➔</span>
                 </div>
             </div>
+            ` : (isEditorUser ? `
+            <div class="editorial-slot-card" style="background: var(--bg-secondary); border: 2px dashed var(--border-light); cursor: pointer; text-align: center; padding: 18px;" onclick="window.openWriteModalForCategory('siir')">
+                <span style="font-size: 1.3rem; display: block; margin-bottom: 6px; opacity: 0.5;">📜</span>
+                <span class="slot-kicker" style="justify-content: center; opacity: 0.7;">GÜNÜN ŞİİRİ</span>
+                <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 6px 0 10px;">Günün şiiri kutusunu oluşturmak ve şiir girmek için tıklayın.</p>
+                <span class="slot-write-hint" style="display: inline-block;">+ Şiir Kutusu Oluştur</span>
+            </div>
+            ` : '')}
 
-            <!-- Kültür & Medeniyet Slotu -->
+            <!-- Kültür & Sanat Slotu (Başlığı serbestçe değiştirilebilir) -->
             <div class="editorial-slot-card" ${cultureMedeniyetArt ? `data-id="${cultureMedeniyetArt.id}"` : (isEditorUser ? `onclick="window.openWriteModalForCategory('haber')"` : '')}>
-                <span class="slot-kicker">🏛️ KÜLTÜR & MEDENİYET ${isEditorUser ? `<span class="slot-write-hint" onclick="event.stopPropagation(); window.openWriteModalForCategory('haber');">✎ Yaz</span>` : ''}</span>
+                ${renderSlotKicker(cultureMedeniyetArt, "haber")}
                 <h3 class="slot-title">${cultureMedeniyetArt ? cultureMedeniyetArt.title : 'Mazi ile İstikbal Arasında Türk Şiiri'}</h3>
-                <p class="slot-excerpt">${cultureMedeniyetArt ? truncateText(cultureMedeniyetArt.subtitle || (cultureMedeniyetArt.content ? cultureMedeniyetArt.content.replace(/<[^>]*>/g, '') : ''), 120) : '“Kültürel hafızamızın kökleri, klasik metinlerimiz ile çağdaş düşüncenin sentezinde yeşeriyor.”'}</p>
+                <p class="slot-excerpt">${cultureMedeniyetArt ? truncateText(cultureMedeniyetArt.subtitle || (cultureMedeniyetArt.content ? cultureMedeniyetArt.content.replace(/<[^>]*>/g, '') : ''), 120) : '"Kültürel hafızamızın kökleri, klasik metinlerimiz ile çağdaş düşüncenin sentezinde yeşeriyor."'}</p>
                 <div class="slot-byline">
                     <span>${cultureMedeniyetArt ? `Hazırlayan: ${cultureMedeniyetArt.author}` : 'Mürekkep Kültür Servisi'}</span>
                     ${isEditorUser ? `<span class="slot-action-link" onclick="event.stopPropagation(); window.openWriteModalForCategory('haber');" title="Yazı Gönder">+ Yazı Gönder</span>` : ''}
                 </div>
             </div>
 
-            <!-- Edebi Lûgat / Günün Kelimesi: Okurlar için özel kelime sayfası, Editörler için güncelleme imkânı -->
+            <!-- Edebi Lûgat / Günün Kelimesi -->
+            ${(dailyWordData && dailyWordData.word && dailyWordData.word.trim()) ? `
             <div class="editorial-slot-card" style="background: var(--bg-secondary); border-top: 4px solid var(--accent-color); cursor: pointer;" onclick="window.openDailyWordDetail()">
                 <span class="slot-kicker">📖 EDEBİ LÛGAT • GÜNÜN KELİMESİ ${isEditorUser ? `<span class="slot-write-hint" onclick="event.stopPropagation(); window.openWriteModalForCategory('lugat');" title="Kelimeyi Güncelle">✎ Değiştir</span>` : ''}</span>
                 <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 4px 0 2px;">
-                    <h3 class="slot-title" style="font-size: 1.22rem; letter-spacing: 0.5px; color: var(--accent-color); margin: 0;">${dailyWordData.word || 'Tahassür'}</h3>
+                    <h3 class="slot-title" style="font-size: 1.22rem; letter-spacing: 0.5px; color: var(--accent-color); margin: 0;">${dailyWordData.word}</h3>
                     <span style="font-family: var(--font-ui); font-size: 0.68rem; font-weight: 700; color: var(--text-secondary);">${dailyWordData.origin || '[Arapça • İsim]'}</span>
                 </div>
                 <p class="slot-excerpt" style="-webkit-line-clamp: 2; margin-bottom: 4px; font-weight: 600; color: var(--text-primary);">
-                    ${dailyWordData.meaning || 'Kavuşulması istenen şeye veya geçmişe duyulan derin özlem, hasret ve hüzünlü iç çekiş.'}
+                    ${dailyWordData.meaning || 'Kavuşulması istenen şeye veya geçmişe duyulan derin özlem.'}
                 </p>
                 <p class="slot-excerpt" style="-webkit-line-clamp: 2; font-style: italic; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 6px;">
-                    ${dailyWordData.example || '“Gözlerinde eski günlerin tahassürü, dilinde yarım kalmış bir türkü vardı.”'}
+                    ${dailyWordData.example || ''}
                 </p>
                 <div class="slot-byline">
                     <span>Lûgat-ı Mürekkep</span>
                     <span class="slot-action-link" onclick="event.stopPropagation(); window.openDailyWordDetail();" title="Kelimeyi İncele">KELİMEYİ İNCELE ➔</span>
                 </div>
             </div>
+            ` : (isEditorUser ? `
+            <div class="editorial-slot-card" style="background: var(--bg-secondary); border: 2px dashed var(--border-light); cursor: pointer; text-align: center; padding: 18px;" onclick="window.openWriteModalForCategory('lugat')">
+                <span style="font-size: 1.3rem; display: block; margin-bottom: 6px; opacity: 0.5;">📖</span>
+                <span class="slot-kicker" style="justify-content: center; opacity: 0.7;">EDEBİ LÛGAT</span>
+                <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 6px 0 10px;">Günün kelimesi veya lûgat kutusu eklemek için tıklayın.</p>
+                <span class="slot-write-hint" style="display: inline-block;">+ Lûgat Kutusu Ekle</span>
+            </div>
+            ` : '')}
+
+            <!-- Öneri Köşesi (RAF Serisi / Marka İş birliği) Slotu -->
+            ${window._oneriData && window._oneriData.title ? `
+            <div class="editorial-slot-card oneri-slot-card" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(197,160,89,0.06) 100%); border-top: 4px solid var(--accent-color); cursor: pointer; position: relative; overflow: hidden;" onclick="window._openOneriDetail()">
+                <span class="slot-kicker" style="color: var(--accent-color); font-weight: 800;">📚 ÖNERİ KÖŞESİ ${window._oneriData.tag ? `<span style="font-size: 0.65rem; background: var(--accent-color); color: #fff; padding: 1px 7px; border-radius: 10px; margin-left: 6px; font-weight: 700;">${window._oneriData.tag}</span>` : ''} ${isEditorUser ? `<span class="slot-write-hint" onclick="event.stopPropagation(); window.openWriteModalForCategory('oneri');" title="Öneriyi Güncelle">✎ Düzenle</span>` : ''}</span>
+                <div style="display: flex; gap: 12px; margin-top: 8px; align-items: flex-start;">
+                    ${window._oneriData.cover ? `<div style="width: 56px; height: 72px; flex-shrink: 0; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-light);"><img src="${window._oneriData.cover}" alt="${window._oneriData.title}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none';this.parentElement.style.display='none';"></div>` : ''}
+                    <div style="flex: 1;">
+                        <h3 class="slot-title" style="font-size: 1.05rem; margin: 0 0 4px;">${window._oneriData.title}</h3>
+                        <p style="font-family: var(--font-ui); font-size: 0.72rem; color: var(--accent-color); font-weight: 700; margin: 0 0 6px;">${window._oneriData.itemAuthor || ''}</p>
+                        <p class="slot-excerpt" style="-webkit-line-clamp: 3; font-size: 0.82rem; color: var(--text-secondary); margin: 0;">${window._oneriData.desc || ''}</p>
+                    </div>
+                </div>
+                <div class="slot-byline" style="margin-top: 10px;">
+                    <span style="font-size: 0.72rem;">${{kitap:'📖 Kitap', muzik:'🎵 Müzik', film:'🎬 Film/Dizi', urun:'🛍️ Ürün', diger:'✨ Öneri'}[window._oneriData.type] || '✨ Öneri'}</span>
+                    ${window._oneriData.link ? `<a href="${window._oneriData.link}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="slot-action-link" style="text-decoration: none;">KESFET ➔</a>` : `<span class="slot-action-link" onclick="event.stopPropagation(); window._openOneriDetail();">OKUYUCUYA NOT ➔</span>`}
+                </div>
+            </div>
+            ` : isEditorUser ? `
+            <div class="editorial-slot-card" style="background: var(--bg-secondary); border: 2px dashed var(--border-light); cursor: pointer; text-align: center; padding: 20px;" onclick="window.openWriteModalForCategory('oneri')">
+                <span style="font-size: 1.5rem; display: block; margin-bottom: 8px; opacity: 0.5;">📚</span>
+                <span class="slot-kicker" style="justify-content: center; opacity: 0.7;">ÖNERİ KÖŞESİ</span>
+                <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 8px 0 12px; line-height: 1.4;">RAF serisi veya öneri içeriği eklemek için tıklayın.</p>
+                <span class="slot-write-hint" style="display: inline-block;">+ Öneri Ekle</span>
+            </div>
+            ` : ''}
         </aside>
     `;
+
 
     // Assembly Complete Broadsheet Layout
     mainGrid.innerHTML = `

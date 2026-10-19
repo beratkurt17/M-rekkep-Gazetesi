@@ -28,13 +28,13 @@ function openWriterStudioModal(categoryKey) {
     const submitBtn = document.querySelector(".btn-publish-submit");
 
     if ((currentUser && currentUser.isEditor) || isEditorModeActive) {
-        if (studioTitle) studioTitle.innerText = "Editör Paneli - Gazete Köşe & Eser Girişi";
-        if (studioDesc) studioDesc.innerText = "Yayınlamak istediğiniz gazete köşesini seçin ve eseri doğrudan ilgili slota yerleştirin.";
+        if (studioTitle) studioTitle.innerText = "Yazı & Köşe İçeriği Yayınla";
+        if (studioDesc) studioDesc.innerText = "Yayınlamak istediğiniz gazete köşesini veya serisini seçip içeriği doğrudan yayınlayın.";
         if (submitBtn) submitBtn.innerText = "Gazetede Doğrudan Yayınla";
     } else {
-        if (studioTitle) studioTitle.innerText = "Editöryal Yazı Başvurusu";
-        if (studioDesc) studioDesc.innerText = "Eseriniz Mürekkep Yayın Kurulu ve Editör heyetimizce incelenecektir. Onaylanan eserler gazetemizde yayına alınır.";
-        if (submitBtn) submitBtn.innerText = "Yayın Kuruluna Başvuru Gönder";
+        if (studioTitle) studioTitle.innerText = "Yazı & Köşe İçeriği Ekle";
+        if (studioDesc) studioDesc.innerText = "Mürekkep Gazetesi için yeni bir edebi yazı veya köşe içeriği oluşturun.";
+        if (submitBtn) submitBtn.innerText = "Gazetede Doğrudan Yayınla";
     }
 
     // Populate and set category select dynamically
@@ -47,30 +47,32 @@ function openWriterStudioModal(categoryKey) {
             baseOptions = [
                 { id: "manset", name: "🌟 1. Ana Manşet (Hero Story)" },
                 { id: "kose-yazilari", name: "✒️ 2. Köşe Yazısı (Sol 1. Slot)" },
-                { id: "deneme", name: "🖋️ 3. Deneme & Eleştiri (Sol 2. Slot)" },
+                { id: "deneme", name: "🖋️ 3. Deneme & Düşünce (Sol 2. Slot)" },
                 { id: "gunun-sozu", name: "📜 4. Günün Sözü (Sol 3. Slot)" },
-                { id: "genc-kalemler", name: "📖 5. Genç Kalemler & Anlatı (Sol 4. Slot)" },
+                { id: "genc-kalemler", name: "📖 5. Edebi Anlatı & Portre (Sol 4. Slot)" },
                 { id: "oyku", name: "📖 6. Öykü & Anlatı (Orta Alt Sol Slot)" },
-                { id: "kitap", name: "📚 7. Kitaplık & Tenkit (Orta Alt Sağ Slot)" },
+                { id: "kitap", name: "📚 7. Kitap & İnceleme (Orta Alt Sağ Slot)" },
                 { id: "siir", name: "📜 8. Günün Şiiri (Sağ 1. Slot)" },
-                { id: "haber", name: "🏛️ 9. Kültür & Medeniyet (Sağ 2. Slot)" },
+                { id: "haber", name: "🏛️ 9. Kültür & Sanat (Sağ 2. Slot)" },
                 { id: "lugat", name: "📖 10. Edebi Lûgat / Günün Kelimesi (Sağ 3. Slot)" },
+                { id: "oneri", name: "📚 11. Öneri Köşesi (RAF Serisi / Marka İş birliği)" },
                 { id: "biyografi", name: "Edebi Portre & Biyografi" },
                 { id: "roportaj", name: "Yazar Röportajı / Söyleşi" },
                 { id: "yarismalar", name: "Yarışmalar & Duyurular" }
             ];
         } else {
             baseOptions = [
+                { id: "manset", name: "🌟 1. Ana Manşet (Hero Story)" },
                 { id: "kose-yazilari", name: "✒️ Köşe Yazısı (Sol 1. Slot)" },
-                { id: "deneme", name: "🖋️ Deneme & Eleştiri (Sol 2. Slot)" },
+                { id: "deneme", name: "🖋️ Deneme & Düşünce (Sol 2. Slot)" },
                 { id: "gunun-sozu", name: "📜 Günün Sözü (Sol 3. Slot)" },
-                { id: "genc-kalemler", name: "📖 Genç Kalemler & Anlatı (Sol 4. Slot)" },
+                { id: "genc-kalemler", name: "📖 Edebi Anlatı & Portre (Sol 4. Slot)" },
                 { id: "oyku", name: "📖 Öykü & Anlatı (Orta Alt Sol Slot)" },
-                { id: "kitap", name: "📚 Kitaplık & Tenkit (Orta Alt Sağ Slot)" },
+                { id: "kitap", name: "📚 Kitap & İnceleme (Orta Alt Sağ Slot)" },
                 { id: "siir", name: "📜 Günün Şiiri (Sağ 1. Slot)" },
-                { id: "haber", name: "🏛️ Kültür & Medeniyet (Sağ 2. Slot)" },
+                { id: "haber", name: "🏛️ Kültür & Sanat (Sağ 2. Slot)" },
                 { id: "lugat", name: "📖 Edebi Lûgat / Kelime (Sağ 3. Slot)" },
-                { id: "manset", name: "🌟 Ana Manşet Başvurusu" },
+                { id: "oneri", name: "📚 Öneri Köşesi (RAF Serisi)" },
                 { id: "biyografi", name: "Edebi Portre & Biyografi" },
                 { id: "roportaj", name: "Yazar Röportajı / Söyleşi" },
                 { id: "yarismalar", name: "Yarışmalar & Duyurular" }
@@ -722,7 +724,53 @@ publishForm.addEventListener("submit", async (e) => {
         return;
     }
 
-    // 4. STANDART YAZI HANDLER (MANŞET, KÖŞE YAZISI, DENEME, GENÇ KALEMLER, ÖYKÜ, KİTAPLIK, KÜLTÜR-SANAT)
+    // 4. ÖNERİ KÖŞESİ (RAF SERİSİ / MARKA İŞ BİRLİĞİ) HANDLER
+    if (category === "oneri") {
+        const oTitle = document.getElementById("oneri-title-input")?.value.trim() || document.getElementById("post-title")?.value.trim() || "";
+        const oType = document.getElementById("oneri-type-input")?.value || "kitap";
+        const oAuthor = document.getElementById("oneri-author-input")?.value.trim() || "";
+        const oTag = document.getElementById("oneri-tag-input")?.value.trim() || "";
+        const oDesc = document.getElementById("oneri-desc-input")?.value.trim() || document.getElementById("post-content")?.value.trim() || "";
+        const oLink = document.getElementById("oneri-link-input")?.value.trim() || "";
+        const oCover = document.getElementById("oneri-cover-input")?.value.trim() || "";
+
+        if (!oTitle || !oDesc) {
+            showToast("⚠️ Lütfen önerilen başlığı ve açıklamasını yazın.");
+            return;
+        }
+
+        window._oneriData = {
+            title: oTitle,
+            type: oType,
+            itemAuthor: oAuthor,
+            tag: oTag,
+            desc: oDesc,
+            link: oLink,
+            cover: oCover,
+            date: new Date().toLocaleDateString("tr-TR", { month: "long", year: "numeric" })
+        };
+
+        try {
+            localStorage.setItem("murekkep_oneri_data", JSON.stringify(window._oneriData));
+        } catch(e) {}
+
+        if (isSupabaseConnected && supabaseClient) {
+            try {
+                await supabaseClient.from('site_settings').upsert({ key: 'oneri_data', value: window._oneriData });
+            } catch(e) {
+                console.warn("Error saving oneri data to Supabase:", e);
+            }
+        }
+
+        showToast("✓ Öneri Köşesi (RAF Serisi) gazetede yayınlandı!");
+        publishForm.reset();
+        editorOverlay.classList.add("hidden");
+        unlockBodyScroll();
+        renderNewspaperGrid();
+        return;
+    }
+
+    // 5. STANDART YAZI HANDLER (MANŞET, KÖŞE YAZISI, DENEME, GENÇ KALEMLER, ÖYKÜ, KİTAPLIK, KÜLTÜR-SANAT)
     const titleInput = document.getElementById("post-title");
     const subtitleInput = document.getElementById("post-subtitle");
     const contentInput = document.getElementById("post-content");
