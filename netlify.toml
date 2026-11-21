@@ -1,0 +1,10 @@
+# Bakım modu: derleme yok, kök klasör yayınlanır.
+[build]
+  publish = "."
+  command = "echo bakim"
+
+# Tüm adresler bakım sayfasını gösterir (eski yazı linkleri dahil).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
