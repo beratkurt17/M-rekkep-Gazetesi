@@ -1,0 +1,71 @@
+---
+import type { Article } from '../lib/types';
+import { formatDate } from '../lib/format';
+
+interface Props {
+  article: Article;
+  variant?: 'manset' | 'surmanset' | 'list';
+}
+const { article: a, variant = 'list' } = Astro.props;
+const href = `/yazi/${a.slug}`;
+const HeadingTag = variant === 'manset' ? 'h2' : 'h3';
+---
+<article class:list={['card', variant, { 'has-image': !!a.cover_image }]}>
+  {a.cover_image && (
+    <a href={href} class="media" tabindex="-1" aria-hidden="true">
+      <img
+        src={a.cover_image}
+        alt=""
+        loading={variant === 'manset' ? 'eager' : 'lazy'}
+        decoding="async"
+      />
+    </a>
+  )}
+  <div class="text">
+    {a.label && <span class="label">{a.label}</span>}
+    <HeadingTag class="title"><a href={href} class="hl">{a.title}</a></HeadingTag>
+    {a.byline && <span class="byline">{a.byline}</span>}
+    {a.spot && variant !== 'list' && <p class="spot">{a.spot}</p>}
+    {a.spot && variant === 'list' && <p class="spot small">{a.spot}</p>}
+    <time class="meta" datetime={a.published_at}>{formatDate(a.published_at)}</time>
+  </div>
+</article>
+
+<style>
+  .card { display: grid; gap: 12px; }
+  .text { display: flex; flex-direction: column; gap: 6px; }
+  .title {
+    margin: 0;
+    font-family: var(--font-head);
+    font-weight: 700;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  .spot { margin: 2px 0 0; color: var(--ink-2); }
+  .spot.small {
+    font-size: 15px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .media img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: var(--paper-2); }
+
+  /* Manşet */
+  .manset .title { font-size: clamp(32px, 5vw, 56px); font-weight: 800; letter-spacing: -0.01em; }
+  .manset .spot { font-size: clamp(17px, 2vw, 20px); line-height: 1.5; max-width: 62ch; }
+  .manset .media img { aspect-ratio: 3 / 2; }
+  .manset:not(.has-image) .title { font-size: clamp(38px, 6.5vw, 72px); }
+
+  /* Sürmanşet */
+  .surmanset .title { font-size: 22px; }
+  .surmanset .spot { font-size: 15px; }
+
+  /* Liste */
+  .list { padding-block: 18px; border-bottom: 1px solid var(--rule-light); }
+  .list .title { font-size: 21px; }
+  @media (min-width: 640px) {
+    .list.has-image { grid-template-columns: 1fr 200px; align-items: start; }
+    .list.has-image .media { order: 2; }
+  }
+</style>

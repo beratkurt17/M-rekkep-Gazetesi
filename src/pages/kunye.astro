@@ -1,0 +1,27 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Künye" description="Mürekkep Gazetesi künye ve iletişim bilgileri.">
+  <div class="wrap kunye">
+    <h1 class="page-title">Künye</h1>
+    <!-- TODO: Gerçek künye bilgileri girilecek -->
+    <dl>
+      <dt>Yayın adı</dt><dd>Mürekkep Gazetesi</dd>
+      <dt>Yayın türü</dt><dd>Edebiyat, kültür ve sanat gazetesi</dd>
+      <dt>Genel Yayın Yönetmeni</dt><dd>—</dd>
+      <dt>İletişim</dt><dd>—</dd>
+    </dl>
+  </div>
+</Base>
+
+<style>
+  .kunye { max-width: 760px; padding-top: 36px; }
+  .page-title { font-family: var(--font-head); font-size: 44px; margin: 0 0 28px; }
+  dl { display: grid; grid-template-columns: 200px 1fr; margin: 0; border-top: 3px solid var(--rule); }
+  dt, dd { margin: 0; padding: 12px 0; border-bottom: 1px solid var(--rule-light); }
+  dt { font-family: var(--font-ui); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; }
+  @media (max-width: 560px) {
+    dl { grid-template-columns: 1fr; }
+    dt { border-bottom: 0; padding-bottom: 0; }
+  }
+</style>

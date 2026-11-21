@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Sayfa bulunamadı">
+  <div class="wrap nf">
+    <p class="label">404</p>
+    <h1>Aradığın sayfa bulunamadı.</h1>
+    <p>Yazı kaldırılmış ya da bağlantı hatalı olabilir.</p>
+    <a href="/" class="hl">Ana sayfaya dön →</a>
+  </div>
+</Base>
+
+<style>
+  .nf { max-width: 640px; padding-block: 80px; text-align: center; }
+  h1 { font-family: var(--font-head); font-size: 40px; margin: 8px 0 12px; }
+  a { font-family: var(--font-ui); font-weight: 600; color: var(--accent); }
+</style>

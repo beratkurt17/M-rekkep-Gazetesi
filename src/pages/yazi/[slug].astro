@@ -1,0 +1,164 @@
+---
+import Base from '../../layouts/Base.astro';
+import ShareBar from '../../components/ShareBar.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import { getArticles, usingSampleData } from '../../lib/db';
+import { formatDateTime, readingMinutes, plainExcerpt } from '../../lib/format';
+import type { Article } from '../../lib/types';
+
+export async function getStaticPaths() {
+  const all = await getArticles();
+  return all.map((article, i) => ({
+    params: { slug: article.slug },
+    props: {
+      article,
+      next: all[i + 1] ?? null, // bir önceki (daha eski) yazı
+      more: all.filter((a) => a.id !== article.id).slice(0, 3),
+    },
+  }));
+}
+
+interface Props { article: Article; next: Article | null; more: Article[] }
+const { article: a, next, more } = Astro.props;
+
+const description = a.spot || plainExcerpt(a.body);
+const pageUrl = new URL(`/yazi/${a.slug}`, Astro.site).toString();
+
+const supabaseUrl = usingSampleData ? '' : import.meta.env.PUBLIC_SUPABASE_URL;
+const supabaseKey = usingSampleData ? '' : import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+---
+<Base
+  title={a.title}
+  description={description}
+  image={a.cover_image}
+  type="article"
+  publishedAt={a.published_at}
+  compactHeader
+>
+  <article class="article">
+    <header class="wrap head">
+      {a.label && <span class="label">{a.label}</span>}
+      <h1 class="title">{a.title}</h1>
+      {a.byline && <p class="byline author">{a.byline}</p>}
+      {a.spot && <p class="spot">{a.spot}</p>}
+      <p class="meta">
+        <time datetime={a.published_at}>{formatDateTime(a.published_at)}</time>
+        <span aria-hidden="true"> · </span>
+        {readingMinutes(a.body)} dk okuma
+      </p>
+    </header>
+
+    {a.cover_image && (
+      <figure class="cover">
+        <img src={a.cover_image} alt={a.image_caption ?? ''} loading="eager" />
+        {a.image_caption && <figcaption class="meta">{a.image_caption}</figcaption>}
+      </figure>
+    )}
+
+    <div class="wrap">
+      <div class="body" set:html={a.body} />
+      <ShareBar url={pageUrl} title={a.title} />
+    </div>
+  </article>
+
+  {next && (
+    <aside class="wrap next">
+      <span class="label">Sıradaki yazı</span>
+      <a href={`/yazi/${next.slug}`} class="next-title hl">{next.title}</a>
+    </aside>
+  )}
+
+  {more.length > 0 && (
+    <section class="wrap more" aria-labelledby="diger">
+      <h2 class="section-title" id="diger">Diğer Yazılar</h2>
+      <div class="more-grid">
+        {more.map((m) => <ArticleCard article={m} variant="surmanset" />)}
+      </div>
+    </section>
+  )}
+
+  {supabaseUrl && (
+    <script is:inline define:vars={{ supabaseUrl, supabaseKey, slug: a.slug }}>
+      // Okunma sayacı: aynı tarayıcıda aynı yazı oturum başına bir kez sayılır.
+      try {
+        const k = 'okundu:' + slug;
+        if (!sessionStorage.getItem(k)) {
+          sessionStorage.setItem(k, '1');
+          fetch(supabaseUrl + '/rest/v1/rpc/increment_view', {
+            method: 'POST',
+            headers: {
+              apikey: supabaseKey,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ p_slug: slug }),
+            keepalive: true,
+          }).catch(() => {});
+        }
+      } catch (e) {}
+    </script>
+  )}
+</Base>
+
+<style>
+  .head, .body, .next { max-width: 760px; }
+  .head { padding-top: 40px; display: flex; flex-direction: column; gap: 12px; }
+  .title {
+    margin: 0;
+    font-family: var(--font-head);
+    font-weight: 800;
+    font-size: clamp(32px, 5.5vw, 54px);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .author { margin: 0; font-size: 15px; }
+  .spot {
+    margin: 4px 0 0;
+    font-size: clamp(18px, 2.2vw, 21px);
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+  .head .meta { margin: 6px 0 0; padding-bottom: 20px; border-bottom: 1px solid var(--rule-light); }
+
+  .cover { max-width: 1000px; margin: 32px auto 0; padding-inline: var(--gutter); }
+  .cover img { width: 100%; }
+  .cover figcaption { padding-top: 8px; }
+
+  .body {
+    padding-top: 28px;
+    font-size: 19px;
+    line-height: 1.75;
+  }
+  .body :global(p) { margin: 0 0 1.2em; }
+  .body :global(h2), .body :global(h3) {
+    font-family: var(--font-head);
+    line-height: 1.25;
+    margin: 1.6em 0 0.6em;
+  }
+  .body :global(blockquote) {
+    margin: 1.6em 0;
+    padding-left: 20px;
+    border-left: 3px solid var(--accent);
+    font-style: italic;
+    font-size: 21px;
+    color: var(--ink-2);
+  }
+  .body :global(img) { margin: 1.6em 0; }
+  .body :global(a) { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+
+  .next {
+    margin-top: 48px;
+    padding-block: 24px;
+    border-top: 3px double var(--rule);
+    border-bottom: 1px solid var(--rule-light);
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .next-title { font-family: var(--font-head); font-weight: 700; font-size: 26px; line-height: 1.2; }
+
+  .more { margin-top: 56px; }
+  .more-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 32px;
+  }
+</style>

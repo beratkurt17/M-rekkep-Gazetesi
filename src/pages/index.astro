@@ -1,0 +1,75 @@
+---
+import Base from '../layouts/Base.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import Sidebar from '../components/Sidebar.astro';
+import { getFrontPage, getSettings } from '../lib/db';
+
+const { manset, surmanset, rest, popular } = await getFrontPage();
+const settings = await getSettings();
+---
+<Base>
+  <div class="wrap front">
+    {!manset && (
+      <p class="empty">Henüz yayınlanmış yazı yok.</p>
+    )}
+
+    {manset && (
+      <>
+        <section class="manset-area" aria-label="Manşet">
+          <ArticleCard article={manset} variant="manset" />
+        </section>
+
+        {surmanset.length > 0 && (
+          <section class="surmanset-row" aria-label="Öne çıkanlar">
+            {surmanset.map((a) => <ArticleCard article={a} variant="surmanset" />)}
+          </section>
+        )}
+
+        <div class="columns">
+          <section class="latest" aria-labelledby="son-yazilar">
+            <h2 class="section-title" id="son-yazilar">Son Yazılar</h2>
+            {rest.map((a) => <ArticleCard article={a} variant="list" />)}
+            {rest.length === 0 && <p class="meta">Başka yazı yok.</p>}
+          </section>
+          <Sidebar settings={settings} popular={popular} />
+        </div>
+      </>
+    )}
+  </div>
+</Base>
+
+<style>
+  .front { padding-top: 32px; }
+  .empty { text-align: center; padding: 80px 0; color: var(--ink-3); }
+
+  .manset-area { padding-bottom: 32px; border-bottom: 1px solid var(--rule); }
+
+  .surmanset-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0;
+    padding-block: 28px;
+    border-bottom: 3px double var(--rule);
+  }
+  .surmanset-row > :global(*) { padding-inline: 20px; border-left: 1px solid var(--rule-light); }
+  .surmanset-row > :global(*:first-child) { padding-left: 0; border-left: 0; }
+
+  .columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 48px;
+    padding-top: 32px;
+  }
+
+  @media (max-width: 900px) {
+    .columns { grid-template-columns: 1fr; gap: 40px; }
+  }
+  @media (max-width: 600px) {
+    .surmanset-row { gap: 24px; }
+    .surmanset-row > :global(*) {
+      padding-inline: 0; border-left: 0;
+      padding-top: 24px; border-top: 1px solid var(--rule-light);
+    }
+    .surmanset-row > :global(*:first-child) { padding-top: 0; border-top: 0; }
+  }
+</style>

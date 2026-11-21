@@ -1,0 +1,77 @@
+---
+import type { Article, SiteSettings } from '../lib/types';
+
+interface Props {
+  settings: SiteSettings;
+  popular: Article[];
+}
+const { settings, popular } = Astro.props;
+const note = settings.editor_note;
+const word = settings.daily_word;
+---
+<aside class="sidebar">
+  {note?.text && (
+    <section class="box">
+      <h2 class="section-title">{note.title || 'Editörden'}</h2>
+      <p class="note">{note.text}</p>
+    </section>
+  )}
+
+  {word?.word && (
+    <section class="box">
+      <h2 class="section-title">Günün Kelimesi</h2>
+      <p class="word">{word.word}</p>
+      <p class="meaning">{word.meaning}</p>
+    </section>
+  )}
+
+  {popular.length > 0 && (
+    <section class="box">
+      <h2 class="section-title">Çok Okunanlar</h2>
+      <ol class="popular">
+        {popular.map((a) => (
+          <li>
+            <a href={`/yazi/${a.slug}`} class="hl">{a.title}</a>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )}
+</aside>
+
+<style>
+  .sidebar { display: flex; flex-direction: column; gap: 36px; }
+  .note { margin: 0; font-style: italic; color: var(--ink-2); font-size: 16px; }
+  .word {
+    margin: 0;
+    font-family: var(--font-head);
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .meaning { margin: 6px 0 0; color: var(--ink-2); font-size: 15px; }
+  .popular {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: n;
+  }
+  .popular li {
+    counter-increment: n;
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    align-items: baseline;
+    padding-block: 12px;
+    border-bottom: 1px solid var(--rule-light);
+    font-family: var(--font-head);
+    font-weight: 600;
+    font-size: 17px;
+    line-height: 1.25;
+  }
+  .popular li::before {
+    content: counter(n);
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+</style>

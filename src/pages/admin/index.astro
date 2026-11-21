@@ -1,0 +1,169 @@
+---
+import '../../styles/global.css';
+import '../../styles/admin.css';
+const configured = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
+---
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Yönetim | Mürekkep</title>
+  <link rel="icon" type="image/jpeg" href="/logo.jpg" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@700;800&display=swap" />
+</head>
+<body class="admin">
+  {!configured && (
+    <div class="center-box">
+      <h1>Supabase bağlı değil</h1>
+      <p>Proje kökündeki <code>.env</code> dosyasına <code>PUBLIC_SUPABASE_URL</code> ve
+        <code>PUBLIC_SUPABASE_ANON_KEY</code> değerlerini gir, sonra <code>npm run dev</code>'i yeniden başlat.</p>
+    </div>
+  )}
+
+  <!-- GİRİŞ -->
+  <section id="login" class="center-box" hidden>
+    <img src="/logo.jpg" alt="" width="64" height="64" class="login-logo" />
+    <h1>Yönetim</h1>
+    <form id="login-form">
+      <label>E-posta <input type="email" name="email" required autocomplete="username" /></label>
+      <label>Şifre <input type="password" name="password" required autocomplete="current-password" /></label>
+      <button type="submit" class="btn primary">Giriş yap</button>
+      <p class="error" id="login-error" hidden></p>
+    </form>
+  </section>
+
+  <!-- PANEL -->
+  <div id="app" hidden>
+    <header class="topbar">
+      <a href="/" target="_blank" class="brand">Mürekkep <span>Yönetim</span></a>
+      <nav class="tabs">
+        <button data-view="list" class="tab active">Yazılar</button>
+        <button data-view="settings" class="tab">Site ayarları</button>
+      </nav>
+      <div class="top-actions">
+        <button id="rebuild-btn" class="btn ghost" title="Siteyi şimdi yeniden oluştur">Siteyi güncelle</button>
+        <button id="logout-btn" class="btn ghost">Çıkış</button>
+      </div>
+    </header>
+
+    <!-- YAZI LİSTESİ -->
+    <main id="view-list" class="view">
+      <div class="view-head">
+        <h1>Yazılar</h1>
+        <button id="new-btn" class="btn primary">+ Yeni yazı</button>
+      </div>
+      <div class="table-wrap">
+        <table class="list">
+          <thead><tr><th>Başlık</th><th>Durum</th><th>Yer</th><th>Tarih</th><th></th></tr></thead>
+          <tbody id="list-body"></tbody>
+        </table>
+      </div>
+      <p id="list-empty" class="muted" hidden>Henüz yazı yok. “Yeni yazı” ile başla.</p>
+    </main>
+
+    <!-- YAZI EDİTÖRÜ -->
+    <main id="view-edit" class="view" hidden>
+      <div class="view-head">
+        <button id="back-btn" class="btn ghost">← Yazılar</button>
+        <span id="edit-status" class="pill"></span>
+      </div>
+
+      <form id="edit-form" class="edit-grid">
+        <div class="edit-main">
+          <input name="label" class="in-label" placeholder="Üst etiket (isteğe bağlı) — Öykü, Şiir, Söyleşi…" />
+          <textarea name="title" class="in-title" rows="2" placeholder="Başlık" required></textarea>
+          <input name="byline" class="in-byline" placeholder="Yazar adı (isteğe bağlı — boşsa görünmez)" />
+          <textarea name="spot" class="in-spot" rows="2" placeholder="Spot / kısa özet (isteğe bağlı)"></textarea>
+
+          <div class="toolbar" id="toolbar">
+            <button type="button" data-cmd="bold" title="Kalın"><b>K</b></button>
+            <button type="button" data-cmd="italic" title="İtalik"><i>İ</i></button>
+            <button type="button" data-cmd="h2" title="Ara başlık">H2</button>
+            <button type="button" data-cmd="h3" title="Küçük ara başlık">H3</button>
+            <button type="button" data-cmd="p" title="Normal paragraf">¶</button>
+            <button type="button" data-cmd="blockquote" title="Alıntı">❝</button>
+            <button type="button" data-cmd="ul" title="Liste">• Liste</button>
+            <button type="button" data-cmd="link" title="Bağlantı">Bağlantı</button>
+            <button type="button" data-cmd="image" title="Metne görsel ekle">Görsel</button>
+            <button type="button" data-cmd="removeFormat" title="Biçimi temizle">Temizle</button>
+          </div>
+          <div id="body-editor" class="body-editor" contenteditable="true"></div>
+        </div>
+
+        <aside class="edit-side">
+          <section class="panel">
+            <h2>Yayın</h2>
+            <label>Durum
+              <select name="status">
+                <option value="draft">Taslak</option>
+                <option value="published">Yayında</option>
+              </select>
+            </label>
+            <label>Yayın tarihi
+              <input type="datetime-local" name="published_at" />
+              <small>Boş bırakılırsa yayınlandığı an. İleri tarih verirsen o saatte yayına girer.</small>
+            </label>
+            <label>Ana sayfadaki yeri
+              <select name="placement">
+                <option value="normal">Normal</option>
+                <option value="surmanset">Sürmanşet</option>
+                <option value="manset">Manşet</option>
+              </select>
+              <small>Birden fazla manşet varsa en yenisi gösterilir.</small>
+            </label>
+            <div class="btn-col">
+              <button type="button" id="publish-btn" class="btn primary">Yayınla</button>
+              <button type="button" id="draft-btn" class="btn">Taslak olarak kaydet</button>
+              <button type="button" id="unpublish-btn" class="btn ghost" hidden>Yayından kaldır</button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h2>Kapak görseli</h2>
+            <div id="cover-preview" class="cover-preview"></div>
+            <input type="file" id="cover-file" accept="image/*" />
+            <button type="button" id="cover-remove" class="btn ghost small" hidden>Görseli kaldır</button>
+            <label>Görsel altı yazısı <input name="image_caption" placeholder="Fotoğraf: …" /></label>
+          </section>
+
+          <section class="panel">
+            <h2>Bağlantı</h2>
+            <label>Adres
+              <div class="slug-row"><span>/yazi/</span><input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" /></div>
+              <small>Yayınlandıktan sonra değiştirme; paylaşılan linkler bozulur.</small>
+            </label>
+          </section>
+        </aside>
+      </form>
+    </main>
+
+    <!-- SİTE AYARLARI -->
+    <main id="view-settings" class="view" hidden>
+      <div class="view-head"><h1>Site ayarları</h1></div>
+      <form id="settings-form" class="settings">
+        <section class="panel">
+          <h2>Editörden notu</h2>
+          <label>Başlık <input name="note_title" placeholder="Editörden" /></label>
+          <label>Metin <textarea name="note_text" rows="4" placeholder="Boş bırakılırsa ana sayfada görünmez"></textarea></label>
+        </section>
+        <section class="panel">
+          <h2>Günün kelimesi</h2>
+          <label>Kelime <input name="word" /></label>
+          <label>Anlamı <textarea name="meaning" rows="2"></textarea></label>
+        </section>
+        <button type="submit" class="btn primary">Kaydet</button>
+      </form>
+    </main>
+  </div>
+
+  <input type="file" id="inline-image-file" accept="image/*" hidden />
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script>
+    import { initAdmin } from '../../admin/app';
+    initAdmin();
+  </script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+---
+interface Props { url: string; title: string }
+const { url, title } = Astro.props;
+const enc = encodeURIComponent;
+const whatsapp = `https://wa.me/?text=${enc(`${title} ${url}`)}`;
+const x = `https://x.com/intent/post?text=${enc(title)}&url=${enc(url)}`;
+---
+<div class="share" aria-label="Paylaş">
+  <span class="meta">Paylaş</span>
+  <a href={whatsapp} target="_blank" rel="noopener">WhatsApp</a>
+  <a href={x} target="_blank" rel="noopener">X</a>
+  <button type="button" data-copy={url}>Bağlantıyı kopyala</button>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(btn.dataset.copy!);
+        const old = btn.textContent;
+        btn.textContent = 'Kopyalandı';
+        setTimeout(() => (btn.textContent = old), 1800);
+      } catch {
+        prompt('Bağlantı:', btn.dataset.copy);
+      }
+    });
+  });
+</script>
+
+<style>
+  .share {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule-light);
+  }
+  .share a, .share button {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border: 1px solid var(--rule);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .share a:hover, .share button:hover { background: var(--ink); color: var(--paper); }
+</style>
