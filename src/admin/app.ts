@@ -1,5 +1,8 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { Article, Placement } from '../lib/types';
 import { createEditor, type RichEditor } from './editor';
+import { openPreview } from './preview';
+import { showToast } from '../scripts/toast';
 import {
   slugify, escapeHtml, sanitizeHtml, compressImage,
   isoToLocalInput, localInputToIso, shortDate,
@@ -7,12 +10,14 @@ import {
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
-interface Row {
-  id: string; slug: string; title: string; spot: string | null; body: string;
-  label: string | null; byline: string | null; cover_image: string | null;
-  image_caption: string | null; placement: string; status: string;
-  published_at: string | null; updated_at: string;
+/** Veritabanındaki yazı satırı (panelde taslaklar da görünür). */
+interface Row extends Omit<Article, 'published_at'> {
+  status: 'draft' | 'published';
+  published_at: string | null;
+  updated_at: string;
 }
+type ListRow = Pick<Row, 'id' | 'slug' | 'title' | 'status' | 'placement' | 'published_at' | 'updated_at' | 'label'>;
+type Filter = 'all' | 'draft' | 'published';
 
 let sb: SupabaseClient;
 let editor: RichEditor;
@@ -20,6 +25,11 @@ let current: Row | null = null;   // düzenlenen yazı (yeni yazıda null)
 let coverUrl: string | null = null;
 let slugTouched = false;
 let dirty = false;
+let posts: ListRow[] = [];
+let filter: Filter = 'all';
+
+const form = () => $<HTMLFormElement>('edit-form');
+const field = (name: string) => form().elements.namedItem(name) as HTMLInputElement;
 
 // ---------------------------------------------------------------------
 // Başlangıç ve giriş
@@ -58,6 +68,8 @@ async function enterApp() {
   showView('list');
 }
 
+const confirmLeave = () => !dirty || confirm('Kaydedilmemiş değişiklikler var. Çıkılsın mı?');
+
 // ---------------------------------------------------------------------
 // Arayüz bağlantıları
 // ---------------------------------------------------------------------
@@ -77,44 +89,54 @@ function bindUi() {
   });
 
   $('logout-btn').addEventListener('click', async () => {
-    if (dirty && !confirm('Kaydedilmemiş değişiklikler var. Çıkılsın mı?')) return;
+    if (!confirmLeave()) return;
     await sb.auth.signOut();
     showLogin();
   });
 
   $('rebuild-btn').addEventListener('click', async () => {
     const { error } = await sb.rpc('request_rebuild');
-    toast(error ? 'Güncelleme isteği gönderilemedi: ' + error.message
-                : 'Site yeniden oluşturuluyor — 1-2 dakika içinde yayında.');
+    showToast(error ? 'Güncelleme isteği gönderilemedi: ' + error.message
+                    : 'Site yeniden oluşturuluyor — 1-2 dakika içinde yayında.', 4500);
   });
 
   document.querySelectorAll<HTMLButtonElement>('.tab').forEach((t) =>
-    t.addEventListener('click', () => {
-      if (dirty && !confirm('Kaydedilmemiş değişiklikler var. Devam edilsin mi?')) return;
-      showView(t.dataset.view as 'list' | 'settings');
-    }),
+    t.addEventListener('click', () => { if (confirmLeave()) showView(t.dataset.view as 'list' | 'settings'); }),
+  );
+  document.querySelectorAll<HTMLButtonElement>('.filter').forEach((b) =>
+    b.addEventListener('click', () => { filter = b.dataset.filter as Filter; renderList(); }),
   );
 
   $('new-btn').addEventListener('click', () => openEditor(null));
-  $('back-btn').addEventListener('click', () => {
-    if (dirty && !confirm('Kaydedilmemiş değişiklikler var. Çıkılsın mı?')) return;
-    showView('list');
+  $('back-btn').addEventListener('click', () => { if (confirmLeave()) showView('list'); });
+
+  form().addEventListener('input', () => { dirty = true; setSaveState('Kaydedilmemiş değişiklikler var'); });
+  $('body-editor').addEventListener('input', () => { dirty = true; setSaveState('Kaydedilmemiş değişiklikler var'); });
+  form().addEventListener('submit', (e) => e.preventDefault());
+
+  field('title').addEventListener('input', () => {
+    if (!slugTouched) field('slug').value = slugify(field('title').value);
   });
-
-  const form = $<HTMLFormElement>('edit-form');
-  form.addEventListener('input', () => (dirty = true));
-  $('body-editor').addEventListener('input', () => (dirty = true));
-
-  const title = form.elements.namedItem('title') as HTMLTextAreaElement;
-  const slug = form.elements.namedItem('slug') as HTMLInputElement;
-  title.addEventListener('input', () => { if (!slugTouched) slug.value = slugify(title.value); });
-  slug.addEventListener('input', () => { slugTouched = true; });
-  form.addEventListener('submit', (e) => e.preventDefault());
+  field('slug').addEventListener('input', () => { slugTouched = true; });
 
   $('publish-btn').addEventListener('click', () => save('published'));
   $('draft-btn').addEventListener('click', () => save('draft'));
+  $('preview-btn').addEventListener('click', () => openPreview(collectArticle()));
   $('unpublish-btn').addEventListener('click', () => {
     if (confirm('Yazı yayından kaldırılıp taslağa alınacak. Emin misin?')) save('draft');
+  });
+
+  // Instagram alıntısı: editörde seçili metni (dize sonlarıyla) alana al
+  $('quote-from-selection').addEventListener('mousedown', (e) => e.preventDefault());
+  $('quote-from-selection').addEventListener('click', () => {
+    const sel = getSelection();
+    const area = $('body-editor');
+    const text = sel && sel.rangeCount && area.contains(sel.anchorNode) ? sel.toString().trim() : '';
+    if (!text) { showToast('Önce metinde bir cümle ya da birkaç dize seç.'); return; }
+    field('ig_quote').value = text.replace(/\n{3,}/g, '\n\n');
+    dirty = true;
+    setSaveState('Kaydedilmemiş değişiklikler var');
+    showToast('Alıntı alındı');
   });
 
   $<HTMLInputElement>('cover-file').addEventListener('change', async (e) => {
@@ -151,44 +173,61 @@ function statusOf(r: Pick<Row, 'status' | 'published_at'>): { text: string; cls:
   if (r.published_at && new Date(r.published_at) > new Date()) return { text: 'Planlı', cls: 'scheduled' };
   return { text: 'Yayında', cls: 'live' };
 }
-const PLACEMENT: Record<string, string> = { manset: 'Manşet', surmanset: 'Sürmanşet', normal: '—' };
 
 async function loadList() {
-  const body = $('list-body');
-  body.innerHTML = '<tr><td colspan="5" class="muted">Yükleniyor…</td></tr>';
+  $('post-list').innerHTML = '<li class="muted">Yükleniyor…</li>';
   const { data, error } = await sb
     .from('articles')
     .select('id, slug, title, status, placement, published_at, updated_at, label')
     .order('updated_at', { ascending: false });
-  if (error) { body.innerHTML = ''; toast('Yazılar alınamadı: ' + error.message); return; }
+  if (error) { $('post-list').innerHTML = ''; showToast('Yazılar alınamadı: ' + error.message); return; }
+  posts = data as ListRow[];
+  renderList();
+}
 
-  $('list-empty').hidden = data.length > 0;
-  body.innerHTML = data.map((r) => {
-    const s = statusOf(r as Row);
-    return `<tr data-id="${r.id}">
-      <td class="t">${r.label ? `<span class="label">${escapeHtml(r.label)}</span> ` : ''}
-        <button class="link" data-act="edit">${escapeHtml(r.title)}</button></td>
-      <td><span class="pill ${s.cls}">${s.text}</span></td>
-      <td>${PLACEMENT[r.placement] ?? '—'}</td>
-      <td class="muted">${shortDate(r.published_at ?? r.updated_at)}</td>
-      <td class="row-actions">
-        ${s.cls === 'live' ? `<a href="/yazi/${encodeURIComponent(r.slug)}" target="_blank">Gör</a>` : ''}
-        <button class="link danger" data-act="delete">Sil</button>
-      </td>
-    </tr>`;
+function renderList() {
+  const counts = {
+    all: posts.length,
+    draft: posts.filter((p) => p.status === 'draft').length,
+    published: posts.filter((p) => p.status === 'published').length,
+  };
+  document.querySelectorAll<HTMLElement>('[data-count]').forEach((el) => (el.textContent = String(counts[el.dataset.count as Filter])));
+  document.querySelectorAll<HTMLButtonElement>('.filter').forEach((b) => b.classList.toggle('active', b.dataset.filter === filter));
+
+  const rows = filter === 'all' ? posts : posts.filter((p) => p.status === filter);
+  const empty = $('list-empty');
+  empty.hidden = rows.length > 0;
+  empty.textContent = filter === 'draft' ? 'Taslak yok.' : filter === 'published' ? 'Yayında yazı yok.' : 'Henüz yazı yok. “Yeni yazı” ile başla.';
+
+  $('post-list').innerHTML = rows.map((r) => {
+    const s = statusOf(r);
+    return `<li class="post" data-id="${r.id}">
+      <button class="post-title" data-act="edit">${escapeHtml(r.title)}</button>
+      <div class="post-meta">
+        <span class="pill ${s.cls}">${s.text}</span>
+        ${r.placement === 'manset' ? '<span class="pill">Manşet</span>' : ''}
+        ${r.label ? `<span>${escapeHtml(r.label)}</span>` : ''}
+        <span class="muted">${shortDate(r.published_at ?? r.updated_at)}</span>
+      </div>
+      <div class="post-actions">
+        ${s.cls === 'live' ? `<a href="/yazi/${encodeURIComponent(r.slug)}/" target="_blank">Sitede gör</a>` : ''}
+        <button class="danger" data-act="delete">Sil</button>
+      </div>
+    </li>`;
   }).join('');
 
-  body.querySelectorAll<HTMLButtonElement>('button[data-act]').forEach((b) =>
+  $('post-list').querySelectorAll<HTMLButtonElement>('button[data-act]').forEach((b) =>
     b.addEventListener('click', async () => {
-      const id = b.closest('tr')!.dataset.id!;
+      const li = b.closest<HTMLElement>('li')!;
+      const id = li.dataset.id!;
       if (b.dataset.act === 'edit') {
         const { data: row, error } = await sb.from('articles').select('*').eq('id', id).single();
-        if (error) toast('Yazı açılamadı: ' + error.message); else openEditor(row as Row);
+        if (error) showToast('Yazı açılamadı: ' + error.message); else openEditor(row as Row);
       } else {
-        const title = b.closest('tr')!.querySelector('.t button')!.textContent;
+        const title = li.querySelector('.post-title')!.textContent;
         if (!confirm(`“${title}” kalıcı olarak silinecek. Bu geri alınamaz. Emin misin?`)) return;
         const { error } = await sb.from('articles').delete().eq('id', id);
-        if (error) toast('Silinemedi: ' + error.message); else { toast('Yazı silindi.'); loadList(); }
+        if (error) showToast('Silinemedi: ' + error.message); else { showToast('Yazı silindi'); loadList(); }
       }
     }),
   );
@@ -202,21 +241,20 @@ function openEditor(row: Row | null) {
   coverUrl = row?.cover_image ?? null;
   slugTouched = !!row; // mevcut yazının adresi başlıkla otomatik değişmesin
 
-  const f = $<HTMLFormElement>('edit-form');
-  const set = (n: string, v: string) => ((f.elements.namedItem(n) as HTMLInputElement).value = v);
-  set('label', row?.label ?? '');
-  set('title', row?.title ?? '');
-  set('byline', row?.byline ?? '');
-  set('spot', row?.spot ?? '');
-  set('slug', row?.slug ?? '');
-  set('status', row?.status ?? 'draft');
-  set('placement', row?.placement ?? 'normal');
-  set('published_at', isoToLocalInput(row?.published_at ?? null));
-  set('image_caption', row?.image_caption ?? '');
+  field('title').value = row?.title ?? '';
+  field('spot').value = row?.spot ?? '';
+  field('byline').value = row?.byline ?? '';
+  field('label').value = row?.label ?? '';
+  field('manset').checked = row?.placement === 'manset';
+  field('ig_quote').value = row?.ig_quote ?? '';
+  field('image_caption').value = row?.image_caption ?? '';
+  field('slug').value = row?.slug ?? '';
+  field('published_at').value = isoToLocalInput(row?.published_at ?? null);
   editor.setHtml(row?.body ?? '');
   renderCover();
   renderStatus();
   showView('edit');
+  setSaveState(row ? `Son kayıt: ${shortDate(row.updated_at)}` : 'Henüz kaydedilmedi');
 }
 
 function renderStatus() {
@@ -235,59 +273,84 @@ function renderCover() {
   $('cover-remove').hidden = !coverUrl;
 }
 
-async function save(status: 'draft' | 'published') {
-  const f = $<HTMLFormElement>('edit-form');
-  const get = (n: string) => ((f.elements.namedItem(n) as HTMLInputElement).value ?? '').trim();
-  const orNull = (v: string) => v || null;
+function setSaveState(text: string, kind: '' | 'ok' | 'error' = '') {
+  const el = $('save-state');
+  el.textContent = text;
+  el.className = `save-state ${kind}`;
+}
 
-  const title = get('title');
-  const slug = get('slug') || slugify(title);
-  if (!title) { toast('Başlık boş olamaz.'); return; }
-  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) {
-    toast('Adres sadece küçük harf, rakam ve tire içerebilir.'); return;
+const orNull = (v: string) => (v.trim() ? v.trim() : null);
+
+/** Formdaki (kaydedilmemiş olabilir) hâliyle yazı — önizleme ve kaydetme için. */
+function collectArticle(): Article {
+  const title = field('title').value.trim();
+  return {
+    id: current?.id ?? 'onizleme',
+    slug: field('slug').value.trim() || slugify(title) || 'onizleme',
+    title: title || 'Başlıksız yazı',
+    spot: orNull(field('spot').value),
+    body: sanitizeHtml(editor.getHtml()),
+    label: orNull(field('label').value),
+    byline: orNull(field('byline').value),
+    cover_image: coverUrl,
+    image_caption: orNull(field('image_caption').value),
+    placement: (field('manset').checked ? 'manset' : 'normal') as Placement,
+    published_at: localInputToIso(field('published_at').value) ?? current?.published_at ?? new Date().toISOString(),
+    view_count: 0,
+    ig_quote: orNull(field('ig_quote').value.replace(/\r\n/g, '\n')),
+  };
+}
+
+async function save(status: 'draft' | 'published') {
+  const title = field('title').value.trim();
+  if (!title) { setSaveState('Başlık boş olamaz.', 'error'); field('title').focus(); return; }
+  const a = collectArticle();
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(a.slug)) {
+    setSaveState('Adres sadece küçük harf, rakam ve tire içerebilir.', 'error'); return;
   }
 
-  let publishedAt = localInputToIso(get('published_at'));
+  let publishedAt = localInputToIso(field('published_at').value);
   if (status === 'published' && !publishedAt) publishedAt = new Date().toISOString();
 
   const record = {
-    title,
-    slug,
-    label: orNull(get('label')),
-    byline: orNull(get('byline')),
-    spot: orNull(get('spot')),
-    body: sanitizeHtml(editor.getHtml()),
-    cover_image: coverUrl,
-    image_caption: orNull(get('image_caption')),
-    placement: get('placement') || 'normal',
-    status,
-    published_at: publishedAt,
+    title: a.title, slug: a.slug, spot: a.spot, body: a.body,
+    label: a.label, byline: a.byline, cover_image: a.cover_image, image_caption: a.image_caption,
+    placement: a.placement, ig_quote: a.ig_quote,
+    status, published_at: publishedAt,
   };
 
-  const q = current
+  setSaveState('Kaydediliyor…');
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.action-buttons button');
+  buttons.forEach((b) => (b.disabled = true));
+  const { data, error } = await (current
     ? sb.from('articles').update(record).eq('id', current.id).select('*').single()
-    : sb.from('articles').insert(record).select('*').single();
-  const { data, error } = await q;
+    : sb.from('articles').insert(record).select('*').single());
+  buttons.forEach((b) => (b.disabled = false));
 
+  // Hata: yazılan metin olduğu gibi ekranda kalır, hiçbir alan sıfırlanmaz.
   if (error) {
-    toast(error.code === '23505'
-      ? 'Bu adres başka bir yazıda kullanılıyor; “Bağlantı” bölümünden değiştir.'
-      : 'Kaydedilemedi: ' + error.message);
+    const msg = error.code === '23505'
+      ? 'Bu adres başka bir yazıda kullanılıyor; “Adres” alanını değiştir.'
+      : error.message.includes('ig_quote')
+        ? 'Veritabanında Instagram alıntısı alanı yok. supabase/2026-11-21-instagram-alintisi.sql dosyasını çalıştır.'
+        : 'Kaydedilemedi: ' + error.message;
+    setSaveState(`${msg} Metnin ekranda duruyor; tekrar deneyebilirsin.`, 'error');
     return;
   }
 
   current = data as Row;
   dirty = false;
-  (f.elements.namedItem('published_at') as HTMLInputElement).value = isoToLocalInput(current.published_at);
   slugTouched = true;
-  editor.setHtml(current.body);
+  field('published_at').value = isoToLocalInput(current.published_at);
   renderStatus();
 
   const s = statusOf(current);
-  toast(
-    status === 'draft' ? 'Taslak kaydedildi.'
+  const time = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  setSaveState(
+    status === 'draft' ? `Taslak kaydedildi · ${time}. Sitede görünmez.`
       : s.cls === 'scheduled' ? `Planlandı: ${shortDate(current.published_at)} itibarıyla yayına girecek.`
-      : 'Yayınlandı. Site 1-2 dakika içinde güncellenecek.',
+      : `Yayımlandı · ${time}. Site 1-2 dakika içinde güncellenir.`,
+    'ok',
   );
 }
 
@@ -295,8 +358,8 @@ async function save(status: 'draft' | 'published') {
 // Görseller
 // ---------------------------------------------------------------------
 async function uploadImage(file: File): Promise<string | null> {
-  if (!file.type.startsWith('image/')) { toast('Lütfen bir görsel dosyası seç.'); return null; }
-  toast('Görsel yükleniyor…');
+  if (!file.type.startsWith('image/')) { showToast('Lütfen bir görsel dosyası seç.'); return null; }
+  showToast('Görsel yükleniyor…');
   try {
     const blob = await compressImage(file);
     const d = new Date();
@@ -306,10 +369,10 @@ async function uploadImage(file: File): Promise<string | null> {
       cacheControl: '31536000',
     });
     if (error) throw error;
-    toast('Görsel yüklendi.');
+    showToast('Görsel yüklendi');
     return sb.storage.from('gorseller').getPublicUrl(path).data.publicUrl;
   } catch (err) {
-    toast('Görsel yüklenemedi: ' + (err as Error).message);
+    showToast('Görsel yüklenemedi: ' + (err as Error).message, 4500);
     return null;
   }
 }
@@ -331,7 +394,7 @@ function pickInlineImage(): Promise<string | null> {
 // ---------------------------------------------------------------------
 async function loadSettings() {
   const { data, error } = await sb.from('site_settings').select('key, value');
-  if (error) { toast('Ayarlar alınamadı: ' + error.message); return; }
+  if (error) { showToast('Ayarlar alınamadı: ' + error.message); return; }
   const s = Object.fromEntries(data.map((r) => [r.key, r.value]));
   const f = $<HTMLFormElement>('settings-form');
   const set = (n: string, v: string) => ((f.elements.namedItem(n) as HTMLInputElement).value = v ?? '');
@@ -345,19 +408,10 @@ async function saveSettings(e: Event) {
   e.preventDefault();
   const f = new FormData(e.target as HTMLFormElement);
   const v = (n: string) => String(f.get(n) ?? '').trim();
+  const now = new Date().toISOString();
   const { error } = await sb.from('site_settings').upsert([
-    { key: 'editor_note', value: { title: v('note_title'), text: v('note_text') }, updated_at: new Date().toISOString() },
-    { key: 'daily_word', value: { word: v('word'), meaning: v('meaning') }, updated_at: new Date().toISOString() },
+    { key: 'editor_note', value: { title: v('note_title'), text: v('note_text') }, updated_at: now },
+    { key: 'daily_word', value: { word: v('word'), meaning: v('meaning') }, updated_at: now },
   ]);
-  toast(error ? 'Kaydedilemedi: ' + error.message : 'Ayarlar kaydedildi. Site 1-2 dakika içinde güncellenecek.');
-}
-
-// ---------------------------------------------------------------------
-let toastTimer: number | undefined;
-function toast(msg: string) {
-  const t = $('toast');
-  t.textContent = msg;
-  t.hidden = false;
-  clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => (t.hidden = true), 4500);
+  showToast(error ? 'Kaydedilemedi: ' + error.message : 'Ayarlar kaydedildi. Site 1-2 dakika içinde güncellenir.', 4500);
 }

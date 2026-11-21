@@ -13,6 +13,8 @@ export interface Article {
   placement: Placement;
   published_at: string;
   view_count: number;
+  /** Editörün hikâye kartı için seçtiği alıntı (dize sonları \n ile korunur). */
+  ig_quote: string | null;
 }
 
 export interface SiteSettings {

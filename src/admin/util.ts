@@ -111,9 +111,11 @@ export function sanitizeHtml(html: string): string {
   };
   walk(root);
 
-  // Boş paragrafları at
+  // Paragraf sonundaki fazla <br>'leri ve boş paragrafları at
+  // (yalnızca <br> içeren boş satırlar düzyazının şiir sanılmasına yol açmasın)
   root.querySelectorAll('p').forEach((p) => {
-    if (!p.textContent?.trim() && !p.querySelector('img,br')) p.remove();
+    while (p.lastChild?.nodeName === 'BR') p.lastChild.remove();
+    if (!p.textContent?.trim() && !p.querySelector('img')) p.remove();
   });
   return root.innerHTML.trim();
 }

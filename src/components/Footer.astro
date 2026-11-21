@@ -1,21 +1,22 @@
 ---
 const year = new Date().getFullYear();
 ---
-<footer class="footer">
+<footer class="site-footer">
   <div class="wrap inner">
     <a href="/" class="name">Mürekkep</a>
     <nav class="links" aria-label="Alt menü">
-      <a href="/arsiv">Arşiv</a>
-      <a href="/kunye">Künye</a>
+      <a href="/arsiv/">Arşiv</a>
+      <a href="/kunye/">Künye</a>
     </nav>
-    <p class="meta">© {year} Mürekkep Gazetesi. Tüm hakları saklıdır.</p>
+    <p class="copy">© {year} Mürekkep Gazetesi</p>
   </div>
 </footer>
 
 <style>
-  .footer {
-    margin-top: 64px;
-    border-top: 3px double var(--rule);
+  .site-footer {
+    margin-top: 56px;
+    border-top: 1px solid var(--ink);
+    box-shadow: 0 -4px 0 -2.5px var(--ink) inset; /* ince ikinci çizgi hissi */
     background: var(--paper-2);
   }
   .inner {
@@ -23,15 +24,12 @@ const year = new Date().getFullYear();
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    padding-block: 28px;
+    gap: 8px 16px;
+    padding-block: 24px calc(24px + env(safe-area-inset-bottom, 0px));
   }
-  .name { font-family: var(--font-head); font-weight: 800; font-size: 26px; }
-  .links {
-    display: flex; gap: 20px;
-    font-family: var(--font-ui); font-size: 13px; font-weight: 600;
-  }
+  .name { font-family: var(--font-brand); font-size: 28px; line-height: 1; }
+  .links { display: flex; gap: 20px; font-family: var(--font-ui); font-size: 15px; font-weight: 600; }
   .links a { display: inline-flex; align-items: center; min-height: 44px; }
   .links a:hover { color: var(--accent); }
-  .meta { margin: 0; width: 100%; }
+  .copy { margin: 0; width: 100%; font-family: var(--font-ui); font-size: 13px; color: var(--ink-3); }
 </style>

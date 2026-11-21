@@ -1,0 +1,159 @@
+/* =====================================================================
+   YAZI SAYFASI (.art) — okuma sütunu
+   Markup: src/lib/render.ts → articleHtml()
+   Başlık, spot, yazar, tarih, gövde ve paylaşım AYNI sol kenarı izler.
+   ===================================================================== */
+
+.art {
+  /* Masaüstünde gövde ~62–68 karakter */
+  max-width: 66ch;
+  margin-inline: auto;
+  padding-top: 20px;
+  font-size: 19px;
+}
+
+.art-head { display: flex; flex-direction: column; gap: 10px; }
+
+.art-label {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.art-title {
+  margin: 0;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: clamp(30px, 7vw, 46px);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.art-spot {
+  margin: 0;
+  font-size: clamp(17px, 2.2vw, 20px);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.art-byline {
+  margin: 2px 0 0;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.art-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule-light);
+}
+.art-meta { margin: 0; font-family: var(--font-ui); font-size: 13.5px; color: var(--ink-3); }
+
+.art-actions { display: flex; gap: 8px; }
+.art-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.art-btn:hover { background: var(--paper-2); }
+.art-btn[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
+
+.art-cover { margin: 20px 0 0; }
+.art-cover img { width: 100%; }
+.art-cover figcaption {
+  padding-top: 8px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+/* ---------- Gövde ---------- */
+.art-body {
+  padding-top: 22px;
+  font-family: var(--font-body);
+  font-size: var(--read-size, 18px);
+  line-height: 1.72;
+}
+@media (min-width: 768px) {
+  .art-body { font-size: var(--read-size, 19px); }
+}
+.art-body p { margin: 0 0 1.1em; }
+.art-body h2, .art-body h3 { font-family: var(--font-head); line-height: 1.25; margin: 1.6em 0 0.6em; }
+.art-body blockquote {
+  margin: 1.5em 0;
+  padding-left: 18px;
+  border-left: 2px solid var(--accent);
+  font-style: italic;
+  color: var(--ink-2);
+}
+.art-body img { margin: 1.5em 0; }
+.art-body a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Şiir: dizeler <br>, kıtalar ayrı paragraf — kıta boşluğu belirgin */
+.art-body.is-poem p { margin-bottom: 1.5em; }
+
+/* Uzun düzyazı açılışında büyük baş harf */
+.art-body.dropcap > p:first-child::first-letter {
+  float: left;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 3.6em;
+  line-height: 0.84;
+  padding: 0.07em 0.08em 0 0;
+  color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .art { font-size: 18px; padding-top: 16px; }
+}
+
+/* ---------- Okuma modu araç çubuğu ---------- */
+.reading-bar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) var(--gutter) 10px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule-light);
+}
+.reading-bar[hidden] { display: none; }
+.reading-bar button {
+  min-height: 44px;
+  min-width: 52px;
+  padding: 0 14px;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.reading-bar .rb-exit { background: var(--ink); color: var(--paper); }
+/* Altta boşluk: öneriler/alt bilgi gizlenince sayfa kısalıp kaydırma konumu
+   kırpılmasın (mod değişirken sıçrama olmasın); son satırlar da rahat okunur. */
+html.is-reading .art {
+  padding-top: calc(72px + env(safe-area-inset-top, 0px));
+  padding-bottom: 60vh;
+}

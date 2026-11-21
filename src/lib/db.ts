@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Article, SiteSettings } from './types';
+import type { Article, Placement, SiteSettings } from './types';
 import { ORNEK_YAZILAR, ORNEK_AYARLAR } from './ornek-veri';
 
 const url = import.meta.env.PUBLIC_SUPABASE_URL;
@@ -13,12 +13,28 @@ const supabase = usingSampleData ? null : createClient(url, key, {
   auth: { persistSession: false },
 });
 
-const FIELDS =
-  'id, slug, title, spot, body, label, byline, cover_image, image_caption, placement, published_at, view_count';
+/** Veritabanı satırını Article'a çevirir; sonradan eklenen alanlar eski satırlarda boş olabilir. */
+function toArticle(r: Record<string, unknown>): Article {
+  return {
+    id: String(r.id),
+    slug: String(r.slug),
+    title: String(r.title),
+    spot: (r.spot as string) ?? null,
+    body: (r.body as string) ?? '',
+    label: (r.label as string) ?? null,
+    byline: (r.byline as string) ?? null,
+    cover_image: (r.cover_image as string) ?? null,
+    image_caption: (r.image_caption as string) ?? null,
+    placement: ((r.placement as Placement) ?? 'normal'),
+    published_at: String(r.published_at),
+    view_count: Number(r.view_count ?? 0),
+    ig_quote: (r.ig_quote as string) ?? null,
+  };
+}
 
 let cache: Article[] | null = null;
 
-/** Yayındaki tüm yazılar, en yeniden eskiye. Derleme sırasında bir kez çekilir. */
+/** Yayındaki tüm yazılar, en yeniden eskiye. */
 export async function getArticles(): Promise<Article[]> {
   // Derlemede tek seferlik çekim yeterli; yerel sunucuda (dev) her istekte taze veri gelsin.
   if (cache && !import.meta.env.DEV) return cache;
@@ -30,10 +46,10 @@ export async function getArticles(): Promise<Article[]> {
   // RLS sadece yayındaki ve tarihi gelmiş yazıları döndürür.
   const { data, error } = await supabase
     .from('articles')
-    .select(FIELDS)
+    .select('*')
     .order('published_at', { ascending: false });
   if (error) throw new Error(`Yazılar alınamadı: ${error.message}`);
-  cache = (data ?? []) as Article[];
+  cache = (data ?? []).map(toArticle);
   return cache;
 }
 
@@ -44,15 +60,14 @@ export async function getSettings(): Promise<SiteSettings> {
   return Object.fromEntries((data ?? []).map((r) => [r.key, r.value])) as SiteSettings;
 }
 
-/** Ana sayfa düzeni: manşet, sürmanşetler ve geri kalanlar. */
+/**
+ * Ana sayfa: manşet (editör seçtiyse en yeni manşet, yoksa en son yazı)
+ * ve manşet dışındaki yazılar.
+ */
 export async function getFrontPage() {
   const all = await getArticles();
-  const manset = all.find((a) => a.placement === 'manset') ?? all[0];
-  const surmanset = all
-    .filter((a) => a.placement === 'surmanset' && a.id !== manset?.id)
-    .slice(0, 4);
-  const used = new Set([manset?.id, ...surmanset.map((a) => a.id)]);
-  const rest = all.filter((a) => !used.has(a.id));
+  const lead = all.find((a) => a.placement === 'manset') ?? all[0] ?? null;
+  const latest = all.filter((a) => a.id !== lead?.id);
   const popular = [...all].sort((a, b) => b.view_count - a.view_count).slice(0, 5);
-  return { manset, surmanset, rest, popular };
+  return { lead, latest, popular };
 }

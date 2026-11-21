@@ -1,28 +1,26 @@
 /* =====================================================================
-   MÜREKKEP — ORTAK STİL
+   MÜREKKEP — ORTAK STİL (renkler, yazı tipleri, temel öğeler)
    ===================================================================== */
 
 :root {
-  /* Eski gazete kâğıdı + sıcak baskı mürekkebi.
-     Kontrast (WCAG): ink 15:1, ink-2 9:1, ink-3 4.9:1 — hepsi okunabilirlik sınırının üstünde. */
-  --paper: #efe7d6;
-  --paper-2: #e6dcc6;
-  --ink: #1d1a16;
-  --ink-2: #463f36;
-  --ink-3: #6b6255;
-  --rule: #1d1a16;
-  --rule-light: #cfc3a9;
-  --accent: #7a1f1f;
+  /* Mat koyu krem zemin, mürekkep siyahı, koyu bordo.
+     Kontrast (WCAG, zemine karşı): ink 13:1, ink-2 8.6:1, ink-3 5.3:1, accent 7.3:1 */
+  --paper: #e8e0d0;
+  --paper-2: #ddd4c3;
+  --ink: #25221f;
+  --ink-2: #47423c;
+  --ink-3: #5f584f;
+  --rule: #25221f;
+  --rule-light: #c6bba6;
+  --accent: #742f38;
 
-  /* Kâğıt dokusu: çok hafif gren (göze batmaz, "basılı" hissi verir) */
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .18 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-
-  --font-head: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  --font-body: 'Lora', Georgia, serif;
-  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-brand: 'Gloock', 'Playfair Display', Georgia, serif;
+  --font-head: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-body: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   --wrap: 1200px;
-  --gutter: clamp(16px, 4vw, 32px);
+  --gutter: clamp(18px, 4vw, 32px);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -31,7 +29,7 @@ html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
-  background: var(--paper) var(--grain);
+  background: var(--paper);
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 17px;
@@ -40,9 +38,8 @@ body {
 }
 
 img { max-width: 100%; height: auto; display: block; }
-
 a { color: inherit; text-decoration: none; }
-a:hover .hl, a.hl:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+button { font: inherit; color: inherit; }
 
 .wrap {
   max-width: var(--wrap);
@@ -50,40 +47,16 @@ a:hover .hl, a.hl:hover { text-decoration: underline; text-decoration-thickness:
   padding-inline: var(--gutter);
 }
 
-/* ---------- Ortak tipografi parçaları ---------- */
-
-.label {
-  font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
-.meta {
-  font-family: var(--font-ui);
-  font-size: 12px;
-  color: var(--ink-3);
-  letter-spacing: 0.02em;
-}
-
-.byline {
-  font-family: var(--font-ui);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-2);
-}
-
+/* Bölüm başlığı: ince çizgi + küçük harf aralıklı etiket */
 .section-title {
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
   font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  margin: 0 0 16px;
-  padding-top: 10px;
-  border-top: 3px solid var(--rule);
 }
 
 .visually-hidden {
@@ -92,3 +65,27 @@ a:hover .hl, a.hl:hover { text-decoration: underline; text-decoration-thickness:
 }
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Geri bildirim mesajı (ör. "Bağlantı kopyalandı") */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 100;
+  max-width: calc(100vw - 32px);
+  padding: 12px 18px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 4px;
+}
+.toast[hidden] { display: none; }
+
+/* ---------- Okuma modu: menü, öneriler ve paylaşım çekilir ---------- */
+html.is-reading .site-header,
+html.is-reading .site-footer,
+html.is-reading .reading-hide,
+html.is-reading [data-action='share'] { display: none !important; }

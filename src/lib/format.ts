@@ -1,3 +1,5 @@
+// Tarih ve metin yardımcıları (sunucu + tarayıcı ortak).
+
 const tz = 'Europe/Istanbul';
 
 export function formatDate(iso: string): string {
@@ -13,45 +15,84 @@ export function formatDateTime(iso: string): string {
   });
 }
 
-export function todayLong(): string {
-  return new Date().toLocaleDateString('tr-TR', {
+export function todayLong(date = new Date()): string {
+  return date.toLocaleDateString('tr-TR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: tz,
   });
 }
 
-/** Dakika cinsinden okuma süresi (HTML etiketleri hariç). */
+// ---------------------------------------------------------------------
+// HTML → düz metin
+// ---------------------------------------------------------------------
+const ENTITIES: Record<string, string> = {
+  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ',
+};
+
+export function decodeEntities(s: string): string {
+  return s.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (m, e: string) => {
+    if (e[0] === '#') {
+      const n = e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+      return Number.isFinite(n) ? String.fromCodePoint(n) : m;
+    }
+    return ENTITIES[e.toLowerCase()] ?? m;
+  });
+}
+
+/** Satır sonları (\n) ve paragraf/kıta boşlukları (\n\n) korunarak düz metin. */
+export function htmlToText(html: string): string {
+  return decodeEntities(
+    html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(p|h2|h3|li|blockquote|figure)>/gi, '\n\n')
+      .replace(/<[^>]*>/g, ''),
+  )
+    .replace(/[ \t]+/g, ' ')
+    .replace(/ *\n */g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/** Paragraf içinde metin–<br>–metin varsa şiir kabul edilir (dizeler alt alta). */
+export function isPoem(html: string): boolean {
+  return /[^>\s]\s*<br\s*\/?>\s*[^<\s]/i.test(html);
+}
+
 export function readingMinutes(html: string): number {
-  const words = html.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter(Boolean).length;
+  const words = htmlToText(html).split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.round(words / 200));
 }
 
-/** İlk paragrafı uzun düzyazı ile başlıyorsa true (büyük baş harf için; şiirde kullanılmaz). */
-export function hasLongOpening(html: string, minChars = 140): boolean {
-  const first = html.match(/^\s*<p[^>]*>([\s\S]*?)<\/p>/i);
-  if (!first || /<br\s*\/?>/i.test(first[1])) return false;
-  return first[1].replace(/<[^>]*>/g, '').trim().length >= minChars;
-}
-
-/**
- * Kapak alıntısı: metnin ilk cümlesi (çok uzunsa kelime sınırında kesilir).
- * Şiirde dize sonları korunur ("/" ile).
- */
-export function pullQuote(html: string, max = 150): string | null {
-  const text = html
-    .replace(/<br\s*\/?>/gi, ' / ')
-    .replace(/<\/p>\s*<p[^>]*>/gi, ' ')
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (!text) return null;
-  const sentence = text.match(/^.+?[.!?…](?=\s|$)/)?.[0] ?? text;
-  if (sentence.length <= max) return sentence;
-  const cut = sentence.slice(0, max);
-  return cut.slice(0, cut.lastIndexOf(' ')).replace(/[,;:\s/]+$/, '') + '…';
-}
-
-/** Meta açıklaması için düz metin özet. */
+/** Meta açıklaması / akış özeti için tek satırlık düz metin. */
 export function plainExcerpt(html: string, max = 160): string {
-  const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  return text.length > max ? text.slice(0, max - 1).trimEnd() + '…' : text;
+  const text = htmlToText(html).replace(/\s+/g, ' ');
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  return cut.slice(0, cut.lastIndexOf(' ')).replace(/[,;:\s]+$/, '') + '…';
+}
+
+/** Şiirin ilk n dizesi (metinden aynen alınır). */
+export function poemLines(html: string, n: number): string[] {
+  return htmlToText(html).split('\n').map((l) => l.trim()).filter(Boolean).slice(0, n);
+}
+
+/** İlk paragraf uzun düzyazı ise true (büyük baş harf için). Şiirde hiç kullanılmaz. */
+export function hasLongOpening(html: string, minChars = 140): boolean {
+  if (isPoem(html)) return false;
+  const first = html.match(/^\s*<p[^>]*>([\s\S]*?)<\/p>/i);
+  return !!first && htmlToText(first[1]).length >= minChars;
+}
+
+export type Excerpt =
+  | { kind: 'spot' | 'prose'; text: string }
+  | { kind: 'poem'; lines: string[] };
+
+/** Akıştaki kısa metin: spot → (şiirse) ilk iki dize → metnin girişi. */
+export function feedExcerpt(a: { spot: string | null; body: string }): Excerpt | null {
+  if (a.spot?.trim()) return { kind: 'spot', text: a.spot.trim() };
+  if (isPoem(a.body)) {
+    const lines = poemLines(a.body, 2);
+    return lines.length ? { kind: 'poem', lines } : null;
+  }
+  const text = plainExcerpt(a.body, 220);
+  return text ? { kind: 'prose', text } : null;
 }

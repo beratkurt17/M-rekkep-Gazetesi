@@ -50,6 +50,9 @@ create table if not exists public.articles (
   updated_at    timestamptz not null default now()
 );
 
+-- Sonradan eklenen alanlar (mevcut tabloya da eklenir)
+alter table public.articles add column if not exists ig_quote text; -- hikâye kartı alıntısı
+
 create index if not exists articles_published_idx
   on public.articles (status, published_at desc);
 

@@ -1,0 +1,94 @@
+/* =====================================================================
+   AKIŞ ÖĞESİ (.fi) — ana sayfa, öneriler ve panel önizlemesi
+   Markup: src/lib/render.ts → feedItemHtml()
+   ===================================================================== */
+
+.feed { display: flex; flex-direction: column; }
+
+/* Ayrı yazılar arasında 20–28px boşluk + tam sütun genişliğinde ince ayraç.
+   Ayraç sadece yazılar ARASINDA; bir yazının başlığı ile imzasının arasına girmez. */
+.fi {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding-block: 22px;
+}
+.feed > .fi + .fi { border-top: 1px solid var(--rule-light); }
+
+/* Yazı içi öğeler arası 6–10px */
+.fi-text { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+.fi-title {
+  margin: 0;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 21px;
+  line-height: 1.22;
+  letter-spacing: -0.005em;
+  text-wrap: pretty;
+}
+/* Öğenin tamamı dokunulabilir (telefonda rahat hedef) */
+.fi-title a::after { content: ''; position: absolute; inset: 0; }
+.fi:hover .fi-title a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+.fi-byline {
+  margin: -2px 0 0;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.fi-excerpt {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.fi-excerpt.is-poem { display: block; font-style: italic; }
+
+.fi-meta {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.fi-label {
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Küçük görsel: yazının kendi sınırları içinde, sağda */
+.fi--img { grid-template-columns: minmax(0, 1fr) 88px; column-gap: 16px; align-items: start; }
+.fi--img .fi-media { order: 2; }
+.fi-media img { width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--paper-2); }
+
+@media (min-width: 640px) {
+  .fi-title { font-size: 22px; }
+  .fi--img { grid-template-columns: minmax(0, 1fr) 132px; column-gap: 20px; }
+  .fi--img .fi-media img { aspect-ratio: 4 / 3; }
+}
+
+/* ---------- Manşet ---------- */
+.fi--lead { padding-top: 0; gap: 14px; }
+.fi--lead.fi--img { grid-template-columns: minmax(0, 1fr); }
+.fi--lead .fi-media { order: 0; }
+.fi--lead .fi-media img { aspect-ratio: 3 / 2; }
+.fi--lead .fi-text { gap: 10px; }
+.fi--lead .fi-title {
+  font-size: clamp(30px, 7.8vw, 48px);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.fi--lead .fi-byline { font-size: 15px; }
+.fi--lead .fi-excerpt { font-size: 18px; -webkit-line-clamp: 4; }

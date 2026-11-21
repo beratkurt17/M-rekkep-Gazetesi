@@ -1,81 +1,101 @@
 ---
 import Base from '../layouts/Base.astro';
-import ArticleCard from '../components/ArticleCard.astro';
 import Sidebar from '../components/Sidebar.astro';
 import { getFrontPage, getSettings } from '../lib/db';
+import { feedItemHtml } from '../lib/render';
 
-const { manset, surmanset, rest, popular } = await getFrontPage();
+const { lead, latest, popular } = await getFrontPage();
 const settings = await getSettings();
+
+// Masaüstünde ilk birkaç yazı manşetin sağında; telefonda hepsi tek akış.
+const SIDE_COUNT = 4;
+const side = latest.slice(0, SIDE_COUNT);
+const rest = latest.slice(SIDE_COUNT);
 ---
 <Base>
-  <div class="wrap front">
-    {!manset && (
-      <p class="empty">Henüz yayınlanmış yazı yok.</p>
-    )}
+  <div class="wrap home">
+    {!lead && <p class="empty">Henüz yayımlanmış yazı yok.</p>}
 
-    {manset && (
+    {lead && (
       <>
-        <section class="manset-area" aria-label="Manşet">
-          <ArticleCard article={manset} variant="manset" />
-        </section>
-
-        {surmanset.length > 0 && (
-          <section class="surmanset-row" aria-label="Öne çıkanlar">
-            {surmanset.map((a) => <ArticleCard article={a} variant="surmanset" />)}
+        <div class="home-top">
+          <section class="home-lead" aria-label="Manşet">
+            <div class="feed" set:html={feedItemHtml(lead, { lead: true })} />
           </section>
-        )}
 
-        <div class="columns">
-          <section class="latest" aria-labelledby="son-yazilar">
-            <h2 class="section-title" id="son-yazilar">Son Yazılar</h2>
-            {rest.map((a) => <ArticleCard article={a} variant="list" />)}
-            {rest.length === 0 && <p class="meta">Başka yazı yok.</p>}
-          </section>
+          {side.length > 0 && (
+            <section class="home-latest" aria-labelledby="son-yazilar">
+              <h2 class="section-title" id="son-yazilar">Son Yazılar</h2>
+              <div class="feed" set:html={side.map((a) => feedItemHtml(a)).join('')} />
+            </section>
+          )}
+        </div>
+
+        <div class="home-more">
+          {rest.length > 0 && (
+            <section class="home-feed" aria-label="Önceki yazılar">
+              <h2 class="section-title desktop-only">Önceki Yazılar</h2>
+              <div class="feed" set:html={rest.map((a) => feedItemHtml(a)).join('')} />
+            </section>
+          )}
           <Sidebar settings={settings} popular={popular} />
         </div>
       </>
     )}
   </div>
+
+  <script is:inline>
+    // Okur bir yazıdan geri döndüğünde akışta kaldığı yere dönsün
+    // (tarayıcı geri önbelleği çalışmazsa yedek).
+    (function () {
+      var KEY = 'murekkep:akis-konum';
+      try {
+        var nav = performance.getEntriesByType('navigation')[0];
+        var y = Number(sessionStorage.getItem(KEY));
+        if (nav && nav.type === 'back_forward' && y > 0) {
+          addEventListener('load', function () { if (scrollY < 10) scrollTo(0, y); });
+        }
+        addEventListener('pagehide', function () { sessionStorage.setItem(KEY, String(scrollY)); });
+      } catch (e) {}
+    })();
+  </script>
 </Base>
 
 <style>
-  .front { padding-top: 32px; }
+  .home { padding-top: 20px; }
   .empty { text-align: center; padding: 80px 0; color: var(--ink-3); }
 
-  .manset-area { padding-bottom: 32px; border-bottom: 1px solid var(--rule); }
+  .home-latest { margin-top: 6px; }
+  .home-latest .section-title { margin-bottom: 0; }
 
-  /* Sürmanşet: eşit sütunlar, aralarında ince dikey çizgi (gazete sütunu) */
-  .surmanset-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 40px;
-    padding-block: 28px;
-    border-bottom: 3px double var(--rule);
-  }
-  .surmanset-row > :global(*) { position: relative; }
-  .surmanset-row > :global(* + *)::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: -20px;
-    border-left: 1px solid var(--rule-light);
-  }
+  /* Telefonda "Önceki Yazılar" başlığı yok; akış kesintisiz sürer */
+  .desktop-only { display: none; }
+  .home-feed .feed > :global(.fi:first-child) { border-top: 1px solid var(--rule-light); }
 
-  .columns {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
-    gap: 48px;
-    padding-top: 32px;
-  }
+  .home-more { display: grid; gap: 40px; }
 
-  @media (max-width: 900px) {
-    .columns { grid-template-columns: 1fr; gap: 40px; }
-  }
-  @media (max-width: 600px) {
-    .surmanset-row { gap: 0; padding-block: 8px; }
-    .surmanset-row > :global(*) { padding-block: 18px; }
-    .surmanset-row > :global(* + *) { border-top: 1px solid var(--rule-light); }
-    .surmanset-row > :global(* + *)::before { display: none; }
+  @media (min-width: 960px) {
+    .home { padding-top: 24px; }
+    .home-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+      gap: 0 28px;
+      align-items: start;
+    }
+    .home-latest {
+      margin-top: 0;
+      padding-left: 28px;
+      border-left: 1px solid var(--rule-light);
+    }
+    .home-latest .section-title { border-top-width: 0; padding-top: 0; }
+    .home-latest :global(.fi:first-child) { padding-top: 14px; }
+
+    .home-more {
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 56px;
+      margin-top: 36px;
+    }
+    .desktop-only { display: block; }
+    .home-feed .feed > :global(.fi:first-child) { border-top: 0; }
   }
 </style>

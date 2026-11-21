@@ -1,80 +1,206 @@
 ---
+// Gazete imzası: masaüstünde [tarih | Mürekkep | Arşiv · Künye],
+// telefonda [menü | Mürekkep]. Altında biri kalın biri ince iki çizgi.
+// compact: yazı sayfalarında daha kısa başlık.
 import { todayLong } from '../lib/format';
 
 interface Props { compact?: boolean }
 const { compact = false } = Astro.props;
+const today = todayLong();
 ---
-<header class:list={['masthead', { compact }]}>
-  <div class="wrap">
-    <div class="topline">
-      <span class="meta">{todayLong()}</span>
-      <span class="meta tagline">Edebiyat · Kültür · Sanat</span>
-    </div>
+<header class:list={['site-header', { compact }]}>
+  <div class="wrap mh">
+    <details class="mh-menu">
+      <summary aria-label="Menü">
+        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 6.5h18M3 12h18M3 17.5h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+      </summary>
+      <nav class="mh-panel" aria-label="Menü">
+        <p class="mh-panel-date" data-today>{today}</p>
+        <a href="/">Ana sayfa</a>
+        <a href="/arsiv/">Arşiv</a>
+        <a href="/kunye/">Künye</a>
+      </nav>
+    </details>
 
-    <a href="/" class="brand" aria-label="Mürekkep Gazetesi ana sayfa">
-      <img src="/logo.jpg" alt="" width="56" height="56" class="logo" />
-      <span class="wordmark">Mürekkep</span>
+    <p class="mh-date" data-today>{today}</p>
+
+    <a href="/" class="mh-brand" aria-label="Mürekkep — ana sayfa">
+      <img src="/logo.jpg" alt="" width="44" height="44" class="mh-seal" />
+      <span class="mh-titles">
+        <span class="mh-name">Mürekkep</span>
+        <span class="mh-sub">Edebiyat gazetesi</span>
+      </span>
     </a>
 
-    <nav class="nav" aria-label="Ana menü">
-      <a href="/">Ana Sayfa</a>
-      <a href="/arsiv">Arşiv</a>
-      <a href="/kunye">Künye</a>
+    <nav class="mh-links" aria-label="Site">
+      <a href="/arsiv/">Arşiv</a>
+      <a href="/kunye/">Künye</a>
     </nav>
   </div>
+  <div class="wrap"><div class="mh-rules" aria-hidden="true"></div></div>
 </header>
 
+<script>
+  // Tarih: sayfa saatlik derlendiği için ziyaret anındaki tarihle güncellenir.
+  const today = new Date().toLocaleDateString('tr-TR', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Istanbul',
+  });
+  document.querySelectorAll('[data-today]').forEach((el) => (el.textContent = today));
+
+  // Mobil menü: dışarı dokununca ya da Esc ile kapanır.
+  const menu = document.querySelector<HTMLDetailsElement>('.mh-menu');
+  if (menu) {
+    document.addEventListener('click', (e) => {
+      if (menu.open && !menu.contains(e.target as Node)) menu.open = false;
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && menu.open) {
+        menu.open = false;
+        menu.querySelector('summary')?.focus();
+      }
+    });
+  }
+</script>
+
 <style>
-  .masthead {
-    border-bottom: 1px solid var(--rule);
+  .site-header { position: relative; padding-top: 14px; }
+
+  .mh {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px;
   }
-  .topline {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    padding-block: 10px;
-    border-bottom: 1px solid var(--rule-light);
+
+  .mh-date {
+    margin: 0;
+    font-family: var(--font-ui);
+    font-size: 13.5px;
+    color: var(--ink-2);
   }
-  .brand {
+
+  .mh-brand {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 16px;
-    padding-block: 22px 14px;
+    gap: 12px;
+    justify-self: center;
   }
-  .logo { border-radius: 50%; width: 56px; height: 56px; }
-  .wordmark {
-    font-family: var(--font-head);
-    font-weight: 800;
-    font-size: clamp(40px, 8vw, 76px);
-    line-height: 1;
-    letter-spacing: -0.01em;
+  /* Amblem: küçük gazete mührü; beyaz zemini kâğıda karışır */
+  .mh-seal {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    mix-blend-mode: multiply;
   }
-  .nav {
-    display: flex;
-    justify-content: center;
-    gap: clamp(4px, 3vw, 28px);
-    padding-block: 0;
-    border-top: 3px double var(--rule);
+  .mh-titles { display: flex; flex-direction: column; align-items: center; }
+  .mh-name {
+    font-family: var(--font-brand);
+    font-weight: 400;
+    font-size: 52px;
+    line-height: 0.95;
+    letter-spacing: -0.005em;
+  }
+  .mh-sub {
+    margin-top: 5px;
     font-family: var(--font-ui);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.24em;
     text-transform: uppercase;
+    color: var(--ink-2);
   }
-  /* Dokunma alanı en az 44px */
-  .nav a { display: flex; align-items: center; min-height: 44px; padding-inline: 12px; }
-  .nav a:hover { color: var(--accent); }
 
-  /* Yazı sayfalarında daha kısa başlık */
-  .compact .topline { display: none; }
-  .compact .brand { padding-block: 14px 10px; }
-  .compact .logo { width: 40px; height: 40px; }
-  .compact .wordmark { font-size: clamp(30px, 5vw, 44px); }
+  .mh-links {
+    justify-self: end;
+    display: flex;
+    font-family: var(--font-ui);
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .mh-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 12px;
+  }
+  .mh-links a:last-child { padding-right: 0; }
+  .mh-links a:hover { color: var(--accent); }
 
-  @media (max-width: 560px) {
-    .tagline { display: none; }
-    .logo { width: 44px; height: 44px; }
+  /* Kalın + ince iki yakın çizgi */
+  .mh-rules {
+    margin-top: 12px;
+    height: 6px;
+    border-top: 2.5px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+  }
+
+  /* Mobil menü (masaüstünde gizli) */
+  .mh-menu { display: none; }
+  .mh-menu summary {
+    list-style: none;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin-left: -11px;
+    cursor: pointer;
+  }
+  .mh-menu summary::-webkit-details-marker { display: none; }
+  .mh-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    padding: 4px var(--gutter) 14px;
+    background: var(--paper);
+    border-bottom: 1px solid var(--ink);
+    font-family: var(--font-ui);
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .mh-panel a {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    border-bottom: 1px solid var(--rule-light);
+  }
+  .mh-panel a:last-child { border-bottom: 0; }
+  .mh-panel-date {
+    margin: 0;
+    padding: 10px 0 6px;
+    font-size: 13.5px;
+    font-weight: 400;
+    color: var(--ink-2);
+  }
+
+  /* Yazı sayfası (masaüstü): biraz daha kısa */
+  .compact .mh-name { font-size: 42px; }
+  .compact .mh-seal { width: 38px; height: 38px; }
+  .compact.site-header { padding-top: 10px; }
+  .compact .mh-rules { margin-top: 10px; }
+
+  /* ---------- Telefon ---------- */
+  @media (max-width: 720px) {
+    .site-header { padding-top: 8px; }
+    .mh { grid-template-columns: 44px 1fr 44px; gap: 6px; }
+    .mh-date, .mh-links { display: none; }
+    .mh-menu { display: block; }
+    .mh-brand { gap: 9px; }
+    .mh-seal { width: 32px; height: 32px; }
+    .mh-name { font-size: 34px; }
+    .mh-sub { font-size: 9.5px; letter-spacing: 0.22em; margin-top: 4px; }
+    .mh-rules { margin-top: 8px; height: 5px; border-top-width: 2px; }
+
+    /* Instagram'dan açılan yazı: en kompakt hâl */
+    .compact .mh-name { font-size: 28px; }
+    .compact .mh-seal { width: 27px; height: 27px; }
+    .compact .mh-sub { display: none; }
+    .compact.site-header { padding-top: 4px; }
+    .compact .mh-rules { margin-top: 4px; }
   }
 </style>

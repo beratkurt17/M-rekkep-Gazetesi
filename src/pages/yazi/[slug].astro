@@ -1,9 +1,9 @@
 ---
 import Base from '../../layouts/Base.astro';
-import ShareBar from '../../components/ShareBar.astro';
-import ArticleCard from '../../components/ArticleCard.astro';
+import ShareSheet from '../../components/ShareSheet.astro';
 import { getArticles, usingSampleData } from '../../lib/db';
-import { formatDateTime, readingMinutes, plainExcerpt, hasLongOpening } from '../../lib/format';
+import { plainExcerpt } from '../../lib/format';
+import { articleHtml, feedItemHtml, articlePath, whatsappUrl } from '../../lib/render';
 import type { Article } from '../../lib/types';
 
 export async function getStaticPaths() {
@@ -13,7 +13,7 @@ export async function getStaticPaths() {
     props: {
       article,
       next: all[i + 1] ?? null, // bir önceki (daha eski) yazı
-      more: all.filter((a) => a.id !== article.id).slice(0, 3),
+      more: all.filter((a) => a.id !== article.id && a.id !== all[i + 1]?.id).slice(0, 3),
     },
   }));
 }
@@ -21,8 +21,9 @@ export async function getStaticPaths() {
 interface Props { article: Article; next: Article | null; more: Article[] }
 const { article: a, next, more } = Astro.props;
 
+const url = new URL(articlePath(a.slug), Astro.site).toString();
+const domain = Astro.site!.host;
 const description = a.spot || plainExcerpt(a.body);
-const pageUrl = new URL(`/yazi/${a.slug}`, Astro.site).toString();
 
 const supabaseUrl = usingSampleData ? '' : import.meta.env.PUBLIC_SUPABASE_URL;
 const supabaseKey = usingSampleData ? '' : import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
@@ -31,51 +32,66 @@ const supabaseKey = usingSampleData ? '' : import.meta.env.PUBLIC_SUPABASE_ANON_
   title={a.title}
   description={description}
   image={a.cover_image}
+  imageAlt={a.image_caption ?? a.title}
   type="article"
   publishedAt={a.published_at}
   compactHeader
 >
-  <article class="article">
-    <header class="wrap head">
-      {a.label && <span class="label">{a.label}</span>}
-      <h1 class="title">{a.title}</h1>
-      {a.byline && <p class="byline author">{a.byline}</p>}
-      {a.spot && <p class="spot">{a.spot}</p>}
-      <p class="meta">
-        <time datetime={a.published_at}>{formatDateTime(a.published_at)}</time>
-        <span aria-hidden="true"> · </span>
-        {readingMinutes(a.body)} dk okuma
-      </p>
-    </header>
+  <div class="wrap">
+    <article
+      class="art"
+      data-article
+      data-url={url}
+      data-title={a.title}
+      data-byline={a.byline ?? ''}
+      data-quote={a.ig_quote ?? ''}
+      data-domain={domain}
+      data-slug={a.slug}
+    >
+      <Fragment set:html={articleHtml(a)} />
 
-    {a.cover_image && (
-      <figure class="cover">
-        <img src={a.cover_image} alt={a.image_caption ?? ''} loading="eager" />
-        {a.image_caption && <figcaption class="meta">{a.image_caption}</figcaption>}
-      </figure>
+      <section class="art-share reading-hide" aria-labelledby="paylas">
+        <h2 class="section-title" id="paylas">Bu yazıyı paylaş</h2>
+        <div class="share-row">
+          <a class="share-opt" href={whatsappUrl(a.title, url)} target="_blank" rel="noopener">WhatsApp’ta paylaş</a>
+          <button type="button" class="share-opt" data-share="story">Instagram hikâye kartı</button>
+          <button type="button" class="share-opt" data-share="copy">Bağlantıyı kopyala</button>
+        </div>
+      </section>
+    </article>
+
+    {(next || more.length > 0) && (
+      <aside class="art suggestions reading-hide" aria-label="Öneriler">
+        {next && (
+          <section>
+            <h2 class="section-title">Sıradaki yazı</h2>
+            <div class="feed" set:html={feedItemHtml(next)} />
+          </section>
+        )}
+        {more.length > 0 && (
+          <section>
+            <h2 class="section-title">Diğer yazılar</h2>
+            <div class="feed" set:html={more.map((m) => feedItemHtml(m)).join('')} />
+          </section>
+        )}
+      </aside>
     )}
+  </div>
 
-    <div class="wrap">
-      <div class:list={['body', { dropcap: hasLongOpening(a.body) }]} set:html={a.body} />
-      <ShareBar url={pageUrl} title={a.title} />
-    </div>
-  </article>
+  <div id="reading-bar" class="reading-bar" role="toolbar" aria-label="Okuma ayarları" hidden>
+    <button type="button" data-font="-" aria-label="Yazıyı küçült">A−</button>
+    <button type="button" data-font="+" aria-label="Yazıyı büyüt">A+</button>
+    <button type="button" class="rb-exit">Okuma modundan çık</button>
+  </div>
 
-  {next && (
-    <aside class="wrap next">
-      <span class="label">Sıradaki yazı</span>
-      <a href={`/yazi/${next.slug}`} class="next-title hl">{next.title}</a>
-    </aside>
-  )}
+  <ShareSheet whatsappHref={whatsappUrl(a.title, url)} />
 
-  {more.length > 0 && (
-    <section class="wrap more" aria-labelledby="diger">
-      <h2 class="section-title" id="diger">Diğer Yazılar</h2>
-      <div class="more-grid">
-        {more.map((m) => <ArticleCard article={m} variant="surmanset" />)}
-      </div>
-    </section>
-  )}
+  <script>
+    import { initReadingMode } from '../../scripts/reading-mode';
+    import { initShare } from '../../scripts/share';
+    initReadingMode();
+    initShare();
+  </script>
 
   {supabaseUrl && (
     <script is:inline define:vars={{ supabaseUrl, supabaseKey, slug: a.slug }}>
@@ -86,10 +102,7 @@ const supabaseKey = usingSampleData ? '' : import.meta.env.PUBLIC_SUPABASE_ANON_
           sessionStorage.setItem(k, '1');
           fetch(supabaseUrl + '/rest/v1/rpc/increment_view', {
             method: 'POST',
-            headers: {
-              apikey: supabaseKey,
-              'Content-Type': 'application/json',
-            },
+            headers: { apikey: supabaseKey, 'Content-Type': 'application/json' },
             body: JSON.stringify({ p_slug: slug }),
             keepalive: true,
           }).catch(() => {});
@@ -100,75 +113,29 @@ const supabaseKey = usingSampleData ? '' : import.meta.env.PUBLIC_SUPABASE_ANON_
 </Base>
 
 <style>
-  .head, .body, .next { max-width: 760px; }
-  .head { padding-top: 40px; display: flex; flex-direction: column; gap: 12px; }
-  .title {
-    margin: 0;
-    font-family: var(--font-head);
-    font-weight: 800;
-    font-size: clamp(32px, 5.5vw, 54px);
-    line-height: 1.1;
-    letter-spacing: -0.01em;
-    text-wrap: balance;
+  .art-share { margin-top: 36px; }
+  .art-share .section-title { margin-bottom: 14px; }
+  .share-row { display: grid; gap: 8px; }
+  .share-opt {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+    padding: 0 16px;
+    border: 1px solid var(--ink);
+    border-radius: 4px;
+    background: transparent;
+    font-family: var(--font-ui);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
   }
-  .author { margin: 0; font-size: 15px; }
-  .spot {
-    margin: 4px 0 0;
-    font-size: clamp(18px, 2.2vw, 21px);
-    line-height: 1.5;
-    color: var(--ink-2);
+  .share-opt:hover { background: var(--paper-2); }
+  @media (min-width: 640px) {
+    .share-row { grid-template-columns: repeat(3, 1fr); }
+    .share-opt { font-size: 15px; }
   }
-  .head .meta { margin: 6px 0 0; padding-bottom: 20px; border-bottom: 1px solid var(--rule-light); }
 
-  .cover { max-width: 1000px; margin: 32px auto 0; padding-inline: var(--gutter); }
-  .cover img { width: 100%; }
-  .cover figcaption { padding-top: 8px; }
-
-  .body {
-    padding-top: 28px;
-    font-size: 19px;
-    line-height: 1.75;
-  }
-  .body :global(p) { margin: 0 0 1.2em; }
-  /* Gazete usulü büyük baş harf: sadece uzun düzyazı açılışlarında */
-  .dropcap > :global(p:first-child)::first-letter {
-    float: left;
-    font-family: var(--font-head);
-    font-weight: 800;
-    font-size: 4.1em;
-    line-height: 0.82;
-    padding: 0.06em 0.1em 0 0;
-    color: var(--accent);
-  }
-  .body :global(h2), .body :global(h3) {
-    font-family: var(--font-head);
-    line-height: 1.25;
-    margin: 1.6em 0 0.6em;
-  }
-  .body :global(blockquote) {
-    margin: 1.6em 0;
-    padding-left: 20px;
-    border-left: 3px solid var(--accent);
-    font-style: italic;
-    font-size: 21px;
-    color: var(--ink-2);
-  }
-  .body :global(img) { margin: 1.6em 0; }
-  .body :global(a) { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
-
-  .next {
-    margin-top: 48px;
-    padding-block: 24px;
-    border-top: 3px double var(--rule);
-    border-bottom: 1px solid var(--rule-light);
-    display: flex; flex-direction: column; gap: 6px;
-  }
-  .next-title { font-family: var(--font-head); font-weight: 700; font-size: 26px; line-height: 1.2; }
-
-  .more { margin-top: 56px; }
-  .more-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 32px;
-  }
+  .suggestions { padding-top: 0; margin-top: 44px; display: flex; flex-direction: column; gap: 28px; font-size: 17px; }
+  .suggestions .section-title { margin-bottom: 0; border-top-width: 2px; }
 </style>

@@ -1,30 +1,35 @@
 ---
 import '../styles/global.css';
+import '../styles/feed.css';
+import '../styles/article.css';
 import Masthead from '../components/Masthead.astro';
 import Footer from '../components/Footer.astro';
+import { FONT_URL } from '../lib/fonts';
 
 interface Props {
   title?: string;
   description?: string;
   image?: string | null;
+  imageAlt?: string;
   type?: 'website' | 'article';
   publishedAt?: string;
   compactHeader?: boolean;
 }
 
-const SITE_NAME = 'Mürekkep Gazetesi';
-const DEFAULT_DESC = 'Mürekkep; edebiyat, kültür ve sanat gazetesi.';
+const SITE_NAME = 'Mürekkep';
+const DEFAULT_DESC = 'Mürekkep — edebiyat gazetesi. Şiir, öykü, deneme ve söyleşiler.';
 
 const {
   title,
   description = DEFAULT_DESC,
   image,
+  imageAlt,
   type = 'website',
   publishedAt,
   compactHeader = false,
 } = Astro.props;
 
-const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} — Edebiyat, Kültür, Sanat`;
+const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} — Edebiyat gazetesi`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(image || '/logo.jpg', Astro.site);
 ---
@@ -32,14 +37,14 @@ const ogImage = new URL(image || '/logo.jpg', Astro.site);
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>{fullTitle}</title>
   <meta name="description" content={description} />
-  <meta name="theme-color" content="#efe7d6" />
+  <meta name="theme-color" content="#e8e0d0" />
   <link rel="canonical" href={canonical} />
   <link rel="icon" type="image/jpeg" href="/logo.jpg" />
 
-  <!-- Paylaşım önizlemeleri (Instagram, WhatsApp, X) -->
+  <!-- Bağlantı önizlemesi (WhatsApp, Instagram, X) -->
   <meta property="og:site_name" content={SITE_NAME} />
   <meta property="og:locale" content="tr_TR" />
   <meta property="og:type" content={type} />
@@ -47,15 +52,13 @@ const ogImage = new URL(image || '/logo.jpg', Astro.site);
   <meta property="og:description" content={description} />
   <meta property="og:url" content={canonical} />
   <meta property="og:image" content={ogImage} />
+  <meta property="og:image:alt" content={imageAlt ?? title ?? SITE_NAME} />
   {publishedAt && <meta property="article:published_time" content={publishedAt} />}
   <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap"
-  />
+  <link rel="stylesheet" href={FONT_URL} />
 </head>
 <body>
   <Masthead compact={compactHeader} />
@@ -63,5 +66,6 @@ const ogImage = new URL(image || '/logo.jpg', Astro.site);
     <slot />
   </main>
   <Footer />
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 </body>
 </html>

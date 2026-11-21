@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { getArticles } from '../lib/db';
 import { formatDate } from '../lib/format';
+import { articlePath } from '../lib/render';
 
 const all = await getArticles();
 
@@ -26,7 +27,7 @@ for (const a of all) {
           {items.map((a) => (
             <li>
               <time class="meta" datetime={a.published_at}>{formatDate(a.published_at)}</time>
-              <a href={`/yazi/${a.slug}`} class="hl t">{a.title}</a>
+              <a href={articlePath(a.slug)} class="t">{a.title}</a>
               {a.label && <span class="label">{a.label}</span>}
             </li>
           ))}

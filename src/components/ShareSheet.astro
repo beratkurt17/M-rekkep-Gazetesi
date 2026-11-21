@@ -1,0 +1,134 @@
+---
+// Paylaşım penceresi (3 seçenek) + Instagram hikâye kartı önizlemesi.
+// Davranış: src/scripts/share.ts
+interface Props { whatsappHref: string }
+const { whatsappHref } = Astro.props;
+---
+<dialog id="share-sheet" class="sheet" aria-labelledby="share-sheet-title">
+  <div class="sheet-head">
+    <h2 id="share-sheet-title">Paylaş</h2>
+    <button type="button" class="x" data-share="close" aria-label="Kapat">✕</button>
+  </div>
+  <div class="options">
+    <a class="opt" href={whatsappHref} target="_blank" rel="noopener" data-share="whatsapp">WhatsApp’ta paylaş</a>
+    <button type="button" class="opt" data-share="story">Instagram için hikâye kartı hazırla</button>
+    <button type="button" class="opt" data-share="copy">Bağlantıyı kopyala</button>
+  </div>
+</dialog>
+
+<dialog id="story-dialog" class="sheet story" aria-labelledby="story-title">
+  <div class="sheet-head">
+    <h2 id="story-title">Instagram hikâye kartı</h2>
+    <button type="button" class="x" data-share="close" aria-label="Kapat">✕</button>
+  </div>
+  <div class="story-body">
+    <canvas class="story-canvas" width="1080" height="1920" aria-label="Hikâye kartı önizlemesi"></canvas>
+    <div class="story-side">
+      <div class="story-notice" hidden>
+        <p class="story-notice-text"></p>
+        <div class="segments"></div>
+      </div>
+      <div class="options">
+        <button type="button" class="opt primary" data-share="story-share">Görseli paylaş</button>
+        <button type="button" class="opt" data-share="story-download">Görseli indir</button>
+        <button type="button" class="opt" data-share="copy">Yazı bağlantısını kopyala</button>
+      </div>
+      <p class="hint">Görseldeki adres tıklanamaz. Bağlantıyı kopyalayıp Instagram hikâyesinde “Bağlantı” etiketine yapıştırabilirsin.</p>
+    </div>
+  </div>
+</dialog>
+
+<style>
+  .sheet {
+    width: min(460px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    padding: 0;
+    border: 1px solid var(--ink);
+    border-radius: 6px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-ui);
+  }
+  .sheet::backdrop { background: rgba(37, 34, 31, 0.45); }
+
+  .sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px 6px 20px;
+    border-bottom: 1px solid var(--rule-light);
+  }
+  .sheet-head h2 { margin: 0; font-size: 17px; font-weight: 700; }
+  .x {
+    width: 44px; height: 44px;
+    border: 0; background: none; cursor: pointer; font-size: 18px;
+  }
+
+  .options { display: flex; flex-direction: column; gap: 8px; padding: 16px 20px 20px; }
+  .opt {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+    padding: 0 16px;
+    border: 1px solid var(--ink);
+    border-radius: 4px;
+    background: transparent;
+    font-family: var(--font-ui);
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+  }
+  .opt:hover { background: var(--paper-2); }
+  .opt.primary { background: var(--ink); color: var(--paper); }
+
+  /* Hikâye kartı */
+  .story { width: min(860px, calc(100vw - 32px)); }
+  .story-body { display: grid; gap: 4px; padding-top: 16px; }
+  .story-canvas {
+    display: block;
+    width: auto;
+    height: min(56dvh, 560px);
+    aspect-ratio: 9 / 16;
+    margin-inline: auto;
+    border: 1px solid var(--rule-light);
+  }
+  .story-side .options { padding-top: 12px; }
+  .hint { margin: 0; padding: 0 20px 20px; font-size: 13.5px; color: var(--ink-2); }
+  .story-notice { padding: 12px 20px 0; }
+  .story-notice-text { margin: 0 0 8px; font-size: 14.5px; font-weight: 600; }
+  .segments { display: flex; flex-direction: column; gap: 6px; max-height: 30dvh; overflow-y: auto; }
+  .segments :global(button) {
+    padding: 10px 12px;
+    border: 1px solid var(--rule-light);
+    border-radius: 4px;
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-style: italic;
+    text-align: left;
+    white-space: pre-line;
+    cursor: pointer;
+  }
+  .segments :global(button[aria-pressed='true']) { border-color: var(--ink); background: var(--paper-2); }
+
+  @media (min-width: 760px) {
+    .story-body { grid-template-columns: auto minmax(0, 1fr); align-items: start; padding: 20px; gap: 20px; }
+    .story-canvas { height: min(70dvh, 620px); }
+    .story-side .options, .story-notice, .hint { padding-inline: 0; }
+    .story-side .options { padding-top: 0; }
+  }
+
+  /* Telefonda alttan açılan pencere */
+  @media (max-width: 600px) {
+    .sheet {
+      width: 100%;
+      max-width: 100%;
+      margin: auto 0 0;
+      border-radius: 10px 10px 0 0;
+      border-width: 1px 0 0;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+  }
+</style>
