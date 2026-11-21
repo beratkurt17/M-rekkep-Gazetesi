@@ -24,8 +24,7 @@ const rest = latest.slice(SIDE_COUNT);
           </section>
 
           {side.length > 0 && (
-            <section class="home-latest" aria-labelledby="son-yazilar">
-              <h2 class="section-title" id="son-yazilar">Son Yazılar</h2>
+            <section class="home-latest" aria-label="Son yazılar">
               <div class="feed" set:html={side.map((a) => feedItemHtml(a)).join('')} />
             </section>
           )}
@@ -65,11 +64,9 @@ const rest = latest.slice(SIDE_COUNT);
   .home { padding-top: 20px; }
   .empty { text-align: center; padding: 80px 0; color: var(--ink-3); }
 
-  .home-latest { margin-top: 6px; }
-  .home-latest .section-title { margin-bottom: 0; }
-
-  /* Telefonda "Önceki Yazılar" başlığı yok; akış kesintisiz sürer */
+  /* Telefonda manşetten sonra akış başlıksız, aynı ince ayraçla kesintisiz sürer */
   .desktop-only { display: none; }
+  .home-latest .feed > :global(.fi:first-child),
   .home-feed .feed > :global(.fi:first-child) { border-top: 1px solid var(--rule-light); }
 
   .home-more { display: grid; gap: 40px; }
@@ -83,18 +80,20 @@ const rest = latest.slice(SIDE_COUNT);
       align-items: start;
     }
     .home-latest {
-      margin-top: 0;
       padding-left: 28px;
       border-left: 1px solid var(--rule-light);
     }
-    .home-latest .section-title { border-top-width: 0; padding-top: 0; }
-    .home-latest :global(.fi:first-child) { padding-top: 14px; }
+    .home-latest .feed > :global(.fi:first-child) { border-top: 0; padding-top: 0; }
 
+    /* Üst satırla aynı sütunlar: sağ sütun yukarıdan aşağı tek hizada */
     .home-more {
-      grid-template-columns: minmax(0, 1fr) 300px;
-      gap: 56px;
+      grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+      gap: 0 28px;
       margin-top: 36px;
     }
+    .home-more > :global(aside.sidebar) { padding-left: 28px; }
+    /* Az yazı varken (önceki yazılar yok) yan sütun yine sağda dursun */
+    .home-more > :global(aside.sidebar:only-child) { grid-column: 2; }
     .desktop-only { display: block; }
     .home-feed .feed > :global(.fi:first-child) { border-top: 0; }
   }
