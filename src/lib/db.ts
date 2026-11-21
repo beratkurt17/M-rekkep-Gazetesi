@@ -20,7 +20,8 @@ let cache: Article[] | null = null;
 
 /** Yayındaki tüm yazılar, en yeniden eskiye. Derleme sırasında bir kez çekilir. */
 export async function getArticles(): Promise<Article[]> {
-  if (cache) return cache;
+  // Derlemede tek seferlik çekim yeterli; yerel sunucuda (dev) her istekte taze veri gelsin.
+  if (cache && !import.meta.env.DEV) return cache;
   if (!supabase) {
     console.warn('[mürekkep] Supabase bilgisi yok — örnek verilerle derleniyor.');
     cache = ORNEK_YAZILAR;

@@ -44,15 +44,23 @@ const settings = await getSettings();
 
   .manset-area { padding-bottom: 32px; border-bottom: 1px solid var(--rule); }
 
+  /* Sürmanşet: eşit sütunlar, aralarında ince dikey çizgi (gazete sütunu) */
   .surmanset-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 0;
+    gap: 40px;
     padding-block: 28px;
     border-bottom: 3px double var(--rule);
   }
-  .surmanset-row > :global(*) { padding-inline: 20px; border-left: 1px solid var(--rule-light); }
-  .surmanset-row > :global(*:first-child) { padding-left: 0; border-left: 0; }
+  .surmanset-row > :global(*) { position: relative; }
+  .surmanset-row > :global(* + *)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -20px;
+    border-left: 1px solid var(--rule-light);
+  }
 
   .columns {
     display: grid;
@@ -65,11 +73,9 @@ const settings = await getSettings();
     .columns { grid-template-columns: 1fr; gap: 40px; }
   }
   @media (max-width: 600px) {
-    .surmanset-row { gap: 24px; }
-    .surmanset-row > :global(*) {
-      padding-inline: 0; border-left: 0;
-      padding-top: 24px; border-top: 1px solid var(--rule-light);
-    }
-    .surmanset-row > :global(*:first-child) { padding-top: 0; border-top: 0; }
+    .surmanset-row { gap: 0; padding-block: 8px; }
+    .surmanset-row > :global(*) { padding-block: 18px; }
+    .surmanset-row > :global(* + *) { border-top: 1px solid var(--rule-light); }
+    .surmanset-row > :global(* + *)::before { display: none; }
   }
 </style>

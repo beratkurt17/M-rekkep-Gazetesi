@@ -32,6 +32,24 @@ export function hasLongOpening(html: string, minChars = 140): boolean {
   return first[1].replace(/<[^>]*>/g, '').trim().length >= minChars;
 }
 
+/**
+ * Kapak alıntısı: metnin ilk cümlesi (çok uzunsa kelime sınırında kesilir).
+ * Şiirde dize sonları korunur ("/" ile).
+ */
+export function pullQuote(html: string, max = 150): string | null {
+  const text = html
+    .replace(/<br\s*\/?>/gi, ' / ')
+    .replace(/<\/p>\s*<p[^>]*>/gi, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!text) return null;
+  const sentence = text.match(/^.+?[.!?…](?=\s|$)/)?.[0] ?? text;
+  if (sentence.length <= max) return sentence;
+  const cut = sentence.slice(0, max);
+  return cut.slice(0, cut.lastIndexOf(' ')).replace(/[,;:\s/]+$/, '') + '…';
+}
+
 /** Meta açıklaması için düz metin özet. */
 export function plainExcerpt(html: string, max = 160): string {
   const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
