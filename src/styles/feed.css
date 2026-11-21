@@ -78,17 +78,23 @@
   .fi--img .fi-media img { aspect-ratio: 4 / 3; }
 }
 
-/* ---------- Manşet ---------- */
-.fi--lead { padding-top: 0; gap: 14px; }
-.fi--lead.fi--img { grid-template-columns: minmax(0, 1fr); }
-.fi--lead .fi-media { order: 0; }
-.fi--lead .fi-media img { aspect-ratio: 3 / 2; }
-.fi--lead .fi-text { gap: 10px; }
-.fi--lead .fi-title {
-  font-size: clamp(30px, 7.8vw, 48px);
-  line-height: 1.1;
-  letter-spacing: -0.015em;
-  text-wrap: balance;
+/* ---------- Manşet ----------
+   Telefonda manşet de diğer yazılarla AYNI boyutta (tutarlı akış ritmi).
+   Büyük manşet yalnızca geniş ekranda. */
+.fi--lead { padding-top: 0; }
+
+@media (min-width: 960px) {
+  .fi--lead { gap: 14px; }
+  .fi--lead.fi--img { grid-template-columns: minmax(0, 1fr); }
+  .fi--lead .fi-media { order: 0; }
+  .fi--lead .fi-media img { aspect-ratio: 3 / 2; }
+  .fi--lead .fi-text { gap: 10px; }
+  .fi--lead .fi-title {
+    font-size: 48px;
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  .fi--lead .fi-byline { font-size: 15px; }
+  .fi--lead .fi-excerpt { font-size: 18px; -webkit-line-clamp: 4; }
 }
-.fi--lead .fi-byline { font-size: 15px; }
-.fi--lead .fi-excerpt { font-size: 18px; -webkit-line-clamp: 4; }
