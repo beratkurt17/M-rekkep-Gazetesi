@@ -35,6 +35,12 @@ const field = (name: string) => form().elements.namedItem(name) as HTMLInputElem
 // Başlangıç ve giriş
 // ---------------------------------------------------------------------
 export function initAdmin() {
+  // Panel başka bir sitenin içine (iframe) gömülürse çalışmasın — tıklama hilesine karşı.
+  if (window.top !== window.self) {
+    document.body.textContent = 'Bu sayfa başka bir sitenin içinde açılamaz.';
+    return;
+  }
+
   const url = import.meta.env.PUBLIC_SUPABASE_URL;
   const key = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return;

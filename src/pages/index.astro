@@ -43,20 +43,9 @@ const rest = latest.slice(SIDE_COUNT);
     )}
   </div>
 
-  <script is:inline>
-    // Okur bir yazıdan geri döndüğünde akışta kaldığı yere dönsün
-    // (tarayıcı geri önbelleği çalışmazsa yedek).
-    (function () {
-      var KEY = 'murekkep:akis-konum';
-      try {
-        var nav = performance.getEntriesByType('navigation')[0];
-        var y = Number(sessionStorage.getItem(KEY));
-        if (nav && nav.type === 'back_forward' && y > 0) {
-          addEventListener('load', function () { if (scrollY < 10) scrollTo(0, y); });
-        }
-        addEventListener('pagehide', function () { sessionStorage.setItem(KEY, String(scrollY)); });
-      } catch (e) {}
-    })();
+  <script>
+    import { rememberFeedPosition } from '../scripts/feed-position';
+    rememberFeedPosition();
   </script>
 </Base>
 

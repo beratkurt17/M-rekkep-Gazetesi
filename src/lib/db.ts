@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Article, Placement, SiteSettings } from './types';
 import { ORNEK_YAZILAR, ORNEK_AYARLAR } from './ornek-veri';
+import { sanitizeBody } from './sanitize';
 
 const url = import.meta.env.PUBLIC_SUPABASE_URL;
 const key = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
@@ -13,6 +14,11 @@ const supabase = usingSampleData ? null : createClient(url, key, {
   auth: { persistSession: false },
 });
 
+/** Kapak görseli yalnızca https adresi olabilir (javascript:, data: vb. atılır). */
+function safeImageUrl(v: unknown): string | null {
+  return typeof v === 'string' && /^https:\/\/[^\s"'<>]+$/i.test(v) ? v : null;
+}
+
 /** Veritabanı satırını Article'a çevirir; sonradan eklenen alanlar eski satırlarda boş olabilir. */
 function toArticle(r: Record<string, unknown>): Article {
   return {
@@ -20,10 +26,10 @@ function toArticle(r: Record<string, unknown>): Article {
     slug: String(r.slug),
     title: String(r.title),
     spot: (r.spot as string) ?? null,
-    body: (r.body as string) ?? '',
+    body: sanitizeBody((r.body as string) ?? ''),
     label: (r.label as string) ?? null,
     byline: (r.byline as string) ?? null,
-    cover_image: (r.cover_image as string) ?? null,
+    cover_image: safeImageUrl(r.cover_image),
     image_caption: (r.image_caption as string) ?? null,
     placement: ((r.placement as Placement) ?? 'normal'),
     published_at: String(r.published_at),
