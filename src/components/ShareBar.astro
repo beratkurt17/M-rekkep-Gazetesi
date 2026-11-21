@@ -37,11 +37,17 @@ const x = `https://x.com/intent/post?text=${enc(title)}&url=${enc(url)}`;
     padding-top: 16px;
     border-top: 1px solid var(--rule-light);
   }
+  .share .meta { flex-basis: 100%; }
   .share a, .share button {
+    flex: 1 1 auto;
+    justify-content: center;
     font-family: var(--font-ui);
     font-size: 13px;
     font-weight: 600;
-    padding: 7px 14px;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 16px;
     border: 1px solid var(--rule);
     background: transparent;
     color: var(--ink);

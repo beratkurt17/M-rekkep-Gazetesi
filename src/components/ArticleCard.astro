@@ -51,21 +51,42 @@ const HeadingTag = variant === 'manset' ? 'h2' : 'h3';
   }
   .media img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: var(--paper-2); }
 
-  /* Manşet */
+  /* Manşet: telefonda görsel üstte, tam genişlik; masaüstünde görsel + başlık yan yana */
   .manset .title { font-size: clamp(32px, 5vw, 56px); font-weight: 800; letter-spacing: -0.01em; }
   .manset .spot { font-size: clamp(17px, 2vw, 20px); line-height: 1.5; max-width: 62ch; }
   .manset .media img { aspect-ratio: 3 / 2; }
   .manset:not(.has-image) .title { font-size: clamp(38px, 6.5vw, 72px); }
+  @media (min-width: 900px) {
+    .manset.has-image {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+      gap: 36px;
+      align-items: center;
+    }
+    .manset.has-image .title { font-size: clamp(32px, 3.4vw, 46px); }
+  }
 
-  /* Sürmanşet */
+  /* Sürmanşet: telefonda yan yana küçük görselli satır (sayfa uzamasın) */
   .surmanset .title { font-size: 22px; }
   .surmanset .spot { font-size: 15px; }
+  @media (max-width: 600px) {
+    .surmanset.has-image { grid-template-columns: minmax(0, 1fr) 104px; align-items: start; }
+    .surmanset.has-image .media { order: 2; }
+    .surmanset.has-image .media img { aspect-ratio: 1; }
+    .surmanset.has-image .title { font-size: 19px; }
+    .surmanset.has-image .spot { display: none; }
+  }
 
   /* Liste */
   .list { padding-block: 18px; border-bottom: 1px solid var(--rule-light); }
   .list .title { font-size: 21px; }
+  /* Görselli liste satırı: görsel sağda küçük (telefonda 104px, geniş ekranda 200px) */
+  .list.has-image { grid-template-columns: minmax(0, 1fr) 104px; align-items: start; }
+  .list.has-image .media { order: 2; }
+  .list.has-image .media img { aspect-ratio: 1; }
+  .list.has-image .title { font-size: 19px; }
   @media (min-width: 640px) {
-    .list.has-image { grid-template-columns: 1fr 200px; align-items: start; }
-    .list.has-image .media { order: 2; }
+    .list.has-image { grid-template-columns: minmax(0, 1fr) 200px; }
+    .list.has-image .media img { aspect-ratio: 16 / 9; }
+    .list.has-image .title { font-size: 21px; }
   }
 </style>

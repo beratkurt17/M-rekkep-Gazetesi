@@ -25,6 +25,13 @@ export function readingMinutes(html: string): number {
   return Math.max(1, Math.round(words / 200));
 }
 
+/** İlk paragrafı uzun düzyazı ile başlıyorsa true (büyük baş harf için; şiirde kullanılmaz). */
+export function hasLongOpening(html: string, minChars = 140): boolean {
+  const first = html.match(/^\s*<p[^>]*>([\s\S]*?)<\/p>/i);
+  if (!first || /<br\s*\/?>/i.test(first[1])) return false;
+  return first[1].replace(/<[^>]*>/g, '').trim().length >= minChars;
+}
+
 /** Meta açıklaması için düz metin özet. */
 export function plainExcerpt(html: string, max = 160): string {
   const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();

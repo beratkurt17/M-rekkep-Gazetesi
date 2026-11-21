@@ -5,8 +5,9 @@ import { ORNEK_YAZILAR, ORNEK_AYARLAR } from './ornek-veri';
 const url = import.meta.env.PUBLIC_SUPABASE_URL;
 const key = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
-// Supabase bilgisi yoksa (yerel geliştirme) örnek verilerle çalışır.
-export const usingSampleData = !url || !key;
+// Supabase bilgisi yoksa ya da PUBLIC_SAMPLE_DATA=1 verilmişse (tasarım denemesi)
+// örnek verilerle çalışır.
+export const usingSampleData = !url || !key || import.meta.env.PUBLIC_SAMPLE_DATA === '1';
 
 const supabase = usingSampleData ? null : createClient(url, key, {
   auth: { persistSession: false },

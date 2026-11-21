@@ -3,7 +3,7 @@ import Base from '../../layouts/Base.astro';
 import ShareBar from '../../components/ShareBar.astro';
 import ArticleCard from '../../components/ArticleCard.astro';
 import { getArticles, usingSampleData } from '../../lib/db';
-import { formatDateTime, readingMinutes, plainExcerpt } from '../../lib/format';
+import { formatDateTime, readingMinutes, plainExcerpt, hasLongOpening } from '../../lib/format';
 import type { Article } from '../../lib/types';
 
 export async function getStaticPaths() {
@@ -56,7 +56,7 @@ const supabaseKey = usingSampleData ? '' : import.meta.env.PUBLIC_SUPABASE_ANON_
     )}
 
     <div class="wrap">
-      <div class="body" set:html={a.body} />
+      <div class:list={['body', { dropcap: hasLongOpening(a.body) }]} set:html={a.body} />
       <ShareBar url={pageUrl} title={a.title} />
     </div>
   </article>
@@ -130,6 +130,16 @@ const supabaseKey = usingSampleData ? '' : import.meta.env.PUBLIC_SUPABASE_ANON_
     line-height: 1.75;
   }
   .body :global(p) { margin: 0 0 1.2em; }
+  /* Gazete usulü büyük baş harf: sadece uzun düzyazı açılışlarında */
+  .dropcap > :global(p:first-child)::first-letter {
+    float: left;
+    font-family: var(--font-head);
+    font-weight: 800;
+    font-size: 4.1em;
+    line-height: 0.82;
+    padding: 0.06em 0.1em 0 0;
+    color: var(--accent);
+  }
   .body :global(h2), .body :global(h3) {
     font-family: var(--font-head);
     line-height: 1.25;

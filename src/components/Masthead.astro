@@ -55,8 +55,8 @@ const { compact = false } = Astro.props;
   .nav {
     display: flex;
     justify-content: center;
-    gap: clamp(16px, 4vw, 36px);
-    padding-block: 10px;
+    gap: clamp(4px, 3vw, 28px);
+    padding-block: 0;
     border-top: 3px double var(--rule);
     font-family: var(--font-ui);
     font-size: 12px;
@@ -64,6 +64,8 @@ const { compact = false } = Astro.props;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
+  /* Dokunma alanı en az 44px */
+  .nav a { display: flex; align-items: center; min-height: 44px; padding-inline: 12px; }
   .nav a:hover { color: var(--accent); }
 
   /* Yazı sayfalarında daha kısa başlık */
