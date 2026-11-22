@@ -3,9 +3,12 @@
 ---
 <header class="topbar">
   <a href="/" target="_blank" class="brand">Mürekkep <span>Yönetim</span></a>
-  <nav class="tabs">
+  <!-- Telefonda alt çubuk olur (src/styles/admin.css → .tabs) -->
+  <nav class="tabs" aria-label="Panel bölümleri">
     <button data-view="list" class="tab active">Yazılar</button>
-    <button data-view="settings" class="tab">Site ayarları</button>
+    <button data-view="authors" class="tab">Yazarlar</button>
+    <button data-view="series" class="tab">Diziler</button>
+    <button data-view="settings" class="tab">Ayarlar</button>
   </nav>
   <div class="top-actions">
     <button id="rebuild-btn" class="btn ghost small" title="Siteyi şimdi yeniden oluştur">Siteyi güncelle</button>

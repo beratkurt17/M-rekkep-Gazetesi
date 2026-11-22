@@ -19,6 +19,19 @@ export function articlePath(slug: string): string {
   return `/yazi/${slug}/`;
 }
 
+export function authorPath(slug: string): string {
+  return `/yazar/${slug}/`;
+}
+
+export function seriesPath(slug: string): string {
+  return `/dizi/${slug}/`;
+}
+
+/** "Okuma Üzerine · 2. bölüm" */
+export function seriesLabel(s: { title: string; part: number }): string {
+  return `${s.title} · ${s.part}. bölüm`;
+}
+
 /** Akıştaki tek bir yazı. lead=true → manşet. */
 export function feedItemHtml(a: Article, opts: { lead?: boolean; href?: string } = {}): string {
   const lead = !!opts.lead;
@@ -38,6 +51,7 @@ export function feedItemHtml(a: Article, opts: { lead?: boolean; href?: string }
 
   const meta = [
     a.label ? `<span class="fi-label">${esc(a.label)}</span>` : '',
+    a.series ? `<span class="fi-series">${esc(seriesLabel(a.series))}</span>` : '',
     `<time datetime="${esc(a.published_at)}">${formatDate(a.published_at)}</time>`,
   ].filter(Boolean).join('<span aria-hidden="true"> · </span>');
 
@@ -62,9 +76,11 @@ export function articleHtml(a: Article): string {
 
   return `<header class="art-head">
   ${a.label ? `<p class="art-label">${esc(a.label)}</p>` : ''}
+  ${a.series ? `<p class="art-series"><a href="${esc(seriesPath(a.series.slug))}">${esc(a.series.title)}</a><span aria-hidden="true"> · </span>${a.series.part}. bölüm</p>` : ''}
   <h1 class="art-title">${esc(a.title)}</h1>
   ${a.spot ? `<p class="art-spot">${esc(a.spot)}</p>` : ''}
-  ${a.byline ? `<p class="art-byline">${esc(a.byline)}</p>` : ''}
+  ${a.author ? `<p class="art-byline"><a href="${esc(authorPath(a.author.slug))}">${esc(a.author.name)}</a></p>`
+    : a.byline ? `<p class="art-byline">${esc(a.byline)}</p>` : ''}
   <div class="art-meta-row">
     <p class="art-meta"><time datetime="${esc(a.published_at)}">${formatDateTime(a.published_at)}</time><span aria-hidden="true"> · </span>${readingMinutes(a.body)} dk okuma</p>
     <div class="art-actions">

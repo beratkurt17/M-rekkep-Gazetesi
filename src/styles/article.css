@@ -47,6 +47,40 @@
   font-size: 15px;
   font-weight: 700;
 }
+.art-byline a { text-decoration: underline; text-decoration-color: var(--rule-light); text-underline-offset: 4px; }
+.art-byline a:hover { text-decoration-color: currentColor; }
+
+/* Dizi bölümü: başlığın üstünde "Dizi adı · 3. bölüm" */
+.art-series {
+  margin: 0;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink-2);
+}
+.art-series a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---------- Dizi gezintisi (src/lib/dizi-gezinme.ts) ---------- */
+.series-nav { margin-top: 36px; display: flex; flex-direction: column; gap: 12px; }
+.series-nav .section-title a { text-decoration: underline; text-underline-offset: 3px; }
+.sn-links { display: grid; gap: 8px; }
+.sn-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--ink);
+  border-radius: 4px;
+}
+.sn-link:hover { background: var(--paper-2); }
+.sn-dir { font-family: var(--font-ui); font-size: 12.5px; font-weight: 700; color: var(--accent); }
+.sn-title { font-family: var(--font-head); font-weight: 600; font-size: 17px; line-height: 1.3; }
+.sn-next { text-align: right; }
+.sn-all { align-self: flex-start; font-family: var(--font-ui); font-size: 14.5px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; min-height: 44px; display: inline-flex; align-items: center; }
+@media (min-width: 640px) {
+  .sn-links { grid-template-columns: 1fr 1fr; }
+  .sn-next:only-child { grid-column: 2; }
+}
 
 .art-meta-row {
   display: flex;

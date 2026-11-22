@@ -1,7 +1,7 @@
 // SADECE YEREL GELİŞTİRME İÇİN ÖRNEK İÇERİK (PUBLIC_SAMPLE_DATA=1 ya da Supabase yokken).
 // Sıra, teslim kontrolündeki senaryoyu kurar: manşetten sonra kapaksız iki şiir,
 // üç satırlık başlıklı bir deneme ve görselli bir yazı art arda gelir.
-import type { Article, SiteSettings } from './types';
+import type { Article, Author, Series, SiteSettings } from './types';
 
 /** Fotoğraf yerine geçen sade örnek görsel (SVG). */
 const foto = (a: string, b: string) =>
@@ -18,9 +18,9 @@ function hoursAgo(h: number) {
   return new Date(Date.now() - h * 3_600_000).toISOString();
 }
 
-const base = { image_caption: null, view_count: 0, ig_quote: null, bicim: 'otomatik' } as const;
+const base = { image_caption: null, view_count: 0, ig_quote: null, bicim: 'otomatik', series: null } as const;
 
-export const ORNEK_YAZILAR: Article[] = [
+const YAZILAR: Omit<Article, 'author'>[] = [
   {
     ...base, id: '1', slug: 'ornek-manset', placement: 'manset',
     title: 'Şehrin Kitapçıları Kapanırken Okurlar Nereye Gidiyor?',
@@ -45,14 +45,14 @@ export const ORNEK_YAZILAR: Article[] = [
     published_at: hoursAgo(4), view_count: 30,
   },
   {
-    ...base, id: '4', slug: 'ornek-deneme', placement: 'normal',
+    ...base, id: '4', slug: 'ornek-deneme', placement: 'normal', series: { slug: 'okuma-uzerine', title: 'Okuma Üzerine', part: 1 },
     title: 'Yavaş Okumanın Savunusu: Hız Çağında Bir Sayfada Uzun Süre Kalmak ve Dikkati Yeniden Kazanmak Üzerine',
     spot: 'Bildirimlerin, kaydırmanın ve özetlerin çağında bir paragrafın içinde oyalanmak neden hâlâ değerli?',
     label: 'Deneme', byline: 'Ayşe Yılmaz', cover_image: null,
     body: p(LOREM, LOREM, LOREM), published_at: hoursAgo(6), view_count: 150,
   },
   {
-    ...base, id: '5', slug: 'ornek-kitap', placement: 'normal',
+    ...base, id: '5', slug: 'ornek-kitap', placement: 'normal', series: { slug: 'okuma-uzerine', title: 'Okuma Üzerine', part: 2 },
     title: 'Unutulmuş Bir Romanı Yeniden Okumak',
     spot: 'Yayımlandığı yıl fark edilmeyen bir roman, bugün neden bu kadar güncel?',
     label: 'Kitap', byline: 'Berat Kurt', cover_image: foto('#a59d8d', '#7d7466'),
@@ -93,3 +93,19 @@ export const ORNEK_AYARLAR: SiteSettings = {
   },
   daily_word: { word: 'Hicran', meaning: 'Ayrılık; ayrılığın verdiği acı.' },
 };
+
+export const ORNEK_YAZARLAR: Author[] = [
+  { id: 'y1', slug: 'berat-kurt', name: 'Berat Kurt', bio: 'Mürekkep\'in kurucusu ve editörü. Deneme ve eleştiri yazıyor.', photo: null },
+  { id: 'y2', slug: 'mehmet-demir', name: 'Mehmet Demir', bio: null, photo: null },
+  { id: 'y3', slug: 'ayse-yilmaz', name: 'Ayşe Yılmaz', bio: 'Şiir ve öykü yazıyor. İlk kitabı hazırlık aşamasında.', photo: null },
+];
+
+export const ORNEK_DIZILER: Series[] = [
+  { id: 'd1', slug: 'okuma-uzerine', title: 'Okuma Üzerine', description: 'Okuma alışkanlıkları ve kitaplarla kurduğumuz ilişki üzerine bir yazı dizisi.' },
+];
+
+/** Örnek yazılardaki yazar adlarını örnek yazar kayıtlarına bağlar. */
+export const ORNEK_YAZILAR: Article[] = YAZILAR.map((a) => {
+  const au = ORNEK_YAZARLAR.find((y) => y.name === a.byline);
+  return { ...a, author: au ? { slug: au.slug, name: au.name } : null };
+});

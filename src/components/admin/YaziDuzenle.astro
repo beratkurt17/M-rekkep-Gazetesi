@@ -33,7 +33,12 @@
     <aside class="edit-side">
       <section class="panel">
         <h2>Ayrıntılar</h2>
-        <label>Yazar <input name="byline" placeholder="Boşsa görünmez" /></label>
+        <label>Yazar <select name="author_id"></select></label>
+        <div class="inline-new" id="yeni-yazar" hidden>
+          <input id="yeni-yazar-ad" maxlength="120" placeholder="Yeni yazarın adı soyadı" autocomplete="off" />
+          <button type="button" class="btn small" id="yeni-yazar-ekle">Ekle</button>
+        </div>
+        <small id="yazar-hint" hidden></small>
         <label>Tür etiketi <input name="label" placeholder="Şiir, Öykü, Deneme… (isteğe bağlı)" /></label>
         <label>Biçim
           <select name="bicim">
@@ -46,6 +51,19 @@
         <label class="check"><input type="checkbox" name="manset" /> Manşette göster
           <small>Seçilmezse ana sayfada en son yayımlanan yazı manşet olur.</small>
         </label>
+      </section>
+
+      <section class="panel">
+        <h2>Dizi (tefrika)</h2>
+        <label>Dizi <select name="series_id"></select></label>
+        <div class="inline-new" id="yeni-dizi" hidden>
+          <input id="yeni-dizi-ad" maxlength="200" placeholder="Yeni dizinin adı" autocomplete="off" />
+          <button type="button" class="btn small" id="yeni-dizi-ekle">Ekle</button>
+        </div>
+        <label id="bolum-satir" hidden>Bölüm numarası
+          <input type="number" name="series_part" min="1" max="999" inputmode="numeric" />
+        </label>
+        <small id="dizi-hint">Bölüm bölüm yayımlanan bir yazıysa diziyi seç.</small>
       </section>
 
       <section class="panel">

@@ -66,6 +66,7 @@
   text-transform: uppercase;
   color: var(--accent);
 }
+.fi-series { font-style: italic; color: var(--ink-2); }
 
 /* Küçük görsel: yazının kendi sınırları içinde, sağda */
 .fi--img { grid-template-columns: minmax(0, 1fr) 88px; column-gap: 16px; align-items: start; }

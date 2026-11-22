@@ -1,0 +1,38 @@
+---
+// Dizi (tefrika) sayfası: tanıtım + yayındaki bölümler, bölüm sırasıyla.
+// Yalnızca en az bir bölümü yayında olan diziler için sayfa oluşur.
+import Base from '../../layouts/Base.astro';
+import ListeBasligi from '../../components/ListeBasligi.astro';
+import { getArticles, getSeries, seriesParts } from '../../lib/db';
+import { feedItemHtml } from '../../lib/render';
+import type { Article, Series } from '../../lib/types';
+
+export async function getStaticPaths() {
+  const [all, series] = await Promise.all([getArticles(), getSeries()]);
+  return series
+    .map((s) => ({ series: s, parts: seriesParts(all, s.slug) }))
+    .filter((x) => x.parts.length > 0)
+    .map((x) => ({ params: { slug: x.series.slug }, props: x }));
+}
+
+interface Props { series: Series; parts: Article[] }
+const { series, parts } = Astro.props;
+const description = series.description?.slice(0, 160) || `${series.title} — Mürekkep'te bir yazı dizisi.`;
+---
+<Base title={series.title} description={description}>
+  <div class="wrap liste-sayfasi">
+    <ListeBasligi
+      kicker="Dizi"
+      title={series.title}
+      text={series.description}
+      count={`${parts.length} bölüm yayımlandı`}
+    />
+    <section aria-label="Bölümler">
+      <div class="feed" set:html={parts.map((a) => feedItemHtml(a)).join('')} />
+    </section>
+  </div>
+</Base>
+
+<style>
+  .liste-sayfasi { max-width: 760px; padding-bottom: 40px; }
+</style>

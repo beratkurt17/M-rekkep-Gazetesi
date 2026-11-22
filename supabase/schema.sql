@@ -3,7 +3,8 @@
 -- Yeni Supabase projesinde: SQL Editor → bu dosyanın tamamını yapıştır → Run
 -- Tekrar çalıştırılabilir (mevcut nesneleri bozmaz).
 -- Sonra sırayla: yayin-tetikleyici.sql, 2026-11-21-instagram-alintisi.sql,
---                2026-11-21-guvenlik.sql, 2026-11-22-faz1-bicim.sql
+--                2026-11-21-guvenlik.sql, 2026-11-22-faz1-bicim.sql,
+--                2026-11-22-faz2-yazarlar-diziler.sql
 -- =====================================================================
 
 -- ---------------------------------------------------------------------

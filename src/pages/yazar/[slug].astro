@@ -1,0 +1,39 @@
+---
+// Yazar sayfası: biyografi + yazarın yayındaki tüm yazıları (en yeniden eskiye).
+// Yalnızca en az bir yazısı yayında olan yazarlar için sayfa oluşur.
+import Base from '../../layouts/Base.astro';
+import ListeBasligi from '../../components/ListeBasligi.astro';
+import { getArticles, getAuthors } from '../../lib/db';
+import { feedItemHtml } from '../../lib/render';
+import type { Article, Author } from '../../lib/types';
+
+export async function getStaticPaths() {
+  const [all, authors] = await Promise.all([getArticles(), getAuthors()]);
+  return authors
+    .map((author) => ({ author, articles: all.filter((a) => a.author?.slug === author.slug) }))
+    .filter((x) => x.articles.length > 0)
+    .map((x) => ({ params: { slug: x.author.slug }, props: x }));
+}
+
+interface Props { author: Author; articles: Article[] }
+const { author, articles } = Astro.props;
+const description = author.bio?.slice(0, 160) || `${author.name} — Mürekkep'te yayımlanan yazıları.`;
+---
+<Base title={author.name} description={description} image={author.photo} imageAlt={author.name}>
+  <div class="wrap liste-sayfasi">
+    <ListeBasligi
+      kicker="Yazar"
+      title={author.name}
+      text={author.bio}
+      photo={author.photo}
+      count={`${articles.length} yazı`}
+    />
+    <section aria-label={`${author.name} yazıları`}>
+      <div class="feed" set:html={articles.map((a) => feedItemHtml(a)).join('')} />
+    </section>
+  </div>
+</Base>
+
+<style>
+  .liste-sayfasi { max-width: 760px; padding-bottom: 40px; }
+</style>

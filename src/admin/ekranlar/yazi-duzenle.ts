@@ -1,4 +1,4 @@
-// Ekran: Yazı editörü (yeni yazı / düzenleme, biçim, dipnot, kapak, Instagram alıntısı, kaydet-yayınla).
+// Ekran: Yazı editörü (yeni yazı / düzenleme, yazar, dizi, biçim, dipnot, kapak, Instagram alıntısı, kaydet-yayınla).
 import type { Article, Bicim, Placement } from '../../lib/types';
 import { isPoem } from '../../lib/format';
 import { $ } from '../ortak/dom';
@@ -12,6 +12,8 @@ import { showToast } from '../../scripts/toast';
 import { createEditor, type RichEditor } from '../yazi/zengin-metin';
 import { openPreview } from '../yazi/onizleme';
 import { bindFootnotes, lockFootnotes } from '../yazi/dipnot';
+import { bindYazarDizi, fillYazarDizi, collectYazarDizi } from '../yazi/yazar-dizi';
+import { SQL } from '../ortak/veritabani';
 import { statusOf, type Row } from '../yazi/tipler';
 
 let editor: RichEditor;
@@ -42,6 +44,7 @@ function renderBicimHint() {
 export function bindYaziDuzenle() {
   editor = createEditor($('body-editor'), $('toolbar'), pickInlineImage, () => bicim() === 'siir');
   bindFootnotes($('body-editor'), $('toolbar'), changed);
+  bindYazarDizi(form(), changed);
   field('bicim').addEventListener('change', renderBicimHint);
   $('body-editor').addEventListener('input', renderBicimHint);
 
@@ -58,7 +61,7 @@ export function bindYaziDuzenle() {
 
   $('publish-btn').addEventListener('click', () => save('published'));
   $('draft-btn').addEventListener('click', () => save('draft'));
-  $('preview-btn').addEventListener('click', () => openPreview(collectArticle()));
+  $('preview-btn').addEventListener('click', () => openPreview(collectArticle().article));
   $('unpublish-btn').addEventListener('click', () => {
     if (confirm('Yazı yayından kaldırılıp taslağa alınacak. Emin misin?')) save('draft');
   });
@@ -86,14 +89,14 @@ export function bindYaziDuzenle() {
   $('cover-remove').addEventListener('click', () => { coverUrl = null; markDirty(); renderCover(); });
 }
 
-export function openEditor(row: Row | null) {
+export async function openEditor(row: Row | null) {
+  await fillYazarDizi(row);
   current = row;
   coverUrl = row?.cover_image ?? null;
   slugTouched = !!row; // mevcut yazının adresi başlıkla otomatik değişmesin
 
   field('title').value = row?.title ?? '';
   field('spot').value = row?.spot ?? '';
-  field('byline').value = row?.byline ?? '';
   field('label').value = row?.label ?? '';
   field('bicim').value = row?.bicim ?? 'otomatik';
   field('manset').checked = row?.placement === 'manset';
@@ -132,17 +135,23 @@ function setSaveState(text: string, kind: '' | 'ok' | 'error' = '') {
   el.className = `save-state ${kind}`;
 }
 
-/** Formdaki (kaydedilmemiş olabilir) hâliyle yazı — önizleme ve kaydetme için. */
-function collectArticle(): Article {
+/**
+ * Formdaki (kaydedilmemiş olabilir) hâliyle yazı — önizleme ve kaydetme için.
+ * fields: yazar/dizi gibi veritabanına ayrıca yazılacak alanlar; error: kaydı engelleyen eksik.
+ */
+function collectArticle(): { article: Article; fields: Record<string, unknown>; error?: string } {
   const title = field('title').value.trim();
-  return {
+  const yd = collectYazarDizi();
+  const article: Article = {
     id: current?.id ?? 'onizleme',
     slug: field('slug').value.trim() || slugify(title) || 'onizleme',
     title: title || 'Başlıksız yazı',
     spot: orNull(field('spot').value),
     body: sanitizeHtml(editor.getHtml()),
     label: orNull(field('label').value),
-    byline: orNull(field('byline').value),
+    byline: yd.byline,
+    author: yd.author,
+    series: yd.series,
     cover_image: coverUrl,
     image_caption: orNull(field('image_caption').value),
     placement: (field('manset').checked ? 'manset' : 'normal') as Placement,
@@ -151,12 +160,14 @@ function collectArticle(): Article {
     ig_quote: orNull(field('ig_quote').value.replace(/\r\n/g, '\n')),
     bicim: bicim(),
   };
+  return { article, fields: yd.fields, error: yd.error };
 }
 
 async function save(status: 'draft' | 'published') {
   const title = field('title').value.trim();
   if (!title) { setSaveState('Başlık boş olamaz.', 'error'); field('title').focus(); return; }
-  const a = collectArticle();
+  const { article: a, fields, error: formError } = collectArticle();
+  if (formError) { setSaveState(formError, 'error'); return; }
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(a.slug)) {
     setSaveState('Adres sadece küçük harf, rakam ve tire içerebilir.', 'error'); return;
   }
@@ -166,9 +177,10 @@ async function save(status: 'draft' | 'published') {
 
   const record = {
     title: a.title, slug: a.slug, spot: a.spot, body: a.body,
-    label: a.label, byline: a.byline, cover_image: a.cover_image, image_caption: a.image_caption,
+    label: a.label, cover_image: a.cover_image, image_caption: a.image_caption,
     placement: a.placement, ig_quote: a.ig_quote, bicim: a.bicim,
     status, published_at: publishedAt,
+    ...fields, // yazar, dizi, bölüm (src/admin/yazi/yazar-dizi.ts)
   };
 
   setSaveState('Kaydediliyor…');
@@ -207,8 +219,11 @@ async function save(status: 'draft' | 'published') {
 /** Kayıt, veritabanında henüz olmayan bir alan yüzünden reddedildiyse hangi SQL dosyasının çalıştırılacağını söyler. */
 function missingColumnHint(msg: string): string | null {
   const files: Record<string, string> = {
-    ig_quote: 'supabase/2026-11-21-instagram-alintisi.sql',
-    bicim: 'supabase/2026-11-22-faz1-bicim.sql',
+    ig_quote: SQL.igQuote,
+    bicim: SQL.faz1,
+    author_id: SQL.faz2,
+    series_id: SQL.faz2,
+    series_part: SQL.faz2,
   };
   const col = Object.keys(files).find((c) => new RegExp(`\\b${c}\\b`).test(msg));
   return col ? `Veritabanı güncel değil (“${col}” alanı yok). Supabase SQL Editor'de ${files[col]} dosyasını çalıştır.` : null;

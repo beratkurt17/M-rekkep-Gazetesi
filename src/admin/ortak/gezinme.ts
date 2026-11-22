@@ -24,6 +24,7 @@ export function showView(name: string) {
   document.querySelectorAll<HTMLButtonElement>('.tab').forEach((t) =>
     t.classList.toggle('active', t.dataset.view === tab),
   );
+  document.body.dataset.view = name; // CSS: yazı düzenlerken telefondaki alt menü gizlenir
   markClean();
   ekran.onShow?.();
   scrollTo(0, 0);

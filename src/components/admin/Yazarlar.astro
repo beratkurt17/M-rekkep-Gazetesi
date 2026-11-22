@@ -1,0 +1,26 @@
+---
+// Ekran: Yazarlar — davranışı src/admin/ekranlar/yazarlar.ts
+import KayitEkrani from './KayitEkrani.astro';
+---
+<KayitEkrani view="authors" key="yazar" title="Yazarlar" newLabel="+ Yeni yazar">
+  <p slot="aciklama" class="muted kayit-aciklama">Yazının “Yazar” seçiminde bu liste çıkar. En az bir yazısı yayında olan her yazarın sitede kendi sayfası olur.</p>
+
+  <section class="panel">
+    <label>Ad soyad <input name="name" maxlength="120" required autocomplete="off" /></label>
+    <label>Adres
+      <div class="slug-row"><span>/yazar/</span><input name="slug" autocomplete="off" /></div>
+      <small>Addan otomatik oluşur. Sayfa paylaşıldıktan sonra değiştirme.</small>
+    </label>
+    <label>Biyografi
+      <textarea name="bio" rows="5" maxlength="2000" placeholder="Kısa tanıtım (isteğe bağlı) — yazar sayfasında görünür"></textarea>
+    </label>
+  </section>
+
+  <section class="panel">
+    <h2>Fotoğraf</h2>
+    <div id="yazar-foto" class="cover-preview photo-preview"></div>
+    <input type="file" id="yazar-foto-dosya" accept="image/*" />
+    <button type="button" id="yazar-foto-kaldir" class="btn ghost small" hidden>Fotoğrafı kaldır</button>
+    <small>İsteğe bağlı. Sitede yuvarlak kesilir; yüzün ortada olduğu bir fotoğraf seç.</small>
+  </section>
+</KayitEkrani>

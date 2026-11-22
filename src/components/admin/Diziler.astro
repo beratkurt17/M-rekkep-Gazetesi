@@ -1,0 +1,24 @@
+---
+// Ekran: Diziler (tefrika) — davranışı src/admin/ekranlar/diziler.ts
+import KayitEkrani from './KayitEkrani.astro';
+---
+<KayitEkrani view="series" key="dizi" title="Diziler" newLabel="+ Yeni dizi">
+  <p slot="aciklama" class="muted kayit-aciklama">Bölüm bölüm yayımlanan yazılar için. Bir yazıyı diziye eklemek için yazının “Dizi” bölümünden diziyi ve bölüm numarasını seç.</p>
+
+  <section class="panel">
+    <label>Dizinin adı <input name="title" maxlength="200" required autocomplete="off" /></label>
+    <label>Adres
+      <div class="slug-row"><span>/dizi/</span><input name="slug" autocomplete="off" /></div>
+      <small>Addan otomatik oluşur. Sayfa paylaşıldıktan sonra değiştirme.</small>
+    </label>
+    <label>Tanıtım
+      <textarea name="description" rows="4" maxlength="2000" placeholder="Dizi sayfasının başında görünür (isteğe bağlı)"></textarea>
+    </label>
+  </section>
+
+  <section class="panel">
+    <h2>Bölümler</h2>
+    <ol id="dizi-bolumleri" class="bolum-listesi"></ol>
+    <small>Bölüm eklemek ya da sırasını değiştirmek için ilgili yazıyı aç.</small>
+  </section>
+</KayitEkrani>

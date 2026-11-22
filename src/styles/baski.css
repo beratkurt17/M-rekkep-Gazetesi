@@ -15,7 +15,7 @@
 
   /* Ekrana özgü her şey */
   .site-header, .site-footer, .reading-hide, .art-actions, .reading-bar,
-  .ilerleme, .devam, .dn-card, .toast, dialog, .dn-back { display: none !important; }
+  .ilerleme, .devam, .dn-card, .toast, dialog, .dn-back, .series-nav { display: none !important; }
 
   .print-only { display: block !important; }
   .print-head {

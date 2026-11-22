@@ -1,9 +1,10 @@
 ---
 import Base from '../../layouts/Base.astro';
 import ShareSheet from '../../components/ShareSheet.astro';
-import { getArticles, usingSampleData } from '../../lib/db';
+import { getArticles, seriesParts, usingSampleData } from '../../lib/db';
 import { plainExcerpt, readingMinutes, formatDate } from '../../lib/format';
 import { articleHtml, feedItemHtml, articlePath, whatsappUrl } from '../../lib/render';
+import { seriesNavHtml } from '../../lib/dizi-gezinme';
 import type { Article } from '../../lib/types';
 
 export async function getStaticPaths() {
@@ -14,12 +15,13 @@ export async function getStaticPaths() {
       article,
       next: all[i + 1] ?? null, // bir önceki (daha eski) yazı
       more: all.filter((a) => a.id !== article.id && a.id !== all[i + 1]?.id).slice(0, 3),
+      parts: article.series ? seriesParts(all, article.series.slug) : [],
     },
   }));
 }
 
-interface Props { article: Article; next: Article | null; more: Article[] }
-const { article: a, next, more } = Astro.props;
+interface Props { article: Article; next: Article | null; more: Article[]; parts: Article[] }
+const { article: a, next, more, parts } = Astro.props;
 
 const url = new URL(articlePath(a.slug), Astro.site).toString();
 const domain = Astro.site!.host;
@@ -55,6 +57,7 @@ const supabaseKey = usingSampleData ? '' : import.meta.env.PUBLIC_SUPABASE_ANON_
       data-api-key={supabaseKey || undefined}
     >
       <Fragment set:html={articleHtml(a)} />
+      <Fragment set:html={seriesNavHtml(a, parts)} />
       <p class="print-only print-foot">Bu yazı Mürekkep'te yayımlandı: {url}</p>
 
       <section class="art-share reading-hide" aria-labelledby="paylas">

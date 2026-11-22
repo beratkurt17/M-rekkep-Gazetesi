@@ -1,0 +1,70 @@
+---
+// Liste sayfalarının başlık bloğu: yazar, dizi (ve ileride sayı) sayfaları.
+// Üst etiket ("Yazar", "Dizi") + başlık + isteğe bağlı fotoğraf, açıklama ve sayı.
+interface Props {
+  kicker: string;
+  title: string;
+  text?: string | null;
+  photo?: string | null;
+  count?: string;
+}
+const { kicker, title, text, photo, count } = Astro.props;
+---
+<header class:list={['lb', { 'lb--photo': !!photo }]}>
+  {photo && <img class="lb-photo" src={photo} alt="" width="112" height="112" />}
+  <div class="lb-text">
+    <p class="lb-kicker">{kicker}</p>
+    <h1 class="lb-title">{title}</h1>
+    {text && <p class="lb-desc">{text}</p>}
+    {count && <p class="lb-count">{count}</p>}
+  </div>
+</header>
+
+<style>
+  .lb {
+    display: grid;
+    gap: 16px;
+    padding: 28px 0 22px;
+    margin-bottom: 8px;
+    border-bottom: 2px solid var(--rule);
+  }
+  .lb-photo {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    filter: grayscale(0.3);
+  }
+  .lb-text { display: flex; flex-direction: column; gap: 8px; max-width: 66ch; }
+  .lb-kicker {
+    margin: 0;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .lb-title {
+    margin: 0;
+    font-family: var(--font-head);
+    font-size: clamp(32px, 7vw, 48px);
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  .lb-desc {
+    margin: 4px 0 0;
+    font-family: var(--font-body);
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--ink-2);
+    white-space: pre-line;
+  }
+  .lb-count { margin: 0; font-family: var(--font-ui); font-size: 14px; color: var(--ink-3); }
+
+  @media (min-width: 640px) {
+    .lb--photo { grid-template-columns: 112px minmax(0, 1fr); align-items: start; gap: 24px; }
+    .lb-photo { width: 112px; height: 112px; }
+  }
+</style>
