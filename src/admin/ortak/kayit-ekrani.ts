@@ -3,7 +3,7 @@
 // alanlarını tanımlar.
 //
 // HTML (src/components/admin/KayitEkrani.astro ile üretilir), id'ler `${key}-…`:
-//   -liste, -yeni, -listesi, -bos  → liste bölümü
+//   -liste, -yeni, -listesi, -bos, (-ara) → liste bölümü
 //   -duzen, -geri, -form, -baslik, -sil, -durum → form bölümü
 import { $ } from './dom';
 import { sb } from './supabase';
@@ -12,11 +12,14 @@ import { escapeHtml, slugify } from './metin';
 import { dbErrorMessage } from './veritabani';
 import { showToast } from '../../scripts/toast';
 
+interface Sira { column: string; ascending?: boolean }
+
 export interface KayitEkraniAyar<T extends { id: string }> {
   key: string;
   table: string;
   select: string;
-  order: { column: string; ascending?: boolean };
+  /** Liste sırası; birden çok alan verilebilir (ör. ay, sonra gün). */
+  order: Sira | Sira[];
   /** Tablo yoksa çalıştırılacak SQL dosyası (hata mesajı için). */
   sqlFile: string;
   text: {
@@ -54,6 +57,7 @@ export function kayitEkrani<T extends { id: string }>(c: KayitEkraniAyar<T>): Ka
   const id = (s: string) => $(`${c.key}-${s}`);
   const form = () => id('form') as HTMLFormElement;
   let rows: T[] = [];
+  let query = '';
   let current: T | null = null;
   let slugTouched = false;
 
@@ -73,8 +77,9 @@ export function kayitEkrani<T extends { id: string }>(c: KayitEkraniAyar<T>): Ka
   async function load() {
     const list = id('listesi');
     list.innerHTML = '<li class="muted">Yükleniyor…</li>';
-    const { data, error } = await sb().from(c.table).select(c.select)
-      .order(c.order.column, { ascending: c.order.ascending ?? true });
+    let q = sb().from(c.table).select(c.select);
+    for (const o of [c.order].flat()) q = q.order(o.column, { ascending: o.ascending ?? true });
+    const { data, error } = await q;
     if (error) {
       list.innerHTML = '';
       id('bos').hidden = false;
@@ -82,10 +87,17 @@ export function kayitEkrani<T extends { id: string }>(c: KayitEkraniAyar<T>): Ka
       return;
     }
     rows = (data ?? []) as unknown as T[];
-    id('bos').hidden = rows.length > 0;
-    id('bos').textContent = c.text.empty;
-    list.innerHTML = rows.map((r) => {
-      const it = c.item(r);
+    renderList();
+  }
+
+  /** Listeyi (varsa arama metnine göre süzerek) çizer. */
+  function renderList() {
+    const norm = (s: string) => s.toLocaleLowerCase('tr-TR');
+    const items = rows.map((r) => ({ r, it: c.item(r) }))
+      .filter(({ it }) => !query || norm(`${it.title} ${it.meta ?? ''}`).includes(norm(query)));
+    id('bos').hidden = items.length > 0;
+    id('bos').textContent = rows.length ? 'Aramaya uyan kayıt yok.' : c.text.empty;
+    id('listesi').innerHTML = items.map(({ r, it }) => {
       return `<li class="post" data-id="${escapeHtml(r.id)}">
         <button type="button" class="post-title">${escapeHtml(it.title)}</button>
         ${it.meta ? `<div class="post-meta muted">${escapeHtml(it.meta)}</div>` : ''}
@@ -154,6 +166,10 @@ export function kayitEkrani<T extends { id: string }>(c: KayitEkraniAyar<T>): Ka
         const li = (e.target as HTMLElement).closest<HTMLElement>('li[data-id]');
         const r = li && rows.find((x) => x.id === li.dataset.id);
         if (r) open(r);
+      });
+      document.getElementById(`${c.key}-ara`)?.addEventListener('input', (e) => {
+        query = (e.target as HTMLInputElement).value.trim();
+        renderList();
       });
       form().addEventListener('input', (e) => {
         markDirty();

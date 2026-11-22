@@ -155,6 +155,18 @@ body.admin { background: var(--paper); font-family: var(--font-ui); font-size: 1
 .sira-btn:disabled { opacity: .3; cursor: default; }
 .bolum-listesi { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
 
+/* ---------- Köşeler (src/admin/ekranlar/koseler.ts) ---------- */
+.kose-secici { display: flex; gap: 6px; margin: -4px 0 18px; overflow-x: auto; scrollbar-width: none; }
+.kose-secici button {
+  flex: none; font: inherit; font-size: 15px; font-weight: 600; white-space: nowrap;
+  min-height: 42px; padding: 0 14px; border: 1px solid var(--rule-light); border-radius: 999px;
+  background: transparent; cursor: pointer;
+}
+.kose-secici button[aria-selected='true'] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.alt-baslik { font-family: var(--font-head); font-size: 24px; margin: 0; }
+.kayit-ara { margin: 0 0 6px; max-width: 640px; }
+.satir-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
 /* Editörde "+ Yeni yazar / dizi" satırı */
 .inline-new { display: flex; gap: 8px; }
 .inline-new input { flex: 1; min-width: 0; }

@@ -20,4 +20,5 @@ export const SQL = {
   faz1: 'supabase/2026-11-22-faz1-bicim.sql',
   faz2: 'supabase/2026-11-22-faz2-yazarlar-diziler.sql',
   faz3: 'supabase/2026-11-22-faz3-sayilar.sql',
+  faz4: 'supabase/2026-11-22-faz4-koseler.sql',
 } as const;

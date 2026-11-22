@@ -4,7 +4,8 @@
 -- Tekrar çalıştırılabilir (mevcut nesneleri bozmaz).
 -- Sonra sırayla: yayin-tetikleyici.sql, 2026-11-21-instagram-alintisi.sql,
 --                2026-11-21-guvenlik.sql, 2026-11-22-faz1-bicim.sql,
---                2026-11-22-faz2-yazarlar-diziler.sql, 2026-11-22-faz3-sayilar.sql
+--                2026-11-22-faz2-yazarlar-diziler.sql, 2026-11-22-faz3-sayilar.sql,
+--                2026-11-22-faz4-koseler.sql, 2026-11-22-faz4-takvim-verisi.sql
 -- =====================================================================
 
 -- ---------------------------------------------------------------------

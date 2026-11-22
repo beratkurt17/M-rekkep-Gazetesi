@@ -1,0 +1,90 @@
+---
+// Ekran: Köşeler — günün dizesi, günün kelimesi, edebiyat takvimi, editörün notu.
+// Davranış: src/admin/ekranlar/koseler.ts (bölüm seçici + editörün notu),
+//           kose-dize.ts, kose-kelime.ts, kose-takvim.ts
+import KayitEkrani from './KayitEkrani.astro';
+import { AYLAR } from '../../lib/format';
+---
+<main id="view-corners" class="view" hidden>
+  <div class="view-head"><h1>Köşeler</h1></div>
+  <div class="kose-secici" role="tablist" aria-label="Köşe seç">
+    <button type="button" role="tab" data-kose="dize" aria-selected="true">Günün dizesi</button>
+    <button type="button" role="tab" data-kose="kelime" aria-selected="false">Günün kelimesi</button>
+    <button type="button" role="tab" data-kose="takvim" aria-selected="false">Edebiyat takvimi</button>
+    <button type="button" role="tab" data-kose="not" aria-selected="false">Editörden</button>
+  </div>
+
+  <!-- GÜNÜN DİZESİ -->
+  <KayitEkrani key="dize" title="Günün dizesi" newLabel="+ Yeni dize">
+    <p slot="aciklama" class="muted kayit-aciklama">Her gün için bir dize ya da alıntı. Önceden birkaç haftalık girebilirsin; her gün sıradaki kendiliğinden çıkar. O güne kayıt yoksa en son dize görünmeye devam eder.</p>
+    <section class="panel">
+      <label>Hangi gün görünsün
+        <input type="date" name="show_on" required />
+        <small>Yeni kayıtta son planlanan günün ertesi hazır gelir.</small>
+      </label>
+      <label>Dize / alıntı
+        <textarea name="body" rows="5" maxlength="1200" required placeholder="Dize sonlarında Enter'a bas; sitede aynen korunur."></textarea>
+      </label>
+      <label>Kimin <input name="author" maxlength="120" placeholder="Ör. Cahit Sıtkı Tarancı" autocomplete="off" /></label>
+      <label>Kaynak <input name="source" maxlength="200" placeholder="Ör. Otuz Beş Yaş, 1946 (isteğe bağlı)" autocomplete="off" /></label>
+    </section>
+  </KayitEkrani>
+
+  <!-- GÜNÜN KELİMESİ -->
+  <KayitEkrani key="kelime" title="Günün kelimesi" newLabel="+ Yeni kelime">
+    <p slot="aciklama" class="muted kayit-aciklama">Her gün için bir kelime. Önceden girebilirsin; o güne kayıt yoksa en son kelime görünmeye devam eder.</p>
+    <section class="panel">
+      <label>Hangi gün görünsün
+        <input type="date" name="show_on" required />
+        <small>Yeni kayıtta son planlanan günün ertesi hazır gelir.</small>
+      </label>
+      <label>Kelime <input name="word" maxlength="60" required autocomplete="off" /></label>
+      <label>Anlamı <textarea name="meaning" rows="3" maxlength="600" required></textarea></label>
+    </section>
+  </KayitEkrani>
+
+  <!-- EDEBİYAT TAKVİMİ -->
+  <KayitEkrani key="takvim" title="Edebiyat takvimi" newLabel="+ Yeni kayıt" search="İsim ya da gün ara (ör. Tanpınar, 22 Kasım)">
+    <p slot="aciklama" class="muted kayit-aciklama">“Bugün edebiyatta” köşesi. Kayıtlar gün ve aya göre her yıl tekrarlanır; o gün kayıt yoksa köşe görünmez.</p>
+    <section class="panel">
+      <div class="satir-2">
+        <label>Gün <input type="number" name="day" min="1" max="31" inputmode="numeric" required /></label>
+        <label>Ay
+          <select name="month">{AYLAR.map((a, i) => <option value={i + 1}>{a}</option>)}</select>
+        </label>
+      </div>
+      <div class="satir-2">
+        <label>Yıl <input type="number" name="year" min="1" max="2100" inputmode="numeric" placeholder="Ör. 1901" /></label>
+        <label>Ne oldu
+          <select name="kind">
+            <option value="dogum">Doğdu</option>
+            <option value="olum">Öldü</option>
+            <option value="diger">Diğer (açıklamada yaz)</option>
+          </select>
+        </label>
+      </div>
+      <label>Kim / ne <input name="person" maxlength="120" required placeholder="Ör. Ahmet Hamdi Tanpınar" autocomplete="off" /></label>
+      <label>Kısa bilgi
+        <input name="note" maxlength="300" placeholder="Ör. Huzur'un yazarı. (sitede görünür, isteğe bağlı)" autocomplete="off" />
+      </label>
+      <label>Kaynak
+        <input name="source" maxlength="300" placeholder="Doğrulama kaynağı (yalnızca panelde görünür)" autocomplete="off" />
+      </label>
+    </section>
+  </KayitEkrani>
+
+  <!-- EDİTÖRDEN -->
+  <section id="not-bolum" hidden>
+    <form id="not-form" class="settings">
+      <section class="panel">
+        <h2>Editörün notu</h2>
+        <label>Başlık <input name="note_title" placeholder="Editörden" /></label>
+        <label>Metin <textarea name="note_text" rows="5" maxlength="1000" placeholder="Boş bırakılırsa sitede görünmez"></textarea></label>
+      </section>
+      <div class="kayit-islemler">
+        <span class="spacer"></span>
+        <button type="submit" class="btn primary big">Kaydet</button>
+      </div>
+    </form>
+  </section>
+</main>

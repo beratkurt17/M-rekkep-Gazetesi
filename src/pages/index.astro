@@ -2,11 +2,12 @@
 import Base from '../layouts/Base.astro';
 import Sidebar from '../components/Sidebar.astro';
 import SayiBandi from '../components/SayiBandi.astro';
-import { getFrontPage, getSettings, getIssues, getArticles, issueArticles } from '../lib/db';
+import KoseKarti from '../components/KoseKarti.astro';
+import { getFrontPage, getKoseler, getIssues, getArticles, issueArticles } from '../lib/db';
 import { feedItemHtml } from '../lib/render';
 
 const { lead, latest, popular } = await getFrontPage();
-const settings = await getSettings();
+const koseler = await getKoseler();
 // Güncel sayı: yayındaki en yüksek numaralı sayı (yoksa bant gösterilmez)
 const currentIssue = (await getIssues())[0] ?? null;
 const issueCount = currentIssue ? issueArticles(await getArticles(), currentIssue.number).length : 0;
@@ -19,6 +20,7 @@ const rest = latest.slice(SIDE_COUNT);
 <Base>
   <div class="wrap home">
     {currentIssue && <SayiBandi issue={currentIssue} count={issueCount} />}
+    <KoseKarti k={koseler} />
     {!lead && <p class="empty">Henüz yayımlanmış yazı yok.</p>}
 
     {lead && (
@@ -42,7 +44,7 @@ const rest = latest.slice(SIDE_COUNT);
               <div class="feed" set:html={rest.map((a) => feedItemHtml(a)).join('')} />
             </section>
           )}
-          <Sidebar settings={settings} popular={popular} />
+          <Sidebar koseler={koseler} popular={popular} />
         </div>
       </>
     )}

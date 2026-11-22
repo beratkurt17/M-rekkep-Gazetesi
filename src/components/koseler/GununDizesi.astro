@@ -1,0 +1,25 @@
+---
+// Köşe: Günün dizesi / alıntısı (dize sonları korunur)
+import type { Quote } from '../../lib/types';
+interface Props { quote: Quote }
+const { quote } = Astro.props;
+const credit = [quote.author, quote.source].filter(Boolean).join(', ');
+---
+<figure class="gd">
+  <blockquote>{quote.body}</blockquote>
+  {credit && <figcaption>— {credit}</figcaption>}
+</figure>
+
+<style>
+  .gd { margin: 0; }
+  .gd blockquote {
+    margin: 0;
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 19px;
+    line-height: 1.55;
+    white-space: pre-line;
+    text-wrap: pretty;
+  }
+  .gd figcaption { margin-top: 10px; font-family: var(--font-ui); font-size: 14px; font-weight: 600; color: var(--ink-2); }
+</style>

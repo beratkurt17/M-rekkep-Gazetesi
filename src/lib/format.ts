@@ -104,3 +104,25 @@ export function feedExcerpt(a: { spot: string | null; body: string; bicim?: Bici
   const text = plainExcerpt(a.body, 220);
   return text ? { kind: 'prose', text } : null;
 }
+
+/** Türkiye saatine göre tarih: "2026-11-22" (köşelerin "bugün"ü). */
+export function todayIso(d = new Date()): string {
+  return d.toLocaleDateString('en-CA', { timeZone: tz });
+}
+
+/** "2026-11-22" → bir gün sonrası "2026-11-23" (takvim günü; saat dilimi kaymaz). */
+export function nextDayIso(iso: string): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+/** "2026-11-22" → "22 Kasım 2026" */
+export function formatDay(iso: string): string {
+  return new Date(`${iso}T12:00:00Z`).toLocaleDateString('tr-TR', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+  });
+}
+
+export const AYLAR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'] as const;

@@ -1,0 +1,33 @@
+---
+// Köşe: Bugün edebiyatta — takvimde bugünün (gün/ay) kayıtları, yıla göre.
+import type { CalendarEntry } from '../../lib/types';
+interface Props { entries: CalendarEntry[] }
+const { entries } = Astro.props;
+const verb = { dogum: ' doğdu.', olum: ' öldü.', diger: '' } as const;
+---
+<ul class="be">
+  {entries.map((e) => (
+    <li>
+      <span class="be-yil">{e.year ?? ''}</span>
+      <span class="be-text"><strong>{e.person}</strong>{verb[e.kind]}{e.note && <> <span class="be-not">{e.note}</span></>}</span>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .be { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+  .be li {
+    display: grid;
+    grid-template-columns: 3.2em minmax(0, 1fr);
+    gap: 10px;
+    align-items: baseline;
+    padding-block: 9px;
+    border-top: 1px solid var(--rule-light);
+    font-size: 16px;
+    line-height: 1.45;
+  }
+  .be li:first-child { border-top: 0; padding-top: 0; }
+  .be-yil { font-family: var(--font-brand); font-size: 18px; color: var(--accent); }
+  .be-text strong { font-family: var(--font-head); font-weight: 700; }
+  .be-not { color: var(--ink-2); }
+</style>

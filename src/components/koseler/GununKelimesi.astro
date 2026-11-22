@@ -1,0 +1,13 @@
+---
+// Köşe: Günün kelimesi
+import type { Word } from '../../lib/types';
+interface Props { word: Word }
+const { word } = Astro.props;
+---
+<p class="gk-word">{word.word}</p>
+<p class="gk-meaning">{word.meaning}</p>
+
+<style>
+  .gk-word { margin: 0; font-family: var(--font-brand); font-size: 36px; line-height: 1.1; }
+  .gk-meaning { margin: 6px 0 0; color: var(--ink-2); font-size: 16px; line-height: 1.5; white-space: pre-line; }
+</style>

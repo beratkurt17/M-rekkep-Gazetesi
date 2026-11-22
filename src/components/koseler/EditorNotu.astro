@@ -1,0 +1,10 @@
+---
+// Köşe: Editörün notu (Köşeler → Editörden)
+interface Props { text: string }
+const { text } = Astro.props;
+---
+<p class="kn">{text}</p>
+
+<style>
+  .kn { margin: 0; font-style: italic; color: var(--ink-2); font-size: 17px; line-height: 1.55; white-space: pre-line; }
+</style>

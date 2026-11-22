@@ -1,0 +1,88 @@
+---
+// Telefonda ana sayfanın üstünde TEK köşe kutusu: küçük seçiciyle
+// Dize · Bugün · Kelime · Editörden arasında geçilir; aynı anda bir köşe görünür.
+// Yalnızca dolu köşeler listelenir. Masaüstünde gizli (köşeler yan sütunda).
+// Davranış: src/scripts/kose-karti.ts
+import type { Koseler } from '../lib/types';
+import EditorNotu from './koseler/EditorNotu.astro';
+import GununDizesi from './koseler/GununDizesi.astro';
+import GununKelimesi from './koseler/GununKelimesi.astro';
+import BugunEdebiyatta from './koseler/BugunEdebiyatta.astro';
+
+interface Props { k: Koseler }
+const { k } = Astro.props;
+
+const tabs = [
+  k.quote && { key: 'dize', label: 'Dize', title: 'Günün Dizesi' },
+  k.today.length > 0 && { key: 'bugun', label: 'Bugün', title: `Bugün Edebiyatta · ${k.todayLabel}` },
+  k.word && { key: 'kelime', label: 'Kelime', title: 'Günün Kelimesi' },
+  k.note && { key: 'not', label: 'Editörden', title: k.note.title },
+].filter(Boolean) as { key: string; label: string; title: string }[];
+---
+{tabs.length > 0 && (
+  <section class="kk" aria-label="Köşeler" data-kose-karti>
+    {tabs.length > 1 ? (
+      <div class="kk-tabs" role="tablist" aria-label="Köşe seç">
+        {tabs.map((t, i) => (
+          <button type="button" role="tab" id={`kk-tab-${t.key}`} aria-controls={`kk-${t.key}`}
+            aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1}>{t.label}</button>
+        ))}
+      </div>
+    ) : null}
+    {tabs.map((t, i) => (
+      <div class="kk-panel" role={tabs.length > 1 ? 'tabpanel' : undefined} id={`kk-${t.key}`}
+        aria-labelledby={tabs.length > 1 ? `kk-tab-${t.key}` : undefined} hidden={i !== 0}>
+        <h2 class="kk-title">{t.title}</h2>
+        {t.key === 'dize' && k.quote && <GununDizesi quote={k.quote} />}
+        {t.key === 'bugun' && <BugunEdebiyatta entries={k.today} />}
+        {t.key === 'kelime' && k.word && <GununKelimesi word={k.word} />}
+        {t.key === 'not' && k.note && <EditorNotu text={k.note.text} />}
+      </div>
+    ))}
+  </section>
+)}
+
+<script>
+  import { initKoseKarti } from '../scripts/kose-karti';
+  initKoseKarti();
+</script>
+
+<style>
+  .kk {
+    margin-bottom: 18px;
+    padding: 14px 16px 16px;
+    background: var(--paper-2);
+    border-radius: 6px;
+  }
+  .kk-tabs {
+    display: flex;
+    gap: 4px;
+    margin: -4px -6px 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .kk-tabs button {
+    flex: none;
+    min-height: 40px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    font-family: var(--font-ui);
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .kk-tabs button[aria-selected='true'] { background: var(--ink); color: var(--paper); }
+  .kk-title {
+    margin: 0 0 10px;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  @media (min-width: 960px) { .kk { display: none; } }
+</style>

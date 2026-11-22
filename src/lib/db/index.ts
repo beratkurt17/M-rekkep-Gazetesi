@@ -6,3 +6,4 @@ export { getAuthors } from './yazarlar';
 export { getSeries, seriesParts } from './diziler';
 export { getIssues, issueArticles } from './sayilar';
 export { getSettings } from './ayarlar';
+export { getKoseler } from './koseler';

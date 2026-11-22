@@ -1,7 +1,7 @@
 // SADECE YEREL GELİŞTİRME İÇİN ÖRNEK İÇERİK (PUBLIC_SAMPLE_DATA=1 ya da Supabase yokken).
 // Sıra, teslim kontrolündeki senaryoyu kurar: manşetten sonra kapaksız iki şiir,
 // üç satırlık başlıklı bir deneme ve görselli bir yazı art arda gelir.
-import type { Article, Author, Issue, Series, SiteSettings } from './types';
+import type { Article, Author, Issue, Koseler, Series, SiteSettings } from './types';
 
 /** Fotoğraf yerine geçen sade örnek görsel (SVG). */
 const foto = (a: string, b: string) =>
@@ -117,3 +117,18 @@ export const ORNEK_SAYILAR: Issue[] = [
     published_at: new Date(Date.now() - 3 * 3_600_000).toISOString(),
   },
 ];
+
+export const ORNEK_KOSELER: Koseler = {
+  note: { title: 'Editörden', text: 'Bu alan yönetim panelinden düzenlenecek kısa bir not içindir.' },
+  quote: {
+    body: 'Örnek bir dize burada durur,\nikinci dize onun altında.',
+    author: 'Örnek Şair',
+    source: 'Örnek Kitap, 1950',
+  },
+  word: { word: 'Hicran', meaning: 'Ayrılık; ayrılığın verdiği acı.' },
+  today: [
+    { year: 1900, kind: 'dogum', person: 'Örnek Yazar', note: 'Örnek bir takvim kaydı.' },
+    { year: 1960, kind: 'olum', person: 'Başka Bir Şair', note: null },
+  ],
+  todayLabel: new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', timeZone: 'Europe/Istanbul' }),
+};

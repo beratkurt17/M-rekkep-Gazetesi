@@ -1,28 +1,46 @@
 ---
-import type { Article, SiteSettings } from '../lib/types';
+// Ana sayfa yan sütunu. Masaüstünde köşeler burada alt alta; telefonda köşeler
+// sayfanın üstündeki tek kutuda (KoseKarti.astro) olduğu için burada yalnızca
+// "Çok Okunanlar" görünür.
+import type { Article, Koseler } from '../lib/types';
 import { articlePath } from '../lib/render';
+import EditorNotu from './koseler/EditorNotu.astro';
+import GununDizesi from './koseler/GununDizesi.astro';
+import GununKelimesi from './koseler/GununKelimesi.astro';
+import BugunEdebiyatta from './koseler/BugunEdebiyatta.astro';
 
 interface Props {
-  settings: SiteSettings;
+  koseler: Koseler;
   popular: Article[];
 }
-const { settings, popular } = Astro.props;
-const note = settings.editor_note;
-const word = settings.daily_word;
+const { koseler: k, popular } = Astro.props;
 ---
 <aside class="sidebar">
-  {note?.text && (
-    <section>
-      <h2 class="section-title">{note.title || 'Editörden'}</h2>
-      <p class="note">{note.text}</p>
+  {k.note && (
+    <section class="kose">
+      <h2 class="section-title">{k.note.title}</h2>
+      <EditorNotu text={k.note.text} />
     </section>
   )}
 
-  {word?.word && (
-    <section>
+  {k.quote && (
+    <section class="kose">
+      <h2 class="section-title">Günün Dizesi</h2>
+      <GununDizesi quote={k.quote} />
+    </section>
+  )}
+
+  {k.today.length > 0 && (
+    <section class="kose">
+      <h2 class="section-title">Bugün Edebiyatta · {k.todayLabel}</h2>
+      <BugunEdebiyatta entries={k.today} />
+    </section>
+  )}
+
+  {k.word && (
+    <section class="kose">
       <h2 class="section-title">Günün Kelimesi</h2>
-      <p class="word">{word.word}</p>
-      <p class="meaning">{word.meaning}</p>
+      <GununKelimesi word={k.word} />
     </section>
   )}
 
@@ -39,9 +57,8 @@ const word = settings.daily_word;
 <style>
   .sidebar { display: flex; flex-direction: column; gap: 36px; }
   .section-title { margin-bottom: 14px; }
-  .note { margin: 0; font-style: italic; color: var(--ink-2); font-size: 17px; }
-  .word { margin: 0; font-family: var(--font-brand); font-size: 36px; line-height: 1.1; }
-  .meaning { margin: 6px 0 0; color: var(--ink-2); font-size: 16px; }
+  /* Telefonda köşeler üstteki kutuda */
+  @media (max-width: 959px) { .kose { display: none; } }
   .popular { margin: 0; padding: 0; list-style: none; counter-reset: n; }
   .popular li {
     counter-increment: n;

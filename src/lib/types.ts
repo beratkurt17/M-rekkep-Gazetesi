@@ -63,5 +63,30 @@ export interface Issue {
 
 export interface SiteSettings {
   editor_note?: { title?: string; text: string };
+  /** Eski tek kelime ayarı; Faz 4'ten sonra yalnızca tablo yoksa kullanılır. */
   daily_word?: { word: string; meaning: string };
+}
+
+/** Günün dizesi / alıntısı. */
+export interface Quote { body: string; author: string | null; source: string | null }
+
+/** Günün kelimesi. */
+export interface Word { word: string; meaning: string }
+
+/** Edebiyat takviminde bir kayıt. */
+export interface CalendarEntry {
+  year: number | null;
+  kind: 'dogum' | 'olum' | 'diger';
+  person: string;
+  note: string | null;
+}
+
+/** Ana sayfa köşeleri (boş olanlar gösterilmez). */
+export interface Koseler {
+  note: { title: string; text: string } | null;
+  quote: Quote | null;
+  word: Word | null;
+  today: CalendarEntry[];
+  /** "22 Kasım" */
+  todayLabel: string;
 }

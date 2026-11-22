@@ -10,7 +10,7 @@ import { bindYaziDuzenle } from './ekranlar/yazi-duzenle';
 import { bindSayilar, showSayilar } from './ekranlar/sayilar';
 import { bindYazarlar, showYazarlar } from './ekranlar/yazarlar';
 import { bindDiziler, showDiziler } from './ekranlar/diziler';
-import { bindAyarlar, loadSettings } from './ekranlar/ayarlar';
+import { bindKoseler, showKoseler } from './ekranlar/koseler';
 
 export function initAdmin() {
   // Panel başka bir sitenin içine (iframe) gömülürse çalışmasın — tıklama hilesine karşı.
@@ -30,7 +30,7 @@ export function initAdmin() {
   registerView('issues', { onShow: showSayilar });
   registerView('authors', { onShow: showYazarlar });
   registerView('series', { onShow: showDiziler });
-  registerView('settings', { onShow: loadSettings });
+  registerView('corners', { onShow: showKoseler });
 
   bindShell();
   bindYaziListesi();
@@ -38,7 +38,7 @@ export function initAdmin() {
   bindSayilar();
   bindYazarlar();
   bindDiziler();
-  bindAyarlar();
+  bindKoseler();
 
   sb().auth.getSession().then(({ data }) => {
     if (data.session) enterApp(); else showLogin();

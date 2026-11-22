@@ -1,21 +1,27 @@
 ---
 // Ortak kayıt ekranı iskeleti: liste + form. Davranışı src/admin/ortak/kayit-ekrani.ts
 // Form alanları <slot /> ile ekrana özgü bileşenden gelir.
+// - view verilirse kendi başına bir ekrandır (<main id="view-…">),
+// - verilmezse bir ekranın içindeki bölümdür (<section id="<key>-bolum">, ör. Köşeler).
 interface Props {
-  view: string;     // gezinmedeki ekran adı → id="view-<view>"
+  view?: string;    // gezinmedeki ekran adı → id="view-<view>"
   key: string;      // öğe id'lerinin ön eki
   title: string;    // "Yazarlar"
   newLabel: string; // "+ Yeni yazar"
+  search?: string;  // verilirse listenin üstünde arama kutusu (yer tutucu metni)
 }
-const { view, key, title, newLabel } = Astro.props;
+const { view, key, title, newLabel, search } = Astro.props;
+const Tag = view ? 'main' : 'section';
+const Heading = view ? 'h1' : 'h2';
 ---
-<main id={`view-${view}`} class="view kayit-ekrani" hidden>
+<Tag id={view ? `view-${view}` : `${key}-bolum`} class:list={['kayit-ekrani', { view: !!view }]} hidden>
   <div id={`${key}-liste`}>
     <div class="view-head">
-      <h1>{title}</h1>
+      <Heading class:list={{ 'alt-baslik': !view }}>{title}</Heading>
       <button type="button" id={`${key}-yeni`} class="btn primary big">{newLabel}</button>
     </div>
     <slot name="aciklama" />
+    {search && <input type="search" id={`${key}-ara`} class="kayit-ara" placeholder={search} aria-label={search} autocomplete="off" />}
     <ul id={`${key}-listesi`} class="post-list"></ul>
     <p id={`${key}-bos`} class="muted" hidden></p>
   </div>
@@ -35,4 +41,4 @@ const { view, key, title, newLabel } = Astro.props;
       <p id={`${key}-durum`} class="save-state" role="status" aria-live="polite"></p>
     </form>
   </div>
-</main>
+</Tag>

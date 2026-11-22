@@ -10,7 +10,7 @@ import YaziDuzenle from '../../components/admin/YaziDuzenle.astro';
 import Sayilar from '../../components/admin/Sayilar.astro';
 import Yazarlar from '../../components/admin/Yazarlar.astro';
 import Diziler from '../../components/admin/Diziler.astro';
-import Ayarlar from '../../components/admin/Ayarlar.astro';
+import Koseler from '../../components/admin/Koseler.astro';
 import Onizleme from '../../components/admin/Onizleme.astro';
 import { FONT_URL } from '../../lib/fonts';
 const configured = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
@@ -45,7 +45,7 @@ const configured = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUB
     <Sayilar />
     <Yazarlar />
     <Diziler />
-    <Ayarlar />
+    <Koseler />
   </div>
 
   <Onizleme />
