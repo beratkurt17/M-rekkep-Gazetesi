@@ -1,8 +1,8 @@
 // Panel önizlemesi: kaydedilmemiş hâliyle akış öğesi, yazı sayfası ve hikâye kartı.
 // Site ile AYNI render fonksiyonlarını kullanır (src/lib/render.ts, src/lib/story-card.ts).
-import type { Article } from '../lib/types';
-import { feedItemHtml, articleHtml } from '../lib/render';
-import { drawStoryCard, loadStoryFonts } from '../lib/story-card';
+import type { Article } from '../../lib/types';
+import { feedItemHtml, articleHtml } from '../../lib/render';
+import { drawStoryCard, loadStoryFonts } from '../../lib/story-card';
 
 const SITE_HOST = new URL(import.meta.env.SITE ?? 'https://murekkepgzt.com').host;
 

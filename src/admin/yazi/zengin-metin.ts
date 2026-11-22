@@ -1,5 +1,5 @@
-// Basit metin editörü: contenteditable + araç çubuğu.
-import { escapeHtml } from './util';
+// Yazı metni editörü: contenteditable + araç çubuğu.
+import { escapeHtml } from '../ortak/metin';
 
 export interface RichEditor {
   getHtml(): string;

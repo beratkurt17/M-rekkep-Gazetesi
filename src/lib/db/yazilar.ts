@@ -1,23 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Article, Placement, SiteSettings } from './types';
-import { ORNEK_YAZILAR, ORNEK_AYARLAR } from './ornek-veri';
-import { sanitizeBody } from './sanitize';
-
-const url = import.meta.env.PUBLIC_SUPABASE_URL;
-const key = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
-
-// Supabase bilgisi yoksa ya da PUBLIC_SAMPLE_DATA=1 verilmişse (tasarım denemesi)
-// örnek verilerle çalışır.
-export const usingSampleData = !url || !key || import.meta.env.PUBLIC_SAMPLE_DATA === '1';
-
-const supabase = usingSampleData ? null : createClient(url, key, {
-  auth: { persistSession: false },
-});
-
-/** Kapak görseli yalnızca https adresi olabilir (javascript:, data: vb. atılır). */
-function safeImageUrl(v: unknown): string | null {
-  return typeof v === 'string' && /^https:\/\/[^\s"'<>]+$/i.test(v) ? v : null;
-}
+// Yazılar: veritabanından çekme ve ana sayfa düzeni.
+import type { Article, Placement } from '../types';
+import { ORNEK_YAZILAR } from '../ornek-veri';
+import { sanitizeBody } from '../sanitize';
+import { supabase, safeImageUrl } from './istemci';
 
 /** Veritabanı satırını Article'a çevirir; sonradan eklenen alanlar eski satırlarda boş olabilir. */
 function toArticle(r: Record<string, unknown>): Article {
@@ -57,13 +42,6 @@ export async function getArticles(): Promise<Article[]> {
   if (error) throw new Error(`Yazılar alınamadı: ${error.message}`);
   cache = (data ?? []).map(toArticle);
   return cache;
-}
-
-export async function getSettings(): Promise<SiteSettings> {
-  if (!supabase) return ORNEK_AYARLAR;
-  const { data, error } = await supabase.from('site_settings').select('key, value');
-  if (error) throw new Error(`Ayarlar alınamadı: ${error.message}`);
-  return Object.fromEntries((data ?? []).map((r) => [r.key, r.value])) as SiteSettings;
 }
 
 /**

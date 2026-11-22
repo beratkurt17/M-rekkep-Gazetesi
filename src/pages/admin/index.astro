@@ -3,6 +3,12 @@ import '../../styles/global.css';
 import '../../styles/feed.css';
 import '../../styles/article.css';
 import '../../styles/admin.css';
+import Giris from '../../components/admin/Giris.astro';
+import UstMenu from '../../components/admin/UstMenu.astro';
+import YaziListesi from '../../components/admin/YaziListesi.astro';
+import YaziDuzenle from '../../components/admin/YaziDuzenle.astro';
+import Ayarlar from '../../components/admin/Ayarlar.astro';
+import Onizleme from '../../components/admin/Onizleme.astro';
 import { FONT_URL } from '../../lib/fonts';
 const configured = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
 ---
@@ -26,165 +32,17 @@ const configured = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUB
     </div>
   )}
 
-  <!-- GİRİŞ -->
-  <section id="login" class="center-box" hidden>
-    <span class="login-brand">Mürekkep</span>
-    <h1>Yönetim</h1>
-    <form id="login-form">
-      <label>E-posta <input type="email" name="email" required autocomplete="username" /></label>
-      <label>Şifre <input type="password" name="password" required autocomplete="current-password" /></label>
-      <button type="submit" class="btn primary">Giriş yap</button>
-      <p class="error" id="login-error" hidden></p>
-    </form>
-  </section>
+  <Giris />
 
-  <!-- PANEL -->
+  <!-- PANEL: her ekran kendi bileşeninde (src/components/admin/) -->
   <div id="app" hidden>
-    <header class="topbar">
-      <a href="/" target="_blank" class="brand">Mürekkep <span>Yönetim</span></a>
-      <nav class="tabs">
-        <button data-view="list" class="tab active">Yazılar</button>
-        <button data-view="settings" class="tab">Site ayarları</button>
-      </nav>
-      <div class="top-actions">
-        <button id="rebuild-btn" class="btn ghost small" title="Siteyi şimdi yeniden oluştur">Siteyi güncelle</button>
-        <button id="logout-btn" class="btn ghost small">Çıkış</button>
-      </div>
-    </header>
-
-    <!-- YAZI LİSTESİ -->
-    <main id="view-list" class="view">
-      <div class="view-head">
-        <h1>Yazılar</h1>
-        <button id="new-btn" class="btn primary big">+ Yeni yazı</button>
-      </div>
-      <div class="filters" role="tablist" aria-label="Yazıları süz">
-        <button class="filter active" data-filter="all" role="tab">Tümü <span data-count="all"></span></button>
-        <button class="filter" data-filter="draft" role="tab">Taslaklar <span data-count="draft"></span></button>
-        <button class="filter" data-filter="published" role="tab">Yayında <span data-count="published"></span></button>
-      </div>
-      <ul id="post-list" class="post-list"></ul>
-      <p id="list-empty" class="muted" hidden></p>
-    </main>
-
-    <!-- YAZI EDİTÖRÜ -->
-    <main id="view-edit" class="view view-edit" hidden>
-      <div class="view-head">
-        <button id="back-btn" class="btn ghost">← Yazılar</button>
-        <span id="edit-status" class="pill"></span>
-      </div>
-
-      <form id="edit-form" class="edit-grid" novalidate>
-        <!-- 1. sıra: başlık, spot, metin -->
-        <div class="edit-main">
-          <textarea name="title" class="in-title" rows="2" placeholder="Başlık" required></textarea>
-          <textarea name="spot" class="in-spot" rows="2" placeholder="Kısa spot (isteğe bağlı) — akışta ve paylaşım önizlemesinde görünür"></textarea>
-
-          <div class="toolbar" id="toolbar">
-            <button type="button" data-cmd="bold" title="Kalın"><b>K</b></button>
-            <button type="button" data-cmd="italic" title="İtalik"><i>İ</i></button>
-            <button type="button" data-cmd="h2" title="Ara başlık">H2</button>
-            <button type="button" data-cmd="p" title="Normal paragraf">¶</button>
-            <button type="button" data-cmd="blockquote" title="Alıntı">❝</button>
-            <button type="button" data-cmd="ul" title="Liste">• Liste</button>
-            <button type="button" data-cmd="link" title="Bağlantı">Bağlantı</button>
-            <button type="button" data-cmd="image" title="Metne görsel ekle">Görsel</button>
-            <button type="button" data-cmd="removeFormat" title="Biçimi temizle">Temizle</button>
-          </div>
-          <div id="body-editor" class="body-editor" contenteditable="true" aria-label="Yazı metni"></div>
-          <p class="editor-hint">Şiir yapıştırırken dize ve kıta sonları korunur.</p>
-        </div>
-
-        <!-- 2. sıra: ayrıntılar -->
-        <aside class="edit-side">
-          <section class="panel">
-            <h2>Ayrıntılar</h2>
-            <label>Yazar <input name="byline" placeholder="Boşsa görünmez" /></label>
-            <label>Tür etiketi <input name="label" placeholder="Şiir, Öykü, Deneme… (isteğe bağlı)" /></label>
-            <label class="check"><input type="checkbox" name="manset" /> Manşette göster
-              <small>Seçilmezse ana sayfada en son yayımlanan yazı manşet olur.</small>
-            </label>
-          </section>
-
-          <section class="panel">
-            <h2>Instagram alıntısı</h2>
-            <textarea name="ig_quote" rows="5" placeholder="Hikâye kartında kullanılacak cümle ya da dizeler (isteğe bağlı)"></textarea>
-            <button type="button" id="quote-from-selection" class="btn small">Metinde seçili bölümü al</button>
-            <small id="quote-hint">Metinde bir cümle ya da birkaç dize seçip butona bas. Boş bırakırsan kartta başlık ve yazar kullanılır.</small>
-          </section>
-
-          <section class="panel">
-            <h2>Kapak görseli</h2>
-            <div id="cover-preview" class="cover-preview"></div>
-            <input type="file" id="cover-file" accept="image/*" />
-            <button type="button" id="cover-remove" class="btn ghost small" hidden>Görseli kaldır</button>
-            <label>Görsel altı yazısı <input name="image_caption" placeholder="Fotoğraf: …" /></label>
-          </section>
-
-          <section class="panel">
-            <h2>Yayın</h2>
-            <label>Yayın tarihi
-              <input type="datetime-local" name="published_at" />
-              <small>Boşsa yayımladığın an. İleri bir tarih verirsen o saatte yayına girer.</small>
-            </label>
-            <label>Adres
-              <div class="slug-row"><span>/yazi/</span><input name="slug" /></div>
-              <small>Yayımlandıktan sonra değiştirme; paylaşılan bağlantılar bozulur.</small>
-            </label>
-            <button type="button" id="unpublish-btn" class="btn ghost small danger" hidden>Yayından kaldır</button>
-          </section>
-        </aside>
-      </form>
-
-      <!-- Her zaman görünen işlem çubuğu -->
-      <div class="action-bar">
-        <p id="save-state" class="save-state" role="status" aria-live="polite"></p>
-        <div class="action-buttons">
-          <button type="button" id="draft-btn" class="btn">Taslağı kaydet</button>
-          <button type="button" id="preview-btn" class="btn">Önizle</button>
-          <button type="button" id="publish-btn" class="btn primary">Yayınla</button>
-        </div>
-      </div>
-    </main>
-
-    <!-- SİTE AYARLARI -->
-    <main id="view-settings" class="view" hidden>
-      <div class="view-head"><h1>Site ayarları</h1></div>
-      <form id="settings-form" class="settings">
-        <section class="panel">
-          <h2>Editörden notu</h2>
-          <label>Başlık <input name="note_title" placeholder="Editörden" /></label>
-          <label>Metin <textarea name="note_text" rows="4" placeholder="Boş bırakılırsa ana sayfada görünmez"></textarea></label>
-        </section>
-        <section class="panel">
-          <h2>Günün kelimesi</h2>
-          <label>Kelime <input name="word" /></label>
-          <label>Anlamı <textarea name="meaning" rows="2"></textarea></label>
-        </section>
-        <button type="submit" class="btn primary">Kaydet</button>
-      </form>
-    </main>
+    <UstMenu />
+    <YaziListesi />
+    <YaziDuzenle />
+    <Ayarlar />
   </div>
 
-  <!-- ÖNİZLEME -->
-  <dialog id="preview-dialog" class="preview-dialog" aria-label="Önizleme">
-    <div class="pv-head">
-      <div class="pv-tabs" role="tablist">
-        <button class="pv-tab active" data-pane="feed" role="tab">Akışta</button>
-        <button class="pv-tab" data-pane="page" role="tab">Yazı sayfası</button>
-        <button class="pv-tab" data-pane="story" role="tab">Hikâye kartı</button>
-      </div>
-      <button type="button" class="btn ghost small" data-close>Kapat</button>
-    </div>
-    <div class="pv-pane" data-pane="feed"><div class="pv-phone"><div class="feed pv-feed"></div></div></div>
-    <div class="pv-pane" data-pane="page" hidden><div class="pv-phone"><article class="art pv-page"></article></div></div>
-    <div class="pv-pane" data-pane="story" hidden>
-      <canvas class="pv-story" width="1080" height="1920"></canvas>
-      <p class="pv-story-note muted"></p>
-    </div>
-  </dialog>
-
-  <input type="file" id="inline-image-file" accept="image/*" hidden />
+  <Onizleme />
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <script>

@@ -1,0 +1,19 @@
+---
+// Panel: yazı önizleme penceresi — davranışı src/admin/yazi/onizleme.ts
+---
+<dialog id="preview-dialog" class="preview-dialog" aria-label="Önizleme">
+  <div class="pv-head">
+    <div class="pv-tabs" role="tablist">
+      <button class="pv-tab active" data-pane="feed" role="tab">Akışta</button>
+      <button class="pv-tab" data-pane="page" role="tab">Yazı sayfası</button>
+      <button class="pv-tab" data-pane="story" role="tab">Hikâye kartı</button>
+    </div>
+    <button type="button" class="btn ghost small" data-close>Kapat</button>
+  </div>
+  <div class="pv-pane" data-pane="feed"><div class="pv-phone"><div class="feed pv-feed"></div></div></div>
+  <div class="pv-pane" data-pane="page" hidden><div class="pv-phone"><article class="art pv-page"></article></div></div>
+  <div class="pv-pane" data-pane="story" hidden>
+    <canvas class="pv-story" width="1080" height="1920"></canvas>
+    <p class="pv-story-note muted"></p>
+  </div>
+</dialog>

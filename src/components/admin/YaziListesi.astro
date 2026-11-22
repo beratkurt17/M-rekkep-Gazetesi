@@ -1,0 +1,16 @@
+---
+// Ekran: yazılar listesi — davranışı src/admin/ekranlar/yazi-listesi.ts
+---
+<main id="view-list" class="view">
+  <div class="view-head">
+    <h1>Yazılar</h1>
+    <button id="new-btn" class="btn primary big">+ Yeni yazı</button>
+  </div>
+  <div class="filters" role="tablist" aria-label="Yazıları süz">
+    <button class="filter active" data-filter="all" role="tab">Tümü <span data-count="all"></span></button>
+    <button class="filter" data-filter="draft" role="tab">Taslaklar <span data-count="draft"></span></button>
+    <button class="filter" data-filter="published" role="tab">Yayında <span data-count="published"></span></button>
+  </div>
+  <ul id="post-list" class="post-list"></ul>
+  <p id="list-empty" class="muted" hidden></p>
+</main>
