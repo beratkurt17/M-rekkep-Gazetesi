@@ -18,7 +18,7 @@ function hoursAgo(h: number) {
   return new Date(Date.now() - h * 3_600_000).toISOString();
 }
 
-const base = { image_caption: null, view_count: 0, ig_quote: null } as const;
+const base = { image_caption: null, view_count: 0, ig_quote: null, bicim: 'otomatik' } as const;
 
 export const ORNEK_YAZILAR: Article[] = [
   {
@@ -27,13 +27,13 @@ export const ORNEK_YAZILAR: Article[] = [
     spot: 'Son beş yılda kapanan bağımsız kitapçıların ardından okurların alışkanlıkları nasıl değişti? Sahaflar, kütüphaneler ve dijital raflar arasında bir yolculuk.',
     label: 'Dosya', byline: 'Berat Kurt',
     cover_image: foto('#8d8577', '#5f584f'), image_caption: 'Fotoğraf: örnek görsel',
-    body: p(LOREM, LOREM, LOREM), published_at: hoursAgo(2), view_count: 120,
+    body: p(LOREM + '<sup data-not="Örnek dipnot: kaynak ya da kısa bir açıklama burada görünür.">*</sup>', LOREM, LOREM), published_at: hoursAgo(2), view_count: 120,
   },
   {
     ...base, id: '2', slug: 'ornek-siir-1', placement: 'normal',
     title: 'Kıyıda Bekleyen',
     spot: null, label: 'Şiir', byline: 'Mehmet Demir', cover_image: null,
-    body: '<p>dalga geri çekilirken<br>adını bıraktı kuma<br>ben okuyamadan</p>\n<p>sonra rüzgâr geldi<br>bir harf aldı, bir harf bıraktı<br>kıyıda yalnız ğ kaldı</p>',
+    body: '<p>dalga geri çekilirken<br>adını bıraktı kuma<br>ben okuyamadan</p>\n<p>sonra rüzgâr geldi<br>    bir harf aldı, bir harf bıraktı<br>kıyıda yalnız ğ kaldı</p>',
     ig_quote: 'dalga geri çekilirken\nadını bıraktı kuma\nben okuyamadan',
     published_at: hoursAgo(3), view_count: 45,
   },

@@ -8,10 +8,12 @@ const OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: [
     'p', 'br', 'strong', 'em', 'u', 'h2', 'h3', 'blockquote', 'a',
     'ul', 'ol', 'li', 'img', 'figure', 'figcaption', 'hr',
+    'sup', // yalnızca dipnot işareti: <sup data-not="…">
   ],
   allowedAttributes: {
     a: ['href', 'target', 'rel'],
     img: ['src', 'alt', 'loading'],
+    sup: ['data-not'],
   },
   allowedSchemes: ['https', 'http', 'mailto'],
   allowedSchemesByTag: { img: ['https'] },

@@ -22,10 +22,11 @@
         <button type="button" data-cmd="ul" title="Liste">• Liste</button>
         <button type="button" data-cmd="link" title="Bağlantı">Bağlantı</button>
         <button type="button" data-cmd="image" title="Metne görsel ekle">Görsel</button>
+        <button type="button" data-dipnot title="İmlecin olduğu yere dipnot ekle">Dipnot</button>
         <button type="button" data-cmd="removeFormat" title="Biçimi temizle">Temizle</button>
       </div>
       <div id="body-editor" class="body-editor" contenteditable="true" aria-label="Yazı metni"></div>
-      <p class="editor-hint">Şiir yapıştırırken dize ve kıta sonları korunur.</p>
+      <p class="editor-hint" id="editor-hint">Yapıştırırken dize, kıta sonları ve satır başı girintileri korunur. Dipnotu düzenlemek için metindeki numarasına dokun.</p>
     </div>
 
     <!-- 2. sıra: ayrıntılar -->
@@ -34,6 +35,14 @@
         <h2>Ayrıntılar</h2>
         <label>Yazar <input name="byline" placeholder="Boşsa görünmez" /></label>
         <label>Tür etiketi <input name="label" placeholder="Şiir, Öykü, Deneme… (isteğe bağlı)" /></label>
+        <label>Biçim
+          <select name="bicim">
+            <option value="otomatik">Otomatik</option>
+            <option value="duzyazi">Düzyazı</option>
+            <option value="siir">Şiir</option>
+          </select>
+          <small id="bicim-hint"></small>
+        </label>
         <label class="check"><input type="checkbox" name="manset" /> Manşette göster
           <small>Seçilmezse ana sayfada en son yayımlanan yazı manşet olur.</small>
         </label>
@@ -80,3 +89,18 @@
   </div>
 </main>
 <input type="file" id="inline-image-file" accept="image/*" hidden />
+
+<!-- Dipnot ekleme/düzenleme — davranışı src/admin/yazi/dipnot.ts -->
+<dialog id="dipnot-dialog" class="dn-dialog" aria-labelledby="dipnot-dialog-baslik">
+  <h2 id="dipnot-dialog-baslik">Dipnot</h2>
+  <label>Dipnot metni
+    <textarea id="dipnot-metin" rows="5" maxlength="1000" placeholder="Kaynak, açıklama ya da çeviri notu…"></textarea>
+    <small>Yayında metinde küçük bir numara olarak görünür; not yazının sonunda listelenir.</small>
+  </label>
+  <div class="dn-dialog-actions">
+    <button type="button" class="btn ghost small danger" data-dn="sil" hidden>Dipnotu sil</button>
+    <span class="spacer"></span>
+    <button type="button" class="btn" data-dn="vazgec">Vazgeç</button>
+    <button type="button" class="btn primary" data-dn="kaydet">Kaydet</button>
+  </div>
+</dialog>

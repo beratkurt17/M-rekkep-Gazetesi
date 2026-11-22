@@ -2,7 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import ShareSheet from '../../components/ShareSheet.astro';
 import { getArticles, usingSampleData } from '../../lib/db';
-import { plainExcerpt } from '../../lib/format';
+import { plainExcerpt, readingMinutes, formatDate } from '../../lib/format';
 import { articleHtml, feedItemHtml, articlePath, whatsappUrl } from '../../lib/render';
 import type { Article } from '../../lib/types';
 
@@ -37,10 +37,14 @@ const supabaseKey = usingSampleData ? '' : import.meta.env.PUBLIC_SUPABASE_ANON_
   publishedAt={a.published_at}
   compactHeader
 >
+  <div class="ilerleme" aria-hidden="true"><span></span></div>
+
   <div class="wrap">
+    <p class="print-only print-head"><strong>Mürekkep</strong><span>Edebiyat gazetesi · {formatDate(a.published_at)}</span></p>
     <article
       class="art"
       data-article
+      data-minutes={readingMinutes(a.body)}
       data-url={url}
       data-title={a.title}
       data-byline={a.byline ?? ''}
@@ -51,6 +55,7 @@ const supabaseKey = usingSampleData ? '' : import.meta.env.PUBLIC_SUPABASE_ANON_
       data-api-key={supabaseKey || undefined}
     >
       <Fragment set:html={articleHtml(a)} />
+      <p class="print-only print-foot">Bu yazı Mürekkep'te yayımlandı: {url}</p>
 
       <section class="art-share reading-hide" aria-labelledby="paylas">
         <h2 class="section-title" id="paylas">Bu yazıyı paylaş</h2>
@@ -86,15 +91,35 @@ const supabaseKey = usingSampleData ? '' : import.meta.env.PUBLIC_SUPABASE_ANON_
     <button type="button" class="rb-exit">Okuma modundan çık</button>
   </div>
 
+  <div id="devam" class="devam" role="region" aria-label="Kaldığın yer" hidden>
+    <span>Kaldığın yerden devam et?</span>
+    <button type="button" data-devam="evet">Devam et</button>
+    <button type="button" data-devam="kapat" aria-label="Baştan oku">✕</button>
+  </div>
+
+  <div id="dipnot-kart" class="dn-card" role="dialog" aria-labelledby="dipnot-kart-baslik" tabindex="-1" hidden>
+    <div class="dn-card-head">
+      <span class="dn-card-title" id="dipnot-kart-baslik">Dipnot</span>
+      <button type="button" class="dn-card-close" aria-label="Kapat">✕</button>
+    </div>
+    <p class="dn-card-text"></p>
+  </div>
+
   <ShareSheet whatsappHref={whatsappUrl(a.title, url)} />
 
   <script>
     import { initReadingMode } from '../../scripts/reading-mode';
     import { initShare } from '../../scripts/share';
     import { countView } from '../../scripts/view-counter';
+    import { initProgressBar } from '../../scripts/ilerleme-cizgisi';
+    import { initResume } from '../../scripts/kaldigin-yer';
+    import { initFootnotes } from '../../scripts/dipnot';
     initReadingMode();
     initShare();
     countView();
+    initProgressBar();
+    initResume();
+    initFootnotes();
   </script>
 </Base>
 

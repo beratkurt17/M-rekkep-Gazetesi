@@ -1,5 +1,5 @@
 // Yazılar: veritabanından çekme ve ana sayfa düzeni.
-import type { Article, Placement } from '../types';
+import type { Article, Bicim, Placement } from '../types';
 import { ORNEK_YAZILAR } from '../ornek-veri';
 import { sanitizeBody } from '../sanitize';
 import { supabase, safeImageUrl } from './istemci';
@@ -20,6 +20,7 @@ function toArticle(r: Record<string, unknown>): Article {
     published_at: String(r.published_at),
     view_count: Number(r.view_count ?? 0),
     ig_quote: (r.ig_quote as string) ?? null,
+    bicim: ((r.bicim as Bicim) ?? 'otomatik'),
   };
 }
 

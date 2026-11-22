@@ -3,7 +3,7 @@
 -- Yeni Supabase projesinde: SQL Editor → bu dosyanın tamamını yapıştır → Run
 -- Tekrar çalıştırılabilir (mevcut nesneleri bozmaz).
 -- Sonra sırayla: yayin-tetikleyici.sql, 2026-11-21-instagram-alintisi.sql,
---                2026-11-21-guvenlik.sql
+--                2026-11-21-guvenlik.sql, 2026-11-22-faz1-bicim.sql
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
@@ -54,6 +54,7 @@ create table if not exists public.articles (
 
 -- Sonradan eklenen alanlar (mevcut tabloya da eklenir)
 alter table public.articles add column if not exists ig_quote text; -- hikâye kartı alıntısı
+-- bicim: supabase/2026-11-22-faz1-bicim.sql (otomatik / duzyazi / siir)
 
 create index if not exists articles_published_idx
   on public.articles (status, published_at desc);

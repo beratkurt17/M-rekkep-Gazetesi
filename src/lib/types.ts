@@ -1,5 +1,8 @@
 export type Placement = 'manset' | 'surmanset' | 'normal';
 
+/** Yazının dizgisi: otomatik → metindeki dize sonlarına bakılır. */
+export type Bicim = 'otomatik' | 'duzyazi' | 'siir';
+
 export interface Article {
   id: string;
   slug: string;
@@ -15,6 +18,7 @@ export interface Article {
   view_count: number;
   /** Editörün hikâye kartı için seçtiği alıntı (dize sonları \n ile korunur). */
   ig_quote: string | null;
+  bicim: Bicim;
 }
 
 export interface SiteSettings {

@@ -140,6 +140,45 @@ body.admin { background: var(--paper); font-family: var(--font-ui); font-size: 1
 .settings { display: flex; flex-direction: column; gap: 16px; max-width: 640px; }
 .settings .btn { align-self: flex-start; }
 
+/* ---------- Dipnot (src/admin/yazi/dipnot.ts) ----------
+   Kayıtta işaret "*"; editörde sırayla numara gösterilir, dokununca düzenlenir. */
+.body-editor { counter-reset: dipnot; }
+.body-editor sup[data-not] {
+  counter-increment: dipnot;
+  font-size: 0;
+  cursor: pointer;
+  user-select: none;
+}
+.body-editor sup[data-not]::after {
+  content: counter(dipnot);
+  display: inline-block;
+  margin-left: 2px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--paper);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  vertical-align: super;
+}
+.dn-dialog {
+  width: min(520px, calc(100vw - 24px));
+  padding: 20px;
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+}
+.dn-dialog::backdrop { background: rgba(37, 34, 31, .5); }
+.dn-dialog h2 { margin: 0 0 14px; font-family: var(--font-head); font-size: 22px; }
+.dn-dialog-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; }
+.dn-dialog-actions .spacer { flex: 1; }
+@media (max-width: 520px) {
+  .dn-dialog { margin: auto 0 0; width: 100%; max-width: 100%; border-radius: 10px 10px 0 0; padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+}
+
 /* ---------- Önizleme ---------- */
 .preview-dialog {
   width: min(980px, calc(100vw - 24px)); max-height: calc(100dvh - 24px);

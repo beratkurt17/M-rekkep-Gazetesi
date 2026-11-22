@@ -1,5 +1,5 @@
 ---
-// Paylaşım penceresi (3 seçenek) + Instagram hikâye kartı önizlemesi.
+// Paylaşım penceresi (WhatsApp, hikâye kartı, bağlantı, yazdır/PDF) + Instagram hikâye kartı önizlemesi.
 // Davranış: src/scripts/share.ts
 interface Props { whatsappHref: string }
 const { whatsappHref } = Astro.props;
@@ -13,6 +13,7 @@ const { whatsappHref } = Astro.props;
     <a class="opt" href={whatsappHref} target="_blank" rel="noopener" data-share="whatsapp">WhatsApp’ta paylaş</a>
     <button type="button" class="opt" data-share="story">Instagram için hikâye kartı hazırla</button>
     <button type="button" class="opt" data-share="copy">Bağlantıyı kopyala</button>
+    <button type="button" class="opt" data-share="print">Yazdır / PDF olarak kaydet</button>
   </div>
 </dialog>
 

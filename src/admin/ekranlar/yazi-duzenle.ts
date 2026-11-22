@@ -1,5 +1,6 @@
-// Ekran: Yazı editörü (yeni yazı / düzenleme, kapak, Instagram alıntısı, kaydet-yayınla).
-import type { Article, Placement } from '../../lib/types';
+// Ekran: Yazı editörü (yeni yazı / düzenleme, biçim, dipnot, kapak, Instagram alıntısı, kaydet-yayınla).
+import type { Article, Bicim, Placement } from '../../lib/types';
+import { isPoem } from '../../lib/format';
 import { $ } from '../ortak/dom';
 import { sb } from '../ortak/supabase';
 import { markDirty, markClean, confirmLeave } from '../ortak/kirli';
@@ -10,6 +11,7 @@ import { uploadImage } from '../ortak/gorsel';
 import { showToast } from '../../scripts/toast';
 import { createEditor, type RichEditor } from '../yazi/zengin-metin';
 import { openPreview } from '../yazi/onizleme';
+import { bindFootnotes, lockFootnotes } from '../yazi/dipnot';
 import { statusOf, type Row } from '../yazi/tipler';
 
 let editor: RichEditor;
@@ -25,8 +27,23 @@ function changed() {
   setSaveState('Kaydedilmemiş değişiklikler var');
 }
 
+const bicim = () => field('bicim').value as Bicim;
+
+/** Biçim seçiminin altındaki açıklama: otomatikte metnin nasıl dizileceğini söyler. */
+function renderBicimHint() {
+  const b = bicim();
+  $('bicim-hint').textContent =
+    b === 'siir' ? 'Şiir dizgisi. Yazarken Enter yeni dize, boş dizede tekrar Enter yeni kıta açar.'
+    : b === 'duzyazi' ? 'Dize sonları olsa bile düzyazı olarak dizilir.'
+    : isPoem(editor.getHtml()) ? 'Şu an şiir olarak dizilecek (metinde dize sonları var).'
+    : 'Şu an düzyazı olarak dizilecek. Şiir yazacaksan “Şiir”i seç.';
+}
+
 export function bindYaziDuzenle() {
-  editor = createEditor($('body-editor'), $('toolbar'), pickInlineImage);
+  editor = createEditor($('body-editor'), $('toolbar'), pickInlineImage, () => bicim() === 'siir');
+  bindFootnotes($('body-editor'), $('toolbar'), changed);
+  field('bicim').addEventListener('change', renderBicimHint);
+  $('body-editor').addEventListener('input', renderBicimHint);
 
   $('back-btn').addEventListener('click', () => { if (confirmLeave()) showView('list'); });
 
@@ -78,12 +95,15 @@ export function openEditor(row: Row | null) {
   field('spot').value = row?.spot ?? '';
   field('byline').value = row?.byline ?? '';
   field('label').value = row?.label ?? '';
+  field('bicim').value = row?.bicim ?? 'otomatik';
   field('manset').checked = row?.placement === 'manset';
   field('ig_quote').value = row?.ig_quote ?? '';
   field('image_caption').value = row?.image_caption ?? '';
   field('slug').value = row?.slug ?? '';
   field('published_at').value = isoToLocalInput(row?.published_at ?? null);
   editor.setHtml(row?.body ?? '');
+  lockFootnotes($('body-editor'));
+  renderBicimHint();
   renderCover();
   renderStatus();
   showView('edit');
@@ -129,6 +149,7 @@ function collectArticle(): Article {
     published_at: localInputToIso(field('published_at').value) ?? current?.published_at ?? new Date().toISOString(),
     view_count: 0,
     ig_quote: orNull(field('ig_quote').value.replace(/\r\n/g, '\n')),
+    bicim: bicim(),
   };
 }
 
@@ -146,7 +167,7 @@ async function save(status: 'draft' | 'published') {
   const record = {
     title: a.title, slug: a.slug, spot: a.spot, body: a.body,
     label: a.label, byline: a.byline, cover_image: a.cover_image, image_caption: a.image_caption,
-    placement: a.placement, ig_quote: a.ig_quote,
+    placement: a.placement, ig_quote: a.ig_quote, bicim: a.bicim,
     status, published_at: publishedAt,
   };
 
@@ -162,9 +183,7 @@ async function save(status: 'draft' | 'published') {
   if (error) {
     const msg = error.code === '23505'
       ? 'Bu adres başka bir yazıda kullanılıyor; “Adres” alanını değiştir.'
-      : error.message.includes('ig_quote')
-        ? 'Veritabanında Instagram alıntısı alanı yok. supabase/2026-11-21-instagram-alintisi.sql dosyasını çalıştır.'
-        : 'Kaydedilemedi: ' + error.message;
+      : missingColumnHint(error.message) ?? 'Kaydedilemedi: ' + error.message;
     setSaveState(`${msg} Metnin ekranda duruyor; tekrar deneyebilirsin.`, 'error');
     return;
   }
@@ -183,6 +202,16 @@ async function save(status: 'draft' | 'published') {
       : `Yayımlandı · ${time}. Site 1-2 dakika içinde güncellenir.`,
     'ok',
   );
+}
+
+/** Kayıt, veritabanında henüz olmayan bir alan yüzünden reddedildiyse hangi SQL dosyasının çalıştırılacağını söyler. */
+function missingColumnHint(msg: string): string | null {
+  const files: Record<string, string> = {
+    ig_quote: 'supabase/2026-11-21-instagram-alintisi.sql',
+    bicim: 'supabase/2026-11-22-faz1-bicim.sql',
+  };
+  const col = Object.keys(files).find((c) => new RegExp(`\\b${c}\\b`).test(msg));
+  return col ? `Veritabanı güncel değil (“${col}” alanı yok). Supabase SQL Editor'de ${files[col]} dosyasını çalıştır.` : null;
 }
 
 function pickInlineImage(): Promise<string | null> {

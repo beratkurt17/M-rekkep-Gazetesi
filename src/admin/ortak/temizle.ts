@@ -4,7 +4,9 @@
 const ALLOWED = new Set([
   'P', 'BR', 'STRONG', 'EM', 'U', 'H2', 'H3', 'BLOCKQUOTE', 'A',
   'UL', 'OL', 'LI', 'IMG', 'FIGURE', 'FIGCAPTION', 'HR',
+  'SUP', // yalnızca dipnot işareti: <sup data-not="…">*</sup>
 ]);
+const MAX_NOTE = 1000;
 const RENAME: Record<string, string> = { B: 'STRONG', I: 'EM', DIV: 'P', H1: 'H2', H4: 'H3' };
 
 function safeUrl(url: string | null, allowMailto = false): string | null {
@@ -53,6 +55,13 @@ export function sanitizeHtml(html: string): string {
         keep.src = src;
         keep.alt = node.getAttribute('alt') ?? '';
         keep.loading = 'lazy';
+      }
+      if (node.tagName === 'SUP') {
+        // Notu olmayan üst simge atılır, metni kalır; dipnotun içeriği yalnızca işarettir.
+        const note = node.getAttribute('data-not')?.trim().slice(0, MAX_NOTE);
+        if (!note) { walk(node); node.replaceWith(...node.childNodes); continue; }
+        keep['data-not'] = note;
+        node.textContent = '*';
       }
       for (const a of [...node.attributes]) node.removeAttribute(a.name);
       for (const [k, v] of Object.entries(keep)) node.setAttribute(k, v);

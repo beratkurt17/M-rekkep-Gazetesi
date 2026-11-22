@@ -1,4 +1,5 @@
 // Tarih ve metin yardımcıları (sunucu + tarayıcı ortak).
+import type { Bicim } from './types';
 
 const tz = 'Europe/Istanbul';
 
@@ -42,6 +43,7 @@ export function decodeEntities(s: string): string {
 export function htmlToText(html: string): string {
   return decodeEntities(
     html
+      .replace(/<sup\b[^>]*\bdata-not=[^>]*>[\s\S]*?<\/sup>/gi, '') // dipnot işaretleri
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<\/(p|h2|h3|li|blockquote|figure)>/gi, '\n\n')
       .replace(/<[^>]*>/g, ''),
@@ -55,6 +57,13 @@ export function htmlToText(html: string): string {
 /** Paragraf içinde metin–<br>–metin varsa şiir kabul edilir (dizeler alt alta). */
 export function isPoem(html: string): boolean {
   return /[^>\s]\s*<br\s*\/?>\s*[^<\s]/i.test(html);
+}
+
+/** Yazı şiir olarak mı dizilsin? Editörün seçimi önceliklidir; "otomatik"te metne bakılır. */
+export function isPoemArticle(a: { bicim?: Bicim; body: string }): boolean {
+  if (a.bicim === 'siir') return true;
+  if (a.bicim === 'duzyazi') return false;
+  return isPoem(a.body);
 }
 
 export function readingMinutes(html: string): number {
@@ -75,9 +84,8 @@ export function poemLines(html: string, n: number): string[] {
   return htmlToText(html).split('\n').map((l) => l.trim()).filter(Boolean).slice(0, n);
 }
 
-/** İlk paragraf uzun düzyazı ise true (büyük baş harf için). Şiirde hiç kullanılmaz. */
+/** İlk paragraf uzun ise true (büyük baş harf için). Yalnızca düzyazıda çağrılır. */
 export function hasLongOpening(html: string, minChars = 140): boolean {
-  if (isPoem(html)) return false;
   const first = html.match(/^\s*<p[^>]*>([\s\S]*?)<\/p>/i);
   return !!first && htmlToText(first[1]).length >= minChars;
 }
@@ -87,9 +95,9 @@ export type Excerpt =
   | { kind: 'poem'; lines: string[] };
 
 /** Akıştaki kısa metin: spot → (şiirse) ilk iki dize → metnin girişi. */
-export function feedExcerpt(a: { spot: string | null; body: string }): Excerpt | null {
+export function feedExcerpt(a: { spot: string | null; body: string; bicim?: Bicim }): Excerpt | null {
   if (a.spot?.trim()) return { kind: 'spot', text: a.spot.trim() };
-  if (isPoem(a.body)) {
+  if (isPoemArticle(a)) {
     const lines = poemLines(a.body, 2);
     return lines.length ? { kind: 'poem', lines } : null;
   }

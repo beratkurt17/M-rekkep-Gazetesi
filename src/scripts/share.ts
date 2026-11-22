@@ -106,6 +106,7 @@ export function initShare() {
         if (sheet.open) sheet.close();
         break;
       case 'story': if (sheet.open) sheet.close(); await openStory(); break;
+      case 'print': sheet.close(); setTimeout(() => print(), 50); break; // pencere kapansın, sonra baskı
       case 'story-share': await shareImage(); break;
       case 'story-download': await download(); showToast('Görsel indirildi'); break;
       case 'close': t.closest('dialog')?.close(); break;

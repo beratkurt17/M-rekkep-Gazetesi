@@ -3,7 +3,9 @@
 // böylece önizleme ile yayındaki görünüm birebir aynıdır.
 // Stiller: src/styles/feed.css ve src/styles/article.css
 import type { Article } from './types';
-import { feedExcerpt, formatDate, formatDateTime, readingMinutes, hasLongOpening, isPoem } from './format';
+import { feedExcerpt, formatDate, formatDateTime, readingMinutes, hasLongOpening, isPoemArticle } from './format';
+import { poemStanzas } from './siir';
+import { extractFootnotes, footnotesHtml } from './dipnot';
 
 export function esc(s: string): string {
   return s
@@ -52,9 +54,11 @@ export function feedItemHtml(a: Article, opts: { lead?: boolean; href?: string }
 
 /** Yazı sayfasının okuma sütunu: başlık bloğu + kapak + gövde. */
 export function articleHtml(a: Article): string {
-  const poem = isPoem(a.body);
+  const poem = isPoemArticle(a);
   const bodyClass = ['art-body', poem ? 'is-poem' : '', !poem && hasLongOpening(a.body) ? 'dropcap' : '']
     .filter(Boolean).join(' ');
+  const fn = extractFootnotes(a.body);
+  const body = poem ? poemStanzas(fn.html) : fn.html;
 
   return `<header class="art-head">
   ${a.label ? `<p class="art-label">${esc(a.label)}</p>` : ''}
@@ -73,7 +77,8 @@ ${a.cover_image ? `<figure class="art-cover">
   <img src="${esc(a.cover_image)}" alt="${esc(a.image_caption ?? '')}">
   ${a.image_caption ? `<figcaption>${esc(a.image_caption)}</figcaption>` : ''}
 </figure>` : ''}
-<div class="${bodyClass}">${a.body}</div>`;
+<div class="${bodyClass}">${body}</div>
+${footnotesHtml(fn.notes)}`;
 }
 
 /** WhatsApp paylaşım adresi: gerçek başlık + kalıcı bağlantı, doğru kodlanmış. */

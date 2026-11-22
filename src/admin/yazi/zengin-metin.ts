@@ -1,4 +1,5 @@
 // Yazı metni editörü: contenteditable + araç çubuğu.
+// Şiir biçiminde: Enter → yeni dize, boş dizede tekrar Enter → yeni kıta.
 import { escapeHtml } from '../ortak/metin';
 
 export interface RichEditor {
@@ -6,12 +7,51 @@ export interface RichEditor {
   setHtml(html: string): void;
 }
 
+/** Satır başındaki boşluk/sekme → bölünmez boşluk (şiir girintisi HTML'de kaybolmasın). */
+function keepIndent(line: string): string {
+  return line.replace(/^[ \t]+/, (m) => ' '.repeat(m.replace(/\t/g, '    ').length));
+}
+
+/** İmlecin hemen önündeki düğüm (boş metin düğümleri atlanır). */
+function nodeBeforeCaret(r: Range, area: HTMLElement): Node | null {
+  const c = r.startContainer;
+  if (c.nodeType === Node.TEXT_NODE && r.startOffset > 0) return c;
+  let n: Node | null = c.nodeType === Node.TEXT_NODE ? c : (c.childNodes[r.startOffset - 1] ?? null);
+  if (n && n !== c) return n;
+  // Kabın başındayız: yukarı çıkıp önceki kardeşe bak
+  n = c;
+  while (n && n !== area) {
+    let prev = n.previousSibling;
+    while (prev && prev.nodeType === Node.TEXT_NODE && !prev.textContent) prev = prev.previousSibling;
+    if (prev) return prev;
+    n = n.parentNode;
+  }
+  return null;
+}
+
 export function createEditor(
   area: HTMLElement,
   toolbar: HTMLElement,
   onImage: () => Promise<string | null>,
+  isPoemMode: () => boolean = () => false,
 ): RichEditor {
   document.execCommand('defaultParagraphSeparator', false, 'p');
+
+  area.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || e.shiftKey || e.isComposing || !isPoemMode()) return;
+    const sel = getSelection();
+    if (!sel || !sel.rangeCount) return;
+    e.preventDefault();
+    const r = sel.getRangeAt(0);
+    const before = r.collapsed ? nodeBeforeCaret(r, area) : null;
+    if (before?.nodeName === 'BR') {
+      // Boş dizede Enter: o boş satırı sil, yeni kıta (paragraf) başlat
+      (before as Element).remove();
+      document.execCommand('insertParagraph');
+    } else {
+      document.execCommand('insertLineBreak');
+    }
+  });
 
   const run = (cmd: string, value?: string) => {
     area.focus();
@@ -50,16 +90,16 @@ export function createEditor(
   });
 
   // Yapıştırırken biçimi temizle: tek satır sonu → <br>, boş satır → yeni paragraf
-  // (şiir dizeleri korunur)
+  // (şiir dizeleri ve satır başı girintileri korunur)
   area.addEventListener('paste', (e) => {
     e.preventDefault();
     const text = e.clipboardData?.getData('text/plain') ?? '';
     const html = text
-      .replace(/\r\n/g, '\n')
-      .split(/\n{2,}/)
-      .map((para) => para.trim())
-      .filter(Boolean)
-      .map((para) => `<p>${escapeHtml(para).replace(/\n/g, '<br>')}</p>`)
+      .replace(/\r\n?/g, '\n')
+      .split(/\n[ \t]*\n/)
+      .map((para) => para.replace(/^\n+|\s+$/g, ''))
+      .filter((para) => para.trim())
+      .map((para) => `<p>${para.split('\n').map((l) => escapeHtml(keepIndent(l.trimEnd()))).join('<br>')}</p>`)
       .join('');
     run('insertHTML', html);
   });
@@ -70,11 +110,11 @@ export function createEditor(
   };
 }
 
-function saveSelection(): Range | null {
+export function saveSelection(): Range | null {
   const s = getSelection();
   return s && s.rangeCount ? s.getRangeAt(0).cloneRange() : null;
 }
-function restoreSelection(r: Range | null) {
+export function restoreSelection(r: Range | null) {
   if (!r) return;
   const s = getSelection();
   s?.removeAllRanges();
