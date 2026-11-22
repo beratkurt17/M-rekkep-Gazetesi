@@ -19,4 +19,5 @@ export const SQL = {
   igQuote: 'supabase/2026-11-21-instagram-alintisi.sql',
   faz1: 'supabase/2026-11-22-faz1-bicim.sql',
   faz2: 'supabase/2026-11-22-faz2-yazarlar-diziler.sql',
+  faz3: 'supabase/2026-11-22-faz3-sayilar.sql',
 } as const;

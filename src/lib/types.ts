@@ -6,6 +6,9 @@ export type Bicim = 'otomatik' | 'duzyazi' | 'siir';
 /** Yazıda gösterilen yazar (sayfa bağlantısı için adresiyle). */
 export interface AuthorRef { slug: string; name: string }
 
+/** Yazının yer aldığı sayı (yalnızca yayındaki sayılar). */
+export interface IssueRef { number: number }
+
 /** Yazının ait olduğu dizi ve bölüm numarası. */
 export interface SeriesRef { slug: string; title: string; part: number }
 
@@ -22,6 +25,8 @@ export interface Article {
   author: AuthorRef | null;
   /** Dizi (tefrika) bölümü ise dizi bilgisi. */
   series: SeriesRef | null;
+  /** Yayındaki bir sayıya bağlıysa sayı numarası; sayı içindeki sırası. */
+  issue: (IssueRef & { order: number | null }) | null;
   cover_image: string | null;
   image_caption: string | null;
   placement: Placement;
@@ -45,6 +50,15 @@ export interface Series {
   slug: string;
   title: string;
   description: string | null;
+}
+
+/** Gazetenin bir sayısı: numara, dosya konusu ve girişi. */
+export interface Issue {
+  id: string;
+  number: number;
+  theme: string | null;
+  intro: string | null;
+  published_at: string;
 }
 
 export interface SiteSettings {

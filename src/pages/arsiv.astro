@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import ArsivSecici from '../components/ArsivSecici.astro';
 import { getArticles } from '../lib/db';
 import { formatDate } from '../lib/format';
 import { articlePath } from '../lib/render';
@@ -19,6 +20,7 @@ for (const a of all) {
 <Base title="Arşiv" description="Mürekkep Gazetesi'nde yayınlanan tüm yazılar.">
   <div class="wrap archive">
     <h1 class="page-title">Arşiv</h1>
+    <ArsivSecici current="aylar" />
     {all.length === 0 && <p class="meta">Henüz yazı yok.</p>}
     {[...groups].map(([month, items]) => (
       <section>
@@ -39,7 +41,7 @@ for (const a of all) {
 
 <style>
   .archive { max-width: 860px; padding-top: 36px; }
-  .page-title { font-family: var(--font-head); font-size: 44px; margin: 0 0 28px; }
+  .page-title { font-family: var(--font-head); font-size: 44px; margin: 0 0 18px; }
   section { margin-bottom: 36px; }
   ul { list-style: none; margin: 0; padding: 0; }
   li {

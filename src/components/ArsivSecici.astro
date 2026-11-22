@@ -1,0 +1,25 @@
+---
+// Arşivin üstünde: "Aylara göre" (/arsiv/) | "Sayılara göre" (/sayilar/)
+interface Props { current: 'aylar' | 'sayilar' }
+const { current } = Astro.props;
+---
+<nav class="as" aria-label="Arşiv görünümü">
+  <a href="/arsiv/" aria-current={current === 'aylar' ? 'page' : undefined}>Aylara göre</a>
+  <a href="/sayilar/" aria-current={current === 'sayilar' ? 'page' : undefined}>Sayılara göre</a>
+</nav>
+
+<style>
+  .as { display: flex; gap: 8px; margin: 0 0 28px; }
+  .as a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid var(--ink);
+    border-radius: 999px;
+    font-family: var(--font-ui);
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .as a[aria-current='page'] { background: var(--ink); color: var(--paper); }
+</style>

@@ -1,11 +1,15 @@
 ---
 import Base from '../layouts/Base.astro';
 import Sidebar from '../components/Sidebar.astro';
-import { getFrontPage, getSettings } from '../lib/db';
+import SayiBandi from '../components/SayiBandi.astro';
+import { getFrontPage, getSettings, getIssues, getArticles, issueArticles } from '../lib/db';
 import { feedItemHtml } from '../lib/render';
 
 const { lead, latest, popular } = await getFrontPage();
 const settings = await getSettings();
+// Güncel sayı: yayındaki en yüksek numaralı sayı (yoksa bant gösterilmez)
+const currentIssue = (await getIssues())[0] ?? null;
+const issueCount = currentIssue ? issueArticles(await getArticles(), currentIssue.number).length : 0;
 
 // Masaüstünde ilk birkaç yazı manşetin sağında; telefonda hepsi tek akış.
 const SIDE_COUNT = 4;
@@ -14,6 +18,7 @@ const rest = latest.slice(SIDE_COUNT);
 ---
 <Base>
   <div class="wrap home">
+    {currentIssue && <SayiBandi issue={currentIssue} count={issueCount} />}
     {!lead && <p class="empty">Henüz yayımlanmış yazı yok.</p>}
 
     {lead && (

@@ -7,6 +7,7 @@ import { registerView, showView } from './ortak/gezinme';
 import { showToast } from '../scripts/toast';
 import { bindYaziListesi, loadList } from './ekranlar/yazi-listesi';
 import { bindYaziDuzenle } from './ekranlar/yazi-duzenle';
+import { bindSayilar, showSayilar } from './ekranlar/sayilar';
 import { bindYazarlar, showYazarlar } from './ekranlar/yazarlar';
 import { bindDiziler, showDiziler } from './ekranlar/diziler';
 import { bindAyarlar, loadSettings } from './ekranlar/ayarlar';
@@ -26,6 +27,7 @@ export function initAdmin() {
   // Ekranlar: ad ↔ HTML'deki id="view-<ad>"
   registerView('list', { onShow: loadList });
   registerView('edit', { tab: 'list' });
+  registerView('issues', { onShow: showSayilar });
   registerView('authors', { onShow: showYazarlar });
   registerView('series', { onShow: showDiziler });
   registerView('settings', { onShow: loadSettings });
@@ -33,6 +35,7 @@ export function initAdmin() {
   bindShell();
   bindYaziListesi();
   bindYaziDuzenle();
+  bindSayilar();
   bindYazarlar();
   bindDiziler();
   bindAyarlar();

@@ -1,0 +1,40 @@
+---
+// Ekran: Sayılar — davranışı src/admin/ekranlar/sayilar.ts
+import KayitEkrani from './KayitEkrani.astro';
+---
+<KayitEkrani view="issues" key="sayi" title="Sayılar" newLabel="+ Yeni sayı">
+  <p slot="aciklama" class="muted kayit-aciklama">Yeni sayıyı istediğin zaman açarsın. Yazıları yazının “Sayı” seçiminden sayıya eklersin; yeni yazılar en son açtığın sayıya hazır gelir. Yayındaki en yüksek numaralı sayı ana sayfanın başında görünür.</p>
+
+  <section class="panel">
+    <label>Sayı numarası
+      <input type="number" name="number" min="1" max="99999" inputmode="numeric" required />
+      <small>Yeni sayıda bir öncekinin devamı olarak gelir.</small>
+    </label>
+    <label>Dosya konusu
+      <input name="theme" maxlength="120" placeholder="Ör. Yalnızlık (isteğe bağlı)" autocomplete="off" />
+    </label>
+    <label>Dosya girişi
+      <textarea name="intro" rows="6" maxlength="4000" placeholder="Bu sayının dosyasını tanıtan kısa yazı (isteğe bağlı). İlk paragraf ana sayfada görünür."></textarea>
+    </label>
+  </section>
+
+  <section class="panel">
+    <h2>Yayın</h2>
+    <label>Durum
+      <select name="status">
+        <option value="draft">Taslak — sitede görünmez</option>
+        <option value="published">Yayında</option>
+      </select>
+    </label>
+    <label>Sayının tarihi
+      <input type="datetime-local" name="published_at" />
+      <small>Boşsa yayına aldığın an. İleri bir tarih verirsen sayı o gün görünür.</small>
+    </label>
+  </section>
+
+  <section class="panel">
+    <h2>İçindekiler</h2>
+    <ol id="sayi-icindekiler" class="sira-listesi"></ol>
+    <small>Sayının sayfasında yazılar bu sırayla dizilir. Okları kullanıp “Kaydet”e bas.</small>
+  </section>
+</KayitEkrani>

@@ -1,17 +1,19 @@
 // Yazılar: veritabanından çekme, yazar/dizi bilgisini bağlama ve ana sayfa düzeni.
-import type { Article, Author, Bicim, Placement, Series } from '../types';
+import type { Article, Author, Bicim, Issue, Placement, Series } from '../types';
 import { ORNEK_YAZILAR } from '../ornek-veri';
 import { sanitizeBody } from '../sanitize';
 import { supabase, safeImageUrl } from './istemci';
 import { getAuthors } from './yazarlar';
 import { getSeries } from './diziler';
+import { getIssues } from './sayilar';
 
-interface Lookups { authors: Map<string, Author>; series: Map<string, Series> }
+interface Lookups { authors: Map<string, Author>; series: Map<string, Series>; issues: Map<string, Issue> }
 
 /** Veritabanı satırını Article'a çevirir; sonradan eklenen alanlar eski satırlarda boş olabilir. */
 function toArticle(r: Record<string, unknown>, l: Lookups): Article {
   const author = r.author_id ? l.authors.get(String(r.author_id)) : undefined;
   const series = r.series_id ? l.series.get(String(r.series_id)) : undefined;
+  const issue = r.issue_id ? l.issues.get(String(r.issue_id)) : undefined;
   return {
     id: String(r.id),
     slug: String(r.slug),
@@ -24,6 +26,7 @@ function toArticle(r: Record<string, unknown>, l: Lookups): Article {
     series: series && r.series_part
       ? { slug: series.slug, title: series.title, part: Number(r.series_part) }
       : null,
+    issue: issue ? { number: issue.number, order: r.issue_order ? Number(r.issue_order) : null } : null,
     cover_image: safeImageUrl(r.cover_image),
     image_caption: (r.image_caption as string) ?? null,
     placement: ((r.placement as Placement) ?? 'normal'),
@@ -46,15 +49,17 @@ export async function getArticles(): Promise<Article[]> {
     return cache;
   }
   // RLS sadece yayındaki ve tarihi gelmiş yazıları döndürür.
-  const [{ data, error }, authors, series] = await Promise.all([
+  const [{ data, error }, authors, series, issues] = await Promise.all([
     supabase.from('articles').select('*').order('published_at', { ascending: false }),
     getAuthors(),
     getSeries(),
+    getIssues(),
   ]);
   if (error) throw new Error(`Yazılar alınamadı: ${error.message}`);
   const lookups: Lookups = {
     authors: new Map(authors.map((a) => [a.id, a])),
     series: new Map(series.map((s) => [s.id, s])),
+    issues: new Map(issues.map((i) => [i.id, i])),
   };
   cache = (data ?? []).map((r) => toArticle(r, lookups));
   return cache;

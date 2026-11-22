@@ -1,7 +1,7 @@
 // SADECE YEREL GELİŞTİRME İÇİN ÖRNEK İÇERİK (PUBLIC_SAMPLE_DATA=1 ya da Supabase yokken).
 // Sıra, teslim kontrolündeki senaryoyu kurar: manşetten sonra kapaksız iki şiir,
 // üç satırlık başlıklı bir deneme ve görselli bir yazı art arda gelir.
-import type { Article, Author, Series, SiteSettings } from './types';
+import type { Article, Author, Issue, Series, SiteSettings } from './types';
 
 /** Fotoğraf yerine geçen sade örnek görsel (SVG). */
 const foto = (a: string, b: string) =>
@@ -18,11 +18,11 @@ function hoursAgo(h: number) {
   return new Date(Date.now() - h * 3_600_000).toISOString();
 }
 
-const base = { image_caption: null, view_count: 0, ig_quote: null, bicim: 'otomatik', series: null } as const;
+const base = { image_caption: null, view_count: 0, ig_quote: null, bicim: 'otomatik', series: null, issue: null } as const;
 
 const YAZILAR: Omit<Article, 'author'>[] = [
   {
-    ...base, id: '1', slug: 'ornek-manset', placement: 'manset',
+    ...base, id: '1', issue: { number: 1, order: 1 }, slug: 'ornek-manset', placement: 'manset',
     title: 'Şehrin Kitapçıları Kapanırken Okurlar Nereye Gidiyor?',
     spot: 'Son beş yılda kapanan bağımsız kitapçıların ardından okurların alışkanlıkları nasıl değişti? Sahaflar, kütüphaneler ve dijital raflar arasında bir yolculuk.',
     label: 'Dosya', byline: 'Berat Kurt',
@@ -30,7 +30,7 @@ const YAZILAR: Omit<Article, 'author'>[] = [
     body: p(LOREM + '<sup data-not="Örnek dipnot: kaynak ya da kısa bir açıklama burada görünür.">*</sup>', LOREM, LOREM), published_at: hoursAgo(2), view_count: 120,
   },
   {
-    ...base, id: '2', slug: 'ornek-siir-1', placement: 'normal',
+    ...base, id: '2', issue: { number: 1, order: 3 }, slug: 'ornek-siir-1', placement: 'normal',
     title: 'Kıyıda Bekleyen',
     spot: null, label: 'Şiir', byline: 'Mehmet Demir', cover_image: null,
     body: '<p>dalga geri çekilirken<br>adını bıraktı kuma<br>ben okuyamadan</p>\n<p>sonra rüzgâr geldi<br>    bir harf aldı, bir harf bıraktı<br>kıyıda yalnız ğ kaldı</p>',
@@ -45,14 +45,14 @@ const YAZILAR: Omit<Article, 'author'>[] = [
     published_at: hoursAgo(4), view_count: 30,
   },
   {
-    ...base, id: '4', slug: 'ornek-deneme', placement: 'normal', series: { slug: 'okuma-uzerine', title: 'Okuma Üzerine', part: 1 },
+    ...base, id: '4', issue: { number: 1, order: 2 }, slug: 'ornek-deneme', placement: 'normal', series: { slug: 'okuma-uzerine', title: 'Okuma Üzerine', part: 1 },
     title: 'Yavaş Okumanın Savunusu: Hız Çağında Bir Sayfada Uzun Süre Kalmak ve Dikkati Yeniden Kazanmak Üzerine',
     spot: 'Bildirimlerin, kaydırmanın ve özetlerin çağında bir paragrafın içinde oyalanmak neden hâlâ değerli?',
     label: 'Deneme', byline: 'Ayşe Yılmaz', cover_image: null,
     body: p(LOREM, LOREM, LOREM), published_at: hoursAgo(6), view_count: 150,
   },
   {
-    ...base, id: '5', slug: 'ornek-kitap', placement: 'normal', series: { slug: 'okuma-uzerine', title: 'Okuma Üzerine', part: 2 },
+    ...base, id: '5', issue: { number: 1, order: 4 }, slug: 'ornek-kitap', placement: 'normal', series: { slug: 'okuma-uzerine', title: 'Okuma Üzerine', part: 2 },
     title: 'Unutulmuş Bir Romanı Yeniden Okumak',
     spot: 'Yayımlandığı yıl fark edilmeyen bir roman, bugün neden bu kadar güncel?',
     label: 'Kitap', byline: 'Berat Kurt', cover_image: foto('#a59d8d', '#7d7466'),
@@ -109,3 +109,11 @@ export const ORNEK_YAZILAR: Article[] = YAZILAR.map((a) => {
   const au = ORNEK_YAZARLAR.find((y) => y.name === a.byline);
   return { ...a, author: au ? { slug: au.slug, name: au.name } : null };
 });
+
+export const ORNEK_SAYILAR: Issue[] = [
+  {
+    id: 's1', number: 1, theme: 'Okumak',
+    intro: 'Kitapçılar kapanırken, bildirimler çoğalırken okumak ne demek? Bu sayının dosyasında okumanın hâlini, yavaşlığını ve direncini konuşuyoruz.\n\nDosyada bir deneme dizisinin ilk iki bölümü, bir şiir ve kitapçıların hikâyesi var.',
+    published_at: new Date(Date.now() - 3 * 3_600_000).toISOString(),
+  },
+];

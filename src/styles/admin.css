@@ -147,6 +147,12 @@ body.admin { background: var(--paper); font-family: var(--font-ui); font-size: 1
 .kayit-islemler { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .kayit-islemler .spacer { flex: 1; }
 .photo-preview { width: 128px; aspect-ratio: 1; border-radius: 50%; }
+.sira-listesi { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+.sira-listesi li { display: grid; grid-template-columns: 2em minmax(0, 1fr) auto auto; align-items: center; gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--rule-light); font-size: 15px; }
+.sira-listesi li:last-child { border-bottom: 0; }
+.sira-no { font-weight: 700; color: var(--accent); }
+.sira-btn { width: 44px; height: 40px; border: 1px solid var(--rule-light); border-radius: 4px; background: transparent; font-size: 18px; cursor: pointer; }
+.sira-btn:disabled { opacity: .3; cursor: default; }
 .bolum-listesi { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
 
 /* Editörde "+ Yeni yazar / dizi" satırı */

@@ -1,0 +1,71 @@
+---
+// Sayı sayfası: dosya konusu + dosya girişi + sayının yazıları (editörün sırasıyla);
+// altta önceki / sonraki sayı.
+import Base from '../../layouts/Base.astro';
+import ListeBasligi from '../../components/ListeBasligi.astro';
+import { getArticles, getIssues, issueArticles } from '../../lib/db';
+import { formatDate } from '../../lib/format';
+import { feedItemHtml, issuePath } from '../../lib/render';
+import type { Article, Issue } from '../../lib/types';
+
+export async function getStaticPaths() {
+  const [all, issues] = await Promise.all([getArticles(), getIssues()]);
+  // issues: en yeniden eskiye → newer = i-1, older = i+1
+  return issues.map((issue, i) => ({
+    params: { number: String(issue.number) },
+    props: {
+      issue,
+      articles: issueArticles(all, issue.number),
+      newer: issues[i - 1] ?? null,
+      older: issues[i + 1] ?? null,
+    },
+  }));
+}
+
+interface Props { issue: Issue; articles: Article[]; newer: Issue | null; older: Issue | null }
+const { issue, articles, newer, older } = Astro.props;
+const title = issue.theme ? `Sayı ${issue.number}: ${issue.theme}` : `Sayı ${issue.number}`;
+const description = issue.intro?.slice(0, 160) || `Mürekkep, Sayı ${issue.number} — ${formatDate(issue.published_at)}.`;
+---
+<Base title={title} description={description}>
+  <div class="wrap liste-sayfasi">
+    <ListeBasligi
+      kicker={`Sayı ${issue.number} · ${formatDate(issue.published_at)}`}
+      title={issue.theme ?? `Sayı ${issue.number}`}
+      text={issue.intro}
+      count={articles.length ? `Bu sayıda ${articles.length} yazı` : 'Bu sayının yazıları henüz yayımlanmadı.'}
+    />
+    {articles.length > 0 && (
+      <section aria-label="İçindekiler">
+        <div class="feed" set:html={articles.map((a) => feedItemHtml(a)).join('')} />
+      </section>
+    )}
+
+    {(older || newer) && (
+      <nav class="sayi-gez" aria-label="Diğer sayılar">
+        {older ? <a href={issuePath(older.number)}>← Sayı {older.number}</a> : <span></span>}
+        <a href="/sayilar/" class="tum">Tüm sayılar</a>
+        {newer ? <a href={issuePath(newer.number)}>Sayı {newer.number} →</a> : <span></span>}
+      </nav>
+    )}
+  </div>
+</Base>
+
+<style>
+  .liste-sayfasi { max-width: 760px; padding-bottom: 40px; }
+  .sayi-gez {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+    margin-top: 28px;
+    padding-top: 14px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--font-ui);
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .sayi-gez a { display: inline-flex; align-items: center; min-height: 44px; }
+  .sayi-gez a:last-child { justify-self: end; }
+  .sayi-gez .tum { font-weight: 600; color: var(--ink-3); text-decoration: underline; text-underline-offset: 3px; }
+</style>

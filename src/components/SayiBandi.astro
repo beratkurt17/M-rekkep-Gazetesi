@@ -1,0 +1,74 @@
+---
+// Ana sayfanın başında güncel sayı: "Sayı 12 · 22 Kasım 2026", varsa dosya konusu
+// ve girişinin ilk paragrafı; sayının sayfasına bağlantı.
+import type { Issue } from '../lib/types';
+import { formatDate } from '../lib/format';
+import { issuePath } from '../lib/render';
+
+interface Props { issue: Issue; count: number }
+const { issue, count } = Astro.props;
+const firstParagraph = issue.intro?.split(/\n\s*\n/)[0]?.trim() ?? '';
+---
+<section class="sb" aria-label={`Sayı ${issue.number}`}>
+  <p class="sb-top">
+    <span class="sb-no">Sayı {issue.number}</span>
+    <time class="sb-date" datetime={issue.published_at}>{formatDate(issue.published_at)}</time>
+  </p>
+  {issue.theme && <h2 class="sb-theme"><span>Dosya:</span> {issue.theme}</h2>}
+  {firstParagraph && <p class="sb-intro">{firstParagraph}</p>}
+  <a class="sb-link" href={issuePath(issue.number)}>
+    {issue.theme ? 'Dosyayı oku' : 'Bu sayının içindekiler'}{count > 0 && ` · ${count} yazı`} →
+  </a>
+</section>
+
+<style>
+  .sb {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 0 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .sb-top { display: flex; align-items: baseline; gap: 10px; margin: 0; }
+  .sb-no { font-family: var(--font-brand); font-size: 24px; line-height: 1; }
+  .sb-date { font-family: var(--font-ui); font-size: 13px; color: var(--ink-3); }
+  .sb-theme {
+    margin: 0;
+    font-family: var(--font-head);
+    font-style: italic;
+    font-weight: 600;
+    font-size: 22px;
+    line-height: 1.2;
+  }
+  .sb-theme span { font-style: normal; color: var(--accent); }
+  .sb-intro {
+    margin: 0;
+    max-width: 66ch;
+    font-family: var(--font-body);
+    font-size: 16.5px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .sb-link {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-family: var(--font-ui);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  @media (min-width: 960px) {
+    .sb { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 18px; row-gap: 6px; }
+    .sb-intro { flex-basis: 100%; -webkit-line-clamp: 2; }
+    .sb-link { margin-left: auto; min-height: 0; }
+  }
+</style>

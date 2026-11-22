@@ -1,4 +1,4 @@
-// Ekran: Yazı editörü (yeni yazı / düzenleme, yazar, dizi, biçim, dipnot, kapak, Instagram alıntısı, kaydet-yayınla).
+// Ekran: Yazı editörü (yeni yazı / düzenleme, sayı, yazar, dizi, biçim, dipnot, kapak, Instagram alıntısı, kaydet-yayınla).
 import type { Article, Bicim, Placement } from '../../lib/types';
 import { isPoem } from '../../lib/format';
 import { $ } from '../ortak/dom';
@@ -13,6 +13,7 @@ import { createEditor, type RichEditor } from '../yazi/zengin-metin';
 import { openPreview } from '../yazi/onizleme';
 import { bindFootnotes, lockFootnotes } from '../yazi/dipnot';
 import { bindYazarDizi, fillYazarDizi, collectYazarDizi } from '../yazi/yazar-dizi';
+import { bindSayiSecimi, fillSayiSecimi, collectSayiSecimi, savedSayiSecimi } from '../yazi/sayi-secimi';
 import { SQL } from '../ortak/veritabani';
 import { statusOf, type Row } from '../yazi/tipler';
 
@@ -45,6 +46,7 @@ export function bindYaziDuzenle() {
   editor = createEditor($('body-editor'), $('toolbar'), pickInlineImage, () => bicim() === 'siir');
   bindFootnotes($('body-editor'), $('toolbar'), changed);
   bindYazarDizi(form(), changed);
+  bindSayiSecimi(form());
   field('bicim').addEventListener('change', renderBicimHint);
   $('body-editor').addEventListener('input', renderBicimHint);
 
@@ -90,7 +92,7 @@ export function bindYaziDuzenle() {
 }
 
 export async function openEditor(row: Row | null) {
-  await fillYazarDizi(row);
+  await Promise.all([fillYazarDizi(row), fillSayiSecimi(row)]);
   current = row;
   coverUrl = row?.cover_image ?? null;
   slugTouched = !!row; // mevcut yazının adresi başlıkla otomatik değişmesin
@@ -152,6 +154,7 @@ function collectArticle(): { article: Article; fields: Record<string, unknown>; 
     byline: yd.byline,
     author: yd.author,
     series: yd.series,
+    issue: null, // önizlemede sayı bağlantısı gösterilmez
     cover_image: coverUrl,
     image_caption: orNull(field('image_caption').value),
     placement: (field('manset').checked ? 'manset' : 'normal') as Placement,
@@ -160,7 +163,7 @@ function collectArticle(): { article: Article; fields: Record<string, unknown>; 
     ig_quote: orNull(field('ig_quote').value.replace(/\r\n/g, '\n')),
     bicim: bicim(),
   };
-  return { article, fields: yd.fields, error: yd.error };
+  return { article, fields: { ...yd.fields, ...collectSayiSecimi() }, error: yd.error };
 }
 
 async function save(status: 'draft' | 'published') {
@@ -180,7 +183,7 @@ async function save(status: 'draft' | 'published') {
     label: a.label, cover_image: a.cover_image, image_caption: a.image_caption,
     placement: a.placement, ig_quote: a.ig_quote, bicim: a.bicim,
     status, published_at: publishedAt,
-    ...fields, // yazar, dizi, bölüm (src/admin/yazi/yazar-dizi.ts)
+    ...fields, // yazar, dizi, bölüm, sayı (src/admin/yazi/yazar-dizi.ts, sayi-secimi.ts)
   };
 
   setSaveState('Kaydediliyor…');
@@ -201,6 +204,7 @@ async function save(status: 'draft' | 'published') {
   }
 
   current = data as Row;
+  savedSayiSecimi(current);
   markClean();
   slugTouched = true;
   field('published_at').value = isoToLocalInput(current.published_at);
@@ -224,6 +228,8 @@ function missingColumnHint(msg: string): string | null {
     author_id: SQL.faz2,
     series_id: SQL.faz2,
     series_part: SQL.faz2,
+    issue_id: SQL.faz3,
+    issue_order: SQL.faz3,
   };
   const col = Object.keys(files).find((c) => new RegExp(`\\b${c}\\b`).test(msg));
   return col ? `Veritabanı güncel değil (“${col}” alanı yok). Supabase SQL Editor'de ${files[col]} dosyasını çalıştır.` : null;

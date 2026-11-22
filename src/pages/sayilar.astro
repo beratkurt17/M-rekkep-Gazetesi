@@ -1,0 +1,50 @@
+---
+// Arşiv — sayılara göre: her sayı, tarihi, dosya konusu ve yazı sayısı.
+import Base from '../layouts/Base.astro';
+import ArsivSecici from '../components/ArsivSecici.astro';
+import { getArticles, getIssues, issueArticles } from '../lib/db';
+import { formatDate } from '../lib/format';
+import { issuePath } from '../lib/render';
+
+const [all, issues] = await Promise.all([getArticles(), getIssues()]);
+const rows = issues.map((i) => ({ issue: i, count: issueArticles(all, i.number).length }));
+---
+<Base title="Sayılar" description="Mürekkep Gazetesi'nin tüm sayıları.">
+  <div class="wrap archive">
+    <h1 class="page-title">Arşiv</h1>
+    <ArsivSecici current="sayilar" />
+    {rows.length === 0 && <p class="meta">Henüz yayımlanmış sayı yok.</p>}
+    <ul>
+      {rows.map(({ issue, count }) => (
+        <li>
+          <a href={issuePath(issue.number)} class="no">Sayı {issue.number}</a>
+          <div class="info">
+            {issue.theme && <a href={issuePath(issue.number)} class="t">{issue.theme}</a>}
+            <span class="meta">{formatDate(issue.published_at)} · {count} yazı</span>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+</Base>
+
+<style>
+  .archive { max-width: 860px; padding-top: 36px; padding-bottom: 40px; }
+  .page-title { font-family: var(--font-head); font-size: 44px; margin: 0 0 18px; }
+  ul { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+  li {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 16px;
+    align-items: baseline;
+    padding-block: 14px;
+    border-bottom: 1px solid var(--rule-light);
+  }
+  .no { font-family: var(--font-brand); font-size: 22px; }
+  .info { display: flex; flex-direction: column; gap: 2px; }
+  .t { font-family: var(--font-head); font-style: italic; font-weight: 600; font-size: 19px; line-height: 1.3; }
+  .meta { font-family: var(--font-ui); font-size: 13.5px; color: var(--ink-3); }
+  @media (max-width: 600px) {
+    li { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>

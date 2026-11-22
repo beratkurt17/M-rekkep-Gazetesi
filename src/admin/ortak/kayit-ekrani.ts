@@ -19,7 +19,11 @@ export interface KayitEkraniAyar<T extends { id: string }> {
   order: { column: string; ascending?: boolean };
   /** Tablo yoksa çalıştırılacak SQL dosyası (hata mesajı için). */
   sqlFile: string;
-  text: { new: string; empty: string; saved: string; deleted: string };
+  text: {
+    new: string; empty: string; saved: string; deleted: string;
+    /** Benzersiz alan çakışınca (varsayılan: adres kullanılıyor). */
+    duplicate?: string;
+  };
   /** Adres (slug) bu alandan otomatik üretilir (yeni kayıtta, elle değiştirilene kadar). */
   slugFrom?: string;
   /** Listede satır: başlık ve altındaki küçük bilgi. */
@@ -33,8 +37,11 @@ export interface KayitEkraniAyar<T extends { id: string }> {
   confirmDelete(r: T): Promise<string>;
   /** Kayıt eklendi/değişti/silindi (ör. başka ekranların önbelleğini tazele). */
   changed?(): void;
-  /** Kayıt başarıyla kaydedildikten sonra (formda kayda bağlı bir şeyi yenilemek için). */
-  afterSave?(r: T): void;
+  /**
+   * Kayıt başarıyla kaydedildikten sonra (ör. bağlı satırları güncelle, formu yenile).
+   * Hata metni dönerse kullanıcıya gösterilir.
+   */
+  afterSave?(r: T): void | string | Promise<void | string>;
 }
 
 export interface KayitEkrani {
@@ -113,15 +120,20 @@ export function kayitEkrani<T extends { id: string }>(c: KayitEkraniAyar<T>): Ka
       ? sb().from(c.table).update(rec).eq('id', current.id).select(c.select).single()
       : sb().from(c.table).insert(rec).select(c.select).single();
     const { data, error } = await q;
-    if (error) { status(`${dbErrorMessage(error, c.sqlFile)} Yazdıkların ekranda duruyor.`, 'error'); return; }
+    if (error) {
+      const msg = error.code === '23505' && c.text.duplicate ? c.text.duplicate : dbErrorMessage(error, c.sqlFile);
+      status(`${msg} Yazdıkların ekranda duruyor.`, 'error');
+      return;
+    }
     current = data as unknown as T;
     slugTouched = true;
     id('baslik').textContent = c.heading(current);
     id('sil').hidden = false;
+    const afterError = await c.afterSave?.(current);
+    c.changed?.();
+    if (afterError) { status(afterError, 'error'); return; }
     markClean();
     status(c.text.saved, 'ok');
-    c.changed?.();
-    c.afterSave?.(current);
   }
 
   async function remove() {
