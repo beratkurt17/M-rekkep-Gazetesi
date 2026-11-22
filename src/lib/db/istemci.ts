@@ -8,6 +8,16 @@ const key = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 // örnek verilerle çalışır.
 export const usingSampleData = !url || !key || import.meta.env.PUBLIC_SAMPLE_DATA === '1';
 
+// GitHub'daki yayın derlemesinde (CI) örnek veriyle site yayınlanmasın: Supabase bilgisi
+// yoksa derleme durur, canlıdaki son sürüm olduğu gibi kalır.
+if (process.env.CI && usingSampleData) {
+  throw new Error(
+    'Yayın derlemesinde Supabase bilgisi yok (ya da PUBLIC_SAMPLE_DATA=1). ' +
+    'GitHub → Settings → Secrets and variables → Actions → Variables altında ' +
+    'PUBLIC_SUPABASE_URL ve PUBLIC_SUPABASE_ANON_KEY tanımlı olmalı.',
+  );
+}
+
 export const supabase = usingSampleData ? null : createClient(url, key, {
   auth: { persistSession: false },
 });
