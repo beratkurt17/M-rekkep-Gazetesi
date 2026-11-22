@@ -33,8 +33,9 @@ const supabaseKey = usingSampleData ? '' : import.meta.env.PUBLIC_SUPABASE_ANON_
 <Base
   title={a.title}
   description={description}
-  image={a.cover_image}
-  imageAlt={a.image_caption ?? a.title}
+  image={a.cover_image ?? `/og/${a.slug}.png`}
+  imageAlt={a.cover_image ? (a.image_caption ?? a.title) : a.title}
+  imageSize={a.cover_image ? undefined : { width: 1200, height: 630 }}
   type="article"
   publishedAt={a.published_at}
   compactHeader
@@ -45,6 +46,7 @@ const supabaseKey = usingSampleData ? '' : import.meta.env.PUBLIC_SUPABASE_ANON_
     <p class="print-only print-head"><strong>Mürekkep</strong><span>Edebiyat gazetesi · {formatDate(a.published_at)}</span></p>
     <article
       class="art"
+      data-pagefind-body
       data-article
       data-minutes={readingMinutes(a.body)}
       data-url={url}
@@ -56,11 +58,15 @@ const supabaseKey = usingSampleData ? '' : import.meta.env.PUBLIC_SUPABASE_ANON_
       data-api={supabaseUrl || undefined}
       data-api-key={supabaseKey || undefined}
     >
+      <!-- Arama dizini (Pagefind) için sonuçlarda gösterilecek bilgiler -->
+      <span hidden data-pagefind-meta={`tarih:${formatDate(a.published_at)}`}></span>
+      {a.byline && <span hidden data-pagefind-meta={`yazar:${a.byline}`}></span>}
+      {a.label && <span hidden data-pagefind-meta={`tur:${a.label}`}></span>}
       <Fragment set:html={articleHtml(a)} />
       <Fragment set:html={seriesNavHtml(a, parts)} />
-      <p class="print-only print-foot">Bu yazı Mürekkep'te yayımlandı: {url}</p>
+      <p class="print-only print-foot" data-pagefind-ignore>Bu yazı Mürekkep'te yayımlandı: {url}</p>
 
-      <section class="art-share reading-hide" aria-labelledby="paylas">
+      <section class="art-share reading-hide" aria-labelledby="paylas" data-pagefind-ignore>
         <h2 class="section-title" id="paylas">Bu yazıyı paylaş</h2>
         <div class="share-row">
           <a class="share-opt" href={whatsappUrl(a.title, url)} target="_blank" rel="noopener">WhatsApp’ta paylaş</a>

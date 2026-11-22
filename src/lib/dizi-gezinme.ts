@@ -15,7 +15,7 @@ export function seriesNavHtml(current: Article, parts: Article[]): string {
       <span class="sn-title">${p.series!.part}. ${esc(p.title)}</span>
     </a>`;
 
-  return `<nav class="series-nav" aria-label="Dizinin bölümleri">
+  return `<nav class="series-nav" aria-label="Dizinin bölümleri" data-pagefind-ignore>
   <p class="section-title">Dizi · <a href="${esc(seriesPath(current.series.slug))}">${esc(current.series.title)}</a></p>
   <div class="sn-links">${prev ? link(prev, 'prev') : ''}${next ? link(next, 'next') : ''}</div>
   <a class="sn-all" href="${esc(seriesPath(current.series.slug))}">Tüm bölümler (${parts.length})</a>

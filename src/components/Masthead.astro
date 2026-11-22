@@ -20,6 +20,7 @@ const today = todayLong();
         <p class="mh-panel-date" data-today>{today}</p>
         <a href="/">Ana sayfa</a>
         <a href="/arsiv/">Arşiv</a>
+        <a href="/ara/">Ara</a>
         <a href="/kunye/">Künye</a>
       </nav>
     </details>
@@ -36,8 +37,17 @@ const today = todayLong();
 
     <nav class="mh-links" aria-label="Site">
       <a href="/arsiv/">Arşiv</a>
+      <a href="/ara/">Ara</a>
       <a href="/kunye/">Künye</a>
     </nav>
+
+    <!-- Telefonda sağ köşede arama -->
+    <a href="/ara/" class="mh-search" aria-label="Ara">
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+        <path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+      </svg>
+    </a>
   </div>
   <div class="wrap"><div class="mh-rules" aria-hidden="true"></div></div>
 </header>
@@ -136,8 +146,9 @@ const today = todayLong();
     border-bottom: 1px solid var(--ink);
   }
 
-  /* Mobil menü (masaüstünde gizli) */
-  .mh-menu { display: none; }
+  /* Mobil menü ve arama (masaüstünde gizli) */
+  .mh-menu, .mh-search { display: none; }
+  .mh-search { place-items: center; width: 44px; height: 44px; margin-right: -11px; justify-self: end; }
   .mh-menu summary {
     list-style: none;
     display: grid;
@@ -190,6 +201,7 @@ const today = todayLong();
     .mh { grid-template-columns: 44px 1fr 44px; gap: 6px; }
     .mh-date, .mh-links { display: none; }
     .mh-menu { display: block; }
+    .mh-search { display: grid; }
     .mh-brand { gap: 9px; }
     .mh-seal { width: 32px; height: 32px; }
     .mh-name { font-size: 34px; }

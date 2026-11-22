@@ -39,7 +39,9 @@ export default defineConfig({
         "manifest-src 'self'",
       ],
       styleDirective: { resources: ["'self'", 'https://fonts.googleapis.com'] },
-      scriptDirective: { resources: ["'self'"] },
+      // 'wasm-unsafe-eval': site içi arama (Pagefind) WebAssembly kullanır; yalnızca
+      // derlenmiş WebAssembly'ye izin verir, eval() gibi metinden kod çalıştırmayı açmaz.
+      scriptDirective: { resources: ["'self'", "'wasm-unsafe-eval'"] },
     },
   },
 });

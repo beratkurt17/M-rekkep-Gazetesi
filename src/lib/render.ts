@@ -85,7 +85,7 @@ export function articleHtml(a: Article): string {
   ${a.spot ? `<p class="art-spot">${esc(a.spot)}</p>` : ''}
   ${a.author ? `<p class="art-byline"><a href="${esc(authorPath(a.author.slug))}">${esc(a.author.name)}</a></p>`
     : a.byline ? `<p class="art-byline">${esc(a.byline)}</p>` : ''}
-  <div class="art-meta-row">
+  <div class="art-meta-row" data-pagefind-ignore>
     <p class="art-meta"><time datetime="${esc(a.published_at)}">${formatDateTime(a.published_at)}</time>${a.issue ? `<span aria-hidden="true"> · </span><a class="art-issue" href="${issuePath(a.issue.number)}">Sayı ${a.issue.number}</a>` : ''}<span aria-hidden="true"> · </span>${readingMinutes(a.body)} dk okuma</p>
     <div class="art-actions">
       <button type="button" class="art-btn" data-action="reading" aria-pressed="false">Okuma modu</button>
