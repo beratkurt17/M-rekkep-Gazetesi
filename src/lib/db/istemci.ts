@@ -24,8 +24,32 @@ if (process.env.CI && usingSampleData) {
   );
 }
 
+/**
+ * Derlemede ağ aksaklığına dayanıklı istek: bağlantı hatasında 3 kez daha dener
+ * (1, 3, 6 sn arayla). Yine olmazsa asıl sebebi (ör. zaman aşımı, adres bulunamadı)
+ * kayda yazar — "fetch failed" tek başına bir şey söylemez.
+ */
+async function sturdyFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const waits = [1000, 3000, 6000];
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fetch(input, init);
+    } catch (err) {
+      const cause = (err as { cause?: { code?: string; message?: string } }).cause;
+      const why = [cause?.code, cause?.message].filter(Boolean).join(' — ') || String(err);
+      if (attempt >= waits.length) {
+        console.error(`[mürekkep] Supabase'e bağlanılamadı (${attempt + 1} deneme): ${why}`);
+        throw err;
+      }
+      console.warn(`[mürekkep] Supabase bağlantı hatası, yeniden deneniyor (${attempt + 1}/${waits.length}): ${why}`);
+      await new Promise((r) => setTimeout(r, waits[attempt]));
+    }
+  }
+}
+
 export const supabase = usingSampleData ? null : createClient(url, key, {
   auth: { persistSession: false },
+  global: { fetch: sturdyFetch },
 });
 
 /**
