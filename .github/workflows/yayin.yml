@@ -30,30 +30,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Bakım modu: depoda bakim/AKTIF dosyası varsa site derlenmez, yalnızca
-      # bakım sayfası yayınlanır (her adres onu gösterir). Kapatmak için dosyayı sil.
+      # Site her zaman derlenir: Supabase bilgisi yoksa derleme burada durur
+      # (src/lib/db/istemci.ts), canlıdaki sürüm olduğu gibi kalır.
+      # Bilgiler Variables'ta ya da Secrets'ta olabilir; ikisine de bakılır.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          PUBLIC_SUPABASE_URL: ${{ vars.PUBLIC_SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ vars.PUBLIC_SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_ANON_KEY }}
+
+      # Bakım modu: depoda bakim/AKTIF dosyası varsa derlenen site YAYINLANMAZ,
+      # yalnızca bakım sayfası yayınlanır (her adres onu gösterir). Kapatmak için dosyayı sil.
       - id: mod
         run: |
           if [ -f bakim/AKTIF ]; then echo "bakim=1" >> "$GITHUB_OUTPUT"; else echo "bakim=0" >> "$GITHUB_OUTPUT"; fi
-
       - if: steps.mod.outputs.bakim == '1'
         run: |
           mkdir -p bakim-yayin
           cp bakim/index.html bakim/robots.txt public/logo.jpg bakim-yayin/
           cp bakim/index.html bakim-yayin/404.html
-
-      - if: steps.mod.outputs.bakim == '0'
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - if: steps.mod.outputs.bakim == '0'
-        run: npm ci
-      - if: steps.mod.outputs.bakim == '0'
-        run: npm run build
-        env:
-          PUBLIC_SUPABASE_URL: ${{ vars.PUBLIC_SUPABASE_URL }}
-          PUBLIC_SUPABASE_ANON_KEY: ${{ vars.PUBLIC_SUPABASE_ANON_KEY }}
 
       - uses: actions/upload-pages-artifact@v3
         with:

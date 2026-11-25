@@ -1,3 +1,3 @@
-Bu dosya varken site BAKIM MODUNDADIR: GitHub siteyi derlemez, yalnızca bakim/
+Bu dosya varken site BAKIM MODUNDADIR: GitHub siteyi derler ama yayınlamaz; yalnızca bakim/
 klasöründeki sayfayı yayınlar (her adres bakım sayfasını gösterir).
 Yeni siteyi yayına almak için bu dosyayı silip main'e gönder.
