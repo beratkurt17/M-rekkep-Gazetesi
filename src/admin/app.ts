@@ -1,6 +1,7 @@
 // Yönetim paneli girişi: bağlantı, oturum, üst menü ve ekranların kaydı.
 // Her ekranın kendi dosyası var: src/admin/ekranlar/
 import { $ } from './ortak/dom';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../lib/supabase-ayar';
 import { connect, sb } from './ortak/supabase';
 import { confirmLeave, isDirty } from './ortak/kirli';
 import { registerView, showView } from './ortak/gezinme';
@@ -19,8 +20,8 @@ export function initAdmin() {
     return;
   }
 
-  const url = import.meta.env.PUBLIC_SUPABASE_URL;
-  const key = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+  const url = SUPABASE_URL;
+  const key = SUPABASE_ANON_KEY;
   if (!url || !key) return;
   connect(url, key);
 

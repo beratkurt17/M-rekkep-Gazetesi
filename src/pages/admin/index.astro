@@ -13,7 +13,8 @@ import Diziler from '../../components/admin/Diziler.astro';
 import Koseler from '../../components/admin/Koseler.astro';
 import Onizleme from '../../components/admin/Onizleme.astro';
 import { FONT_URL } from '../../lib/fonts';
-const configured = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../../lib/supabase-ayar';
+const configured = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
 ---
 <!doctype html>
 <html lang="tr">

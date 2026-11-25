@@ -6,8 +6,8 @@ import sitemap from '@astrojs/sitemap';
 
 // Yerelde .env, GitHub Actions'ta ortam değişkenleri kullanılır.
 try { process.loadEnvFile('.env'); } catch { /* CI'da .env yok */ }
-const SUPABASE = process.env.PUBLIC_SUPABASE_URL
-  ? new URL(process.env.PUBLIC_SUPABASE_URL).origin
+const SUPABASE = process.env.PUBLIC_SUPABASE_URL?.trim()
+  ? new URL(process.env.PUBLIC_SUPABASE_URL.trim().replace(/^["']|["']$/g, '')).origin
   : 'https://*.supabase.co';
 
 export default defineConfig({
